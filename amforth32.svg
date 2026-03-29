@@ -1,0 +1,20 @@
+<svg width="300" height="190" viewBox="0 0 300 190" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .w{fill:#ffffff}.b{fill:#000000}.c{fill:#30a0c8}
+    .mc{font-family:monospace;fill:#30a0c8}
+  </style>
+  <rect class="b" x="0" y="0" width="300" height="190"/>
+  <rect class="c" x="0" y="0" width="300" height="6"/>
+  <rect class="c" x="0" y="184" width="300" height="6"/>
+  <rect class="w" x="16" y="24" width="32" height="32"/><rect class="b" x="24" y="32" width="16" height="16"/>
+  <rect class="w" x="58" y="24" width="32" height="32"/><rect class="c" x="66" y="32" width="16" height="16"/>
+  <rect class="c" x="100" y="24" width="32" height="32"/><rect class="b" x="108" y="32" width="16" height="16"/>
+  <rect class="w" x="142" y="24" width="32" height="32"/><rect class="b" x="150" y="32" width="16" height="16"/>
+  <rect class="c" x="184" y="24" width="32" height="32"/><rect class="w" x="192" y="32" width="16" height="16"/>
+  <rect class="w" x="226" y="24" width="32" height="32"/><rect class="c" x="234" y="32" width="16" height="16"/>
+  <text font-family="monospace" font-size="38" font-weight="700" letter-spacing="-1" x="16" y="118">
+    <tspan fill="#ffffff">amforth</tspan><tspan fill="#30a0c8">32</tspan>
+  </text>
+  <text class="mc" x="16" y="158" font-size="11" letter-spacing="3">ITC · 32-BIT · GPLv3</text>
+</svg>
+
