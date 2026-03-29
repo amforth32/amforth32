@@ -1,3 +1,16 @@
-remote_theme: "jekyll/minima"
-minima:
-  skin: auto
+# Theme Settings
+remote_theme: just-the-docs/just-the-docs
+
+# Navigation Settings
+# This enables the search bar in the sidebar
+search_enabled: true
+
+# Color Scheme
+# Setting this to 'nil' or omitting it allows the theme 
+# to follow the user's system dark/light preference.
+color_scheme: nil 
+
+# Aux Links (Top right buttons)
+aux_links:
+  "GitHub Repo":
+    - "https://github.com/amforth32/amforth32"
