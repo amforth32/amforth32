@@ -8,7 +8,7 @@ search_enabled: true
 # Color Scheme
 # Setting this to 'nil' or omitting it allows the theme 
 # to follow the user's system dark/light preference.
-color_scheme: nil 
+# color_scheme: dark 
 
 # Aux Links (Top right buttons)
 aux_links:
