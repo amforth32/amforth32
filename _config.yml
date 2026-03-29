@@ -12,5 +12,5 @@ color_scheme: nil
 
 # Aux Links (Top right buttons)
 aux_links:
-  "GitHub Repo":
+  "Repository":
     - "https://github.com/amforth32/amforth32"
