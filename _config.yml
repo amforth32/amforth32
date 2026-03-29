@@ -14,3 +14,9 @@ search_enabled: true
 aux_links:
   "Repository":
     - "https://github.com/amforth32/amforth32"
+
+nav_external_links:
+  - title: Amforth
+    url: https://amforth.sourceforge.net/index.html
+  - title: Forth Standard
+    url: https://forth-standard.org/
