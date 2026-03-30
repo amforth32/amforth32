@@ -1,3 +1,22 @@
 <img src="https://github.com/mkobetic/amforth/actions/workflows/arm-build.yaml/badge.svg" align="right">
 <img src="https://github.com/mkobetic/amforth/actions/workflows/arm-linux-build.yaml/badge.svg" align="right">
 <img src="https://github.com/mkobetic/amforth/actions/workflows/rv-build.yaml/badge.svg" align="right">
+
+<script>
+  // Initial check and application
+  const darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+  
+  function applyTheme() {
+    if (darkModeQuery.matches) {
+      jtd.setTheme('dark');
+    } else {
+      jtd.setTheme('light');
+    }
+  }
+
+  // Run immediately
+  applyTheme();
+
+  // Listen for system changes while the page is open
+  darkModeQuery.addEventListener('change', applyTheme);
+</script>
