@@ -22,6 +22,26 @@
     return 'light';
   }
 
+  /* Re-apply theme on navigation (critical for pages with subitems / children) */
+  function reapplyOnNavigation() {
+    const preferred = getPreferredTheme();
+    /* Small delay because navigation often triggers after DOM updates */
+    setTimeout(function() {
+      applyTheme(preferred);
+    }, 50);
+  }
+
+  /* Listen for popstate (back/forward buttons) and hash changes */
+  window.addEventListener("popstate", reapplyOnNavigation);
+  window.addEventListener("hashchange", reapplyOnNavigation);
+
+  /* Also re-apply whenever the page becomes visible again (helps with sidebar interactions) */
+  document.addEventListener("visibilitychange", function() {
+    if (document.visibilityState === "visible") {
+      reapplyOnNavigation();
+    }
+  });
+
   window.addEventListener('load', function() {
     const preferred = getPreferredTheme();
     applyTheme(preferred);
