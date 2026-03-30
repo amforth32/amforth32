@@ -1,8 +1,11 @@
 <script>
+  document.documentElement.style.visibility = "hidden";
+
   function applyTheme(theme) {
     if (typeof jtd !== 'undefined') {
       jtd.setTheme(theme);
       localStorage.setItem('theme', theme);
+      document.documentElement.style.visibility = "visible";
       console.log("Theme applied:", theme);
     } else {
         console.log("jtd undefined")
