@@ -3,40 +3,56 @@
 <img src="https://github.com/mkobetic/amforth/actions/workflows/rv-build.yaml/badge.svg" align="right">
 
 <script>
-  // Function to set theme (uses built-in jtd helper)
-  function setTheme(theme) {
-    if (typeof jtd !== 'undefined') {
+  console.log("✅ footer_custom.html script tag is present and running");
+
+  function applyTheme(theme) {
+    if (typeof jtd !== 'undefined' && typeof jtd.setTheme === 'function') {
       jtd.setTheme(theme);
-      localStorage.setItem('theme', theme);  // Persist preference
+      localStorage.setItem('theme', theme);
+      console.log("🎨 Theme applied successfully:", theme);
+      return true;
     }
+    return false;
   }
 
-  // Get user's saved preference or system preference
   function getPreferredTheme() {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme) {
-      return savedTheme;
-    }
+    const saved = localStorage.getItem('theme');
+    if (saved) return saved;
 
-    // Check system preference
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
       return 'dark';
     }
     return 'light';
   }
 
-  // Initialize on page load
-  document.addEventListener('DOMContentLoaded', function() {
+  // Try immediately, then poll until jtd is available (max 3 seconds)
+  function initTheme() {
     const preferred = getPreferredTheme();
-    setTheme(preferred);
+    let attempts = 0;
+    const maxAttempts = 30; // ~3 seconds
 
-    // Optional: Listen for system preference changes (auto-switch live)
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    mediaQuery.addEventListener('change', (e) => {
-      // Only auto-switch if user hasn't manually overridden
+    const tryApply = setInterval(() => {
+      attempts++;
+      const success = applyTheme(preferred);
+
+      if (success || attempts >= maxAttempts) {
+        clearInterval(tryApply);
+        if (!success) {
+          console.warn("⚠️ Could not apply theme after", maxAttempts, "attempts - jtd still unavailable");
+        }
+      }
+    }, 100);
+  }
+
+  // Start as soon as this script runs
+  initTheme();
+
+  // Also listen for system changes (if no manual preference saved)
+  if (window.matchMedia) {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
       if (!localStorage.getItem('theme')) {
-        setTheme(e.matches ? 'dark' : 'light');
+        applyTheme(e.matches ? 'dark' : 'light');
       }
     });
-  });
+  }
 </script>
