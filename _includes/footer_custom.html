@@ -25,7 +25,6 @@
     return 'light';
   }
 
-  // Try immediately, then poll until jtd is available (max 3 seconds)
   function initTheme() {
     const preferred = getPreferredTheme();
     let attempts = 0;
@@ -44,10 +43,8 @@
     }, 100);
   }
 
-  // Start as soon as this script runs
   initTheme();
 
-  // Also listen for system changes (if no manual preference saved)
   if (window.matchMedia) {
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
       if (!localStorage.getItem('theme')) {
