@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>AmForth32 Reference Card</title>
+<style>
+
+body { font-family: sans-serif; }
+table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+th { background-color: #f2f2f2; }
+h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  body { background-color: #222222; color: #cccccc; }
+  a { color: #8ab4f8; }
+  th, td { border-color: #444; }
+  th { background-color: #333333; }
+  h2 { border-bottom-color: #cccccc; }
+}
+</style>
+</head>
+<body>
+<h1>AmForth32 Reference Card</h1>
+<h2>CORTEX-M4 / UNO R4 WIFI main@9f8f701 2026-03-31T13:46:15+00:00</h2>
+<p>
+<a href="#STACK">STACK</a> | <a href="#COMPARE">COMPARE</a> | <a href="#MATH">MATH</a> | <a href="#MIXED">MIXED</a> | <a href="#DOUBLE">DOUBLE</a> | <a href="#MEMORY">MEMORY</a> | <a href="#STRING">STRING</a> | <a href="#DICTIONARY">DICTIONARY</a> | <a href="#WORDLIST">WORDLIST</a> | <a href="#COMPILER">COMPILER</a> | <a href="#FLOW">FLOW</a> | <a href="#IO">IO</a> | <a href="#OUTPUT">OUTPUT</a> | <a href="#SYSTEM">SYSTEM</a> | <a href="#TOOLS">TOOLS</a> | <a href="#FLASH">FLASH</a> | <a href="#OTHER">OTHER</a> | <a href="#MCU">MCU</a> | <a href="#UNCATEGORIZED">UNCATEGORIZED</a> | <a href="#LEGEND">LEGEND</a>
+</p>
+<h2 id="STACK">STACK</h2>
+<table>
+<tr><th>Word</th><th>Type</th><th>Stack Signature</th><th>Description</th><th>Location</th></tr>
+<tr><td title="DUP">dup</td><td>CODEWORD</td><td>( x -- x x )</td><td>duplicate TOS</td><td>arm/words/dup.s:2<td></tr>
+<tr><td title="QDUP">?dup</td><td>CODEWORD</td><td>( x -- x x | 0 )</td><td>duplicate TOS if it is not zero</td><td>arm/words/q-dup.s:2<td></tr>
+<tr><td title="SWAP">swap</td><td>CODEWORD</td><td>( x1 x2 -- x2 x1 )</td><td>swap top 2 cells on the stack</td><td>arm/words/swap.s:2<td></tr>
+<tr><td title="OVER">over</td><td>CODEWORD</td><td>( x1 x2 -- x1 x2 x1 )</td><td>copy NOS to the top</td><td>arm/words/over.s:2<td></tr>
+<tr><td title="DROP">drop</td><td>CODEWORD</td><td>( x -- )</td><td>drop TOS</td><td>arm/words/drop.s:2<td></tr>
+<tr><td title="ROT">rot</td><td>CODEWORD</td><td>(x1 x2 x3 -- x2 x3 x1)</td><td>rotate top 3 cells on stack left, 3OS becomes TOS</td><td>arm/words/rot.s:3<td></tr>
+<tr><td title="MROT">-rot</td><td>CODEWORD</td><td>(x1 x2 x3 -- x3 x1 x2)</td><td>rotate top 3 cells on stack right, TOS becomes 3OS</td><td>arm/words/m-rot.s:1<td></tr>
+<tr><td title="TUCK">tuck</td><td>CODEWORD</td><td>( x1 x2 -- x2 x1 x2 )</td><td>insert TOS below 2nd cell of the stack</td><td>arm/words/tuck.s:2<td></tr>
+<tr><td title="NIP">nip</td><td>CODEWORD</td><td>( x1 x2 -- x2 )</td><td>drop NOS</td><td>arm/words/nip.s:2<td></tr>
+<tr><td title="PICK">pick</td><td>CODEWORD</td><td>( xu .. x1 x0 u -- xu ... x1 x0 xu )</td><td>copy u-th stack cell to the top</td><td>arm/words/pick.s:2<td></tr>
+<tr><td title="2DUP">2dup</td><td>CODEWORD</td><td>( d - d d )</td><td>duplicate top 2 cells on the stack</td><td>arm/words/2dup.s:1<td></tr>
+<tr><td title="2SWAP">2swap</td><td>CODEWORD</td><td>( d1 d2 -- d2 d1 )</td><td>swap top two cell pairs on the stack</td><td>arm/words/2swap.s:1<td></tr>
+<tr><td title="2OVER">2over</td><td>CODEWORD</td><td>( d1 d2 -- d1 d2 d1 )</td><td>copy 2nd cell pair to the top of the stack</td><td>arm/words/2over.s:1<td></tr>
+<tr><td title="2DROP">2drop</td><td>CODEWORD</td><td>( d -- )</td><td>drop top cell pair from the stack</td><td>arm/words/2drop.s:1<td></tr>
+<tr><td title="2ROT">2rot</td><td>CODEWORD</td><td>(d1 d2 d3 -- d2 d3 d1)</td><td>rotate top 3 cell pairs on stack left, 3rd pair becomes top pair</td><td>arm/words/2rot.s:2<td></tr>
+<tr><td title="2NIP">2nip</td><td>CODEWORD</td><td>( d2 d1 -- d1 )</td><td>remove 2nd cell pair from the stack</td><td>arm/words/2nip.s:1<td></tr>
+<tr><td title="DEPTH">depth</td><td>CODEWORD</td><td>( -- n )</td><td>n is current dept of the data stack</td><td>arm/words/stack.s:2<td></tr>
+<tr><td title="QSTACK">?stack</td><td>COLON</td><td>( -- )</td><td>throw if stack depth is negative</td><td>core/words/q-stack.s:2<td></tr>
+<tr><td title="SP0">sp0</td><td>USER</td><td>( -- addr )</td><td>storage address of initial data stack pointer</td><td>arm/words/sp.s:20<td></tr>
+<tr><td title="SP">sp</td><td>USER</td><td>( -- addr )</td><td>storage address of data stack pointer</td><td>arm/words/sp.s:17<td></tr>
+<tr><td title="SP_STORE">sp!</td><td>CODEWORD</td><td>( addr -- )</td><td>set data stack pointer to addr</td><td>arm/words/sp.s:10<td></tr>
+<tr><td title="SP_FETCH">sp@</td><td>CODEWORD</td><td>( -- addr )</td><td>addr is current data stack pointer</td><td>arm/words/sp.s:2<td></tr>
+<tr><td title="RDROP">rdrop</td><td>CODEWORD</td><td>(R: x -- )</td><td>drop top of the return stack</td><td>arm/words/stack.s:19<td></tr>
+<tr><td title="RDEPTH">rdepth</td><td>CODEWORD</td><td>( -- n )</td><td>n is current dept of the return stack</td><td>arm/words/stack.s:10<td></tr>
+<tr><td title="RP">rp</td><td>USER</td><td>( -- addr )</td><td>storage address of return stack pointer</td><td>arm/words/rp.s:17<td></tr>
+<tr><td title="RP_STORE">rp!</td><td>CODEWORD</td><td>( addr -- )</td><td>set return stack pointer to addr</td><td>arm/words/rp.s:10<td></tr>
+<tr><td title="RP_FETCH">rp@</td><td>CODEWORD</td><td>( -- addr )</td><td>addr is current return stack pointer</td><td>arm/words/rp.s:2<td></tr>
+<tr><td title="R_FETCH">r@</td><td>CODEWORD</td><td>(R: x -- x )( -- x )</td><td>copy top of return stack to data stack</td><td>arm/words/r-fetch.s:2<td></tr>
+<tr><td title="R_FROM">r&gt;</td><td>CODEWORD</td><td>(R: x -- )( -- x )</td><td>move top of return stack to data stack</td><td>arm/words/r-from.s:2<td></tr>
+<tr><td title="TO_R">&gt;r</td><td>CODEWORD</td><td>( x -- )(R: -- x)</td><td>move TOS to return stack</td><td>arm/words/to-r.s:2<td></tr>
+<tr><td title="N_R_FROM">nr&gt;</td><td>CODEWORD</td><td>(R: xu .. x1 u -- )( -- xu .. x1 u )</td><td>move u items from return stack to data stack</td><td>arm/words/n_r_from.s:1<td></tr>
+<tr><td title="N_TO_R">n&gt;r</td><td>CODEWORD</td><td>( xu .. x1 u -- ) (R: -- xu .. x1 u)</td><td>move u items from data stack to return stack</td><td>arm/words/n_to_r.s:1<td></tr>
+<tr><td title="2R_FROM">2r&gt;</td><td>CODEWORD</td><td>(R: d -- )( -- d )</td><td>move top 2 cells from return stack to data stack</td><td>arm/words/2r-from.s:1<td></tr>
+<tr><td title="2TO_R">2&gt;r</td><td>CODEWORD</td><td>( d -- )(R: -- d )</td><td>move top two cells from data stack to return stack</td><td>arm/words/2to-r.s:1<td></tr>
+<tr><td title="2R_FETCH">2r@</td><td>CODEWORD</td><td>(R: d -- d )( -- d )</td><td>copy top 2 cells from return stack to data stack</td><td>arm/words/2r-fetch.s:1<td></tr>
+<tr><td title="LDROP">ldrop</td><td>COLON</td><td>(L: x -- )</td><td>remove TOS from leave stack</td><td>core/words/lstack.s:37<td></tr>
+<tr><td title="LDEPTH">ldepth</td><td>COLON</td><td>( -- n )</td><td>n is current depth of the leave stack</td><td>core/words/lstack.s:45<td></tr>
+<tr><td title="L_FETCH">l@</td><td>COLON</td><td>( -- x ) (L: x -- x )</td><td>copy TOS from leave stack to data stack</td><td>core/words/lstack.s:20<td></tr>
+<tr><td title="L_FROM">l&gt;</td><td>COLON</td><td>( -- x ) (L: x -- )</td><td>move TOS from leave stack to data stack</td><td>core/words/lstack.s:9<td></tr>
+<tr><td title="TO_L">&gt;l</td><td>COLON</td><td>( x -- )(L: -- x )</td><td>move TOS from data stack to leave stack</td><td>core/words/lstack.s:27<td></tr>
+<tr><td title="2L_FETCH">2l@</td><td>COLON</td><td>( -- x2 x1 ) (L: x1 x2 -- x1 x2 )</td><td>copy cell pair from top of leave stack to data stack</td><td>core/words/lstack.s:63<td></tr>
+<tr><td title="2L_FROM">2l&gt;</td><td>COLON</td><td>( -- x2 x1 ) (L: x1 x2 -- )</td><td>move cell pair from top of leave stack to data stack</td><td>core/words/lstack.s:53<td></tr>
+<tr><td title="2TO_L">2&gt;l</td><td>COLON</td><td>( x1 x2 -- )(L: -- x2 x1 )</td><td>move cell pair from top of data stack to leave stack</td><td>core/words/lstack.s:74<td></tr>
+<tr><td title="LP">lp</td><td>VARIABLE</td><td></td><td>leave stack pointer</td><td>core/words/lstack.s:6<td></tr>
+<tr><td title="LP0">lp0</td><td>VALUE</td><td>RAM_upper_leavestack</td><td>start of the leave stack</td><td>core/words/lstack.s:3<td></tr>
+</table>
+<h2 id="COMPARE">COMPARE</h2>
+<table>
+<tr><th>Word</th><th>Type</th><th>Stack Signature</th><th>Description</th><th>Location</th></tr>
+<tr><td title="UMIN">umin</td><td>CODEWORD</td><td>( u1 u2 -- u3 )</td><td>u3 = min(u1, u2)</td><td>arm/words/comp.s:161<td></tr>
+<tr><td title="UMAX">umax</td><td>CODEWORD</td><td>( u1 u2 -- u3 )</td><td>u3 = max(u1, u2)</td><td>arm/words/comp.s:151<td></tr>
+<tr><td title="MAX">max</td><td>CODEWORD</td><td>( n1 n2 -- n3 )</td><td>n3 = max(n1, n2)</td><td>arm/words/comp.s:141<td></tr>
+<tr><td title="MIN">min</td><td>CODEWORD</td><td>( n1 n2 -- n3 )</td><td>n3 = min(n1, n2)</td><td>arm/words/comp.s:131<td></tr>
+<tr><td title="EQUAL">=</td><td>CODEWORD</td><td>( n1 n2 -- f )</td><td>f = n1 == n2</td><td>arm/words/comp.s:120<td></tr>
+<tr><td title="NOTEQUAL">&lt;&gt;</td><td>CODEWORD</td><td>( n1 n2 -- f )</td><td>f = n1 != n2</td><td>arm/words/comp.s:109<td></tr>
+<tr><td title="GREATER">&gt;</td><td>CODEWORD</td><td>( n1 n2 -- f )</td><td>f = n1 &gt; n2</td><td>arm/words/comp.s:80<td></tr>
+<tr><td title="LESS">&lt;</td><td>CODEWORD</td><td>( n1 n2 -- f )</td><td>f = n1 &lt; n2</td><td>arm/words/comp.s:69<td></tr>
+<tr><td title="LESSEQUAL">&lt;=</td><td>CODEWORD</td><td>( n1 n2 -- f )</td><td>f = n1 &lt;= n2</td><td>arm/words/comp.s:58<td></tr>
+<tr><td title="GREATEREQUAL">&gt;=</td><td>CODEWORD</td><td>( n1 n2 -- f )</td><td>f = n1 &gt;= n2</td><td>arm/words/comp.s:47<td></tr>
+<tr><td title="ZEROLESS">0&lt;</td><td>CODEWORD</td><td>( n -- f )</td><td>f = n &lt; 0</td><td>arm/words/comp.s:39<td></tr>
+<tr><td title="NOTZEROEQUAL">0&lt;&gt;</td><td>CODEWORD</td><td>( n -- f )</td><td>f = n != 0</td><td>arm/words/comp.s:30<td></tr>
+<tr><td title="ZEROEQUAL">0=</td><td>CODEWORD</td><td>( n -- f )</td><td>f = n == 0</td><td>arm/words/comp.s:22<td></tr>
+<tr><td title="GREATERZERO">0&gt;</td><td>COLON</td><td>( n -- f )</td><td>f = n &gt; 0</td><td>core/words/greater-zero.s:3<td></tr>
+<tr><td title="WITHIN">within</td><td>COLON</td><td>( n min max -- f )</td><td>f = min &lt;= n &lt; max | max &lt; min &lt;= n | n &lt; max &lt; min</td><td>core/words/within.s:3<td></tr>
+<tr><td title="UGREATER">u&gt;</td><td>CODEWORD</td><td>( u1 u2 -- f )</td><td>f = u1 &gt; u2</td><td>arm/words/comp.s:100<td></tr>
+<tr><td title="ULESS">u&lt;</td><td>CODEWORD</td><td>( u1 u2 -- f )</td><td>f = u1 &lt; u2</td><td>arm/words/comp.s:91<td></tr>
+<tr><td>u&lt;=</td></tr>
+<tr><td>u&gt;=</td></tr>
+</table>
+<h2 id="MATH">MATH</h2>
+<table>
+<tr><th>Word</th><th>Type</th><th>Stack Signature</th><th>Description</th><th>Location</th></tr>
+<tr><td title="STAR">*</td><td>CODEWORD</td><td>( n1 n2 -- n3 )</td><td>n3 = n1 * n2</td><td>arm/words/star.s:2<td></tr>
+<tr><td title="PLUS">+</td><td>CODEWORD</td><td>( n1 n2 -- n3 )</td><td>n3 = n1 + n2</td><td>arm/words/plus.s:2<td></tr>
+<tr><td title="MINUS">-</td><td>CODEWORD</td><td>( n1 n2 -- n3 )</td><td>n3 = n1 - n2</td><td>arm/words/minus.s:2<td></tr>
+<tr><td title="SLASH">/</td><td>COLON</td><td>( n1 n2 -- n3 )</td><td>n3 is quotient of n1 / n2</td><td>arm/words/muldiv.s:9<td></tr>
+<tr><td title="MOD">mod</td><td>COLON</td><td>( n1 n2 -- n3 )</td><td>n3 is remainder of n1 / n2</td><td>arm/words/muldiv.s:2<td></tr>
+<tr><td title="SLASHMOD">/mod</td><td>CODEWORD</td><td>( n1 n2 -- n3 n4 )</td><td>n3 is remainder and n4 the quotient of n1 / n2</td><td>arm/words/muldiv.s:16<td></tr>
+<tr><td title="STARSLASH">*/</td><td>COLON</td><td>( n1 n2 n3 -- n4 )</td><td>n4 = n1 * n2 / n3</td><td>core/words/star-slash.s:1<td></tr>
+<tr><td title="STARSLASHMOD">*/mod</td><td>COLON</td><td>( n1 n2 n3 -- n4 n5)</td><td>n5 is the quotient and n4 the remainder of n1 * n2 / n3</td><td>core/words/star-slash-mod.s:1<td></tr>
+<tr><td title="USLASHMOD">u/mod</td><td>CODEWORD</td><td>( u1 u2 -- u3 u4 )</td><td>u3 is remainder and u4 the quotient of u1 / u2</td><td>arm/words/muldiv.s:34<td></tr>
+<tr><td title="1MINUS">1-</td><td>CODEWORD</td><td>( n1 -- n2 )</td><td>n2 = n1 - 1</td><td>arm/words/1-minus.s:1<td></tr>
+<tr><td title="1PLUS">1+</td><td>CODEWORD</td><td>( n1 -- n2 )</td><td>n2 = n1 + 1</td><td>arm/words/1-plus.s:1<td></tr>
+<tr><td title="2MINUS">2-</td><td>CODEWORD</td><td>( n1 -- n2 )</td><td>n2 = n1 - 2</td><td>arm/words/2-minus.s:1<td></tr>
+<tr><td title="2PLUS">2+</td><td>CODEWORD</td><td>( n1 -- n2 )</td><td>n2 = n1 + 2</td><td>arm/words/2-plus.s:1<td></tr>
+<tr><td title="2SLASH">2/</td><td>CODEWORD</td><td>( n1 -- n2 )</td><td>n2 = n1 / 2</td><td>arm/words/2-slash.s:1<td></tr>
+<tr><td title="2STAR">2*</td><td>CODEWORD</td><td>( n1 -- n2 )</td><td>n2 = 2 * n1</td><td>arm/words/2-star.s:1<td></tr>
+<tr><td title="NOT">not</td><td>COLON</td><td>( f1 -- f2 )</td><td>f = ~f (logical not)</td><td>arm/words/logic.s:18<td></tr>
+<tr><td title="OR">or</td><td>CODEWORD</td><td>( x1 x2 -- x3 )</td><td>x3 = x1 | x2</td><td>arm/words/logic.s:10<td></tr>
+<tr><td title="AND">and</td><td>CODEWORD</td><td>( x1 x2 -- x3 )</td><td>x3 = x1 &amp; x2</td><td>arm/words/logic.s:2<td></tr>
+<tr><td title="XOR">xor</td><td>CODEWORD</td><td>( x1 x2 -- x3 )</td><td>x3 = x1 ^ x2</td><td>arm/words/xor.s:2<td></tr>
+<tr><td title="INVERT">invert</td><td>CODEWORD</td><td>( x1 -- x2 )</td><td>x2 = ~x1 (bitwise)</td><td>arm/words/invert.s:1<td></tr>
+<tr><td title="LSHIFT">lshift</td><td>CODEWORD</td><td>( x1 u -- x2 )</td><td>x2 = x1 &lt;&lt; u</td><td>arm/words/logic.s:34<td></tr>
+<tr><td title="RSHIFT">rshift</td><td>CODEWORD</td><td>( x1 u -- x2 )</td><td>x2 = x1 &gt;&gt; u</td><td>arm/words/logic.s:25<td></tr>
+<tr><td title="ASHIFT">ashift</td><td>CODEWORD</td><td>( n1 u -- n2 )</td><td>n2 = n1 &gt;&gt; u (arithmetic shift right, sign filled)</td><td>arm/words/ashift.s:1<td></tr>
+<tr><td title="ABS">abs</td><td>CODEWORD</td><td>( n1 -- n2 )</td><td>n2 = abs(n1)</td><td>arm/words/abs.s:1<td></tr>
+<tr><td title="NEGATE">negate</td><td>CODEWORD</td><td>( n1 -- n2 )</td><td>n2 = -n1</td><td>arm/words/negate.s:2<td></tr>
+</table>
+<h2 id="MIXED">MIXED</h2>
+<table>
+<tr><th>Word</th><th>Type</th><th>Stack Signature</th><th>Description</th><th>Location</th></tr>
+<tr><td title="MSTAR">m*</td><td>CODEWORD</td><td>( n1 n2 -- d )</td><td>d = n1*n2</td><td>arm/words/double.s:2<td></tr>
+<tr><td title="MPLUS">m+</td><td>COLON</td><td>( d1 n -- d2 )</td><td>d2 = d1 + n</td><td>core/words/mplus.s:3<td></tr>
+<tr><td title="UMSTAR">um*</td><td>CODEWORD</td><td>(u1 u2 -- ud )</td><td>ud = u1 * u2</td><td>arm/words/umstar.s:1<td></tr>
+<tr><td title="UMSLASHMOD">um/mod</td><td>CODEWORD</td><td>( ud u1 -- u2 u3 )</td><td>u3 is the quotient and u2 the remainder of ud / u1</td><td>arm/words/um-slash-mod.s:1<td></tr>
+<tr><td title="SMSLASHREM">sm/rem</td><td>COLON</td><td>( d n1 -- n2 n3 )</td><td>alias for m/mod</td><td>core/words/m-slash-mod.s:34<td></tr>
+<tr><td title="MSLASHMOD">m/mod</td><td>COLON</td><td>( d n1 -- n2 n3 )</td><td>n3 is quotient and n2 remainder of d / n1</td><td>core/words/m-slash-mod.s:1<td></tr>
+</table>
+<h2 id="DOUBLE">DOUBLE</h2>
+<table>
+<tr><th>Word</th><th>Type</th><th>Stack Signature</th><th>Description</th><th>Location</th></tr>
+<tr><td title="S2D">s&gt;d</td><td>CODEWORD</td><td>( n -- d )</td><td>converts n to double cell d (MSB cell is higher in the stack)</td><td>arm/words/double.s:246<td></tr>
+<tr><td title="DEQUAL">d=</td><td>CODEWORD</td><td>( d1 d2 -- f )</td><td>f = d1 == d2</td><td>arm/words/double.s:231<td></tr>
+<tr><td title="DZEROEQUAL">d0=</td><td>CODEWORD</td><td>( d -- f )</td><td>f = d == 0</td><td>arm/words/double.s:217<td></tr>
+<tr><td title="DZEROLESS">d0&lt;</td><td>CODEWORD</td><td>( d -- f )</td><td>f = d &lt; 0</td><td>arm/words/double.s:209<td></tr>
+<tr><td title="DGREATER">d&gt;</td><td>CODEWORD</td><td>( d1 d2 -- f )</td><td>f = d1 &gt; d2</td><td>arm/words/double.s:184<td></tr>
+<tr><td title="DLESS">d&lt;</td><td>CODEWORD</td><td>( d1 d2 -- f )</td><td>f = d1 &lt; d2</td><td>arm/words/double.s:159<td></tr>
+<tr><td title="DMINUS">d-</td><td>CODEWORD</td><td>( d1 d2 - d3 )</td><td>d3 = d1 - d2</td><td>arm/words/d-minus.s:2<td></tr>
+<tr><td title="DPLUS">d+</td><td>CODEWORD</td><td>( d1 d2 -- d3 )</td><td>d3 = d1 + d2</td><td>arm/words/d-plus.s:2<td></tr>
+<tr><td title="DSLASH">d/</td><td>CODEWORD</td><td>( d1 d2 -- d3 )</td><td>d3 is quotient of d1 / d2</td><td>arm/words/double.s:145<td></tr>
+<tr><td title="DSLASHMOD">d/mod</td><td>CODEWORD</td><td>(d1 d2 -- d3 d4 )</td><td>d3 remainder, d4 quotient of d1 / d2</td><td>arm/words/double.s:84<td></tr>
+<tr><td title="UDSTAR">ud*</td><td>COLON</td><td></td><td>unclear, maybe broken?</td><td>core/words/ud-star.s:15<td></tr>
+<tr><td title="UDSLASHMOD">ud/mod</td><td>CODEWORD</td><td>(ud1 ud2 -- ud3 ud4 )</td><td>ud3 remainder, ud4 quotient of ud1 / ud2</td><td>arm/words/double.s:11<td></tr>
+<tr><td title="D2SLASH">d2/</td><td>CODEWORD</td><td>( d1 -- d2 )</td><td>d2 = d1 / 2</td><td>arm/words/d-2slash.s:2<td></tr>
+<tr><td title="D2STAR">d2*</td><td>CODEWORD</td><td>( d1 -- d2 )</td><td>d2 = 2 * d1</td><td>arm/words/d-2star.s:2<td></tr>
+<tr><td title="DNEGATE">dnegate</td><td>CODEWORD</td><td>( d1 -- d2 )</td><td>d2 = -d1</td><td>arm/words/dnegate.s:2<td></tr>
+<tr><td title="DABS">dabs</td><td>COLON</td><td>( d -- ud )</td><td>ud = abs(d)</td><td>core/words/dabs.s:2<td></tr>
+</table>
+<h2 id="MEMORY">MEMORY</h2>
+<table>
+<tr><th>Word</th><th>Type</th><th>Stack Signature</th><th>Description</th><th>Location</th></tr>
+<tr><td title="STORE">!</td><td>CODEWORD</td><td>( x addr -- )</td><td>[addr] = x; store word x at addr</td><td>arm/words/store.s:2<td></tr>
+<tr><td title="FETCH">@</td><td>CODEWORD</td><td>(addr -- x)</td><td>x = [addr]; load word at addr</td><td>arm/words/fetch.s:2<td></tr>
+<tr><td title="HSTORE">h!</td><td>CODEWORD</td><td>( x addr -- )</td><td>[addr] = half(x); store halfword x to addr</td><td>arm/words/memory.s:54<td></tr>
+<tr><td title="HFETCH">h@</td><td>CODEWORD</td><td>( addr -- x )</td><td>x = half([addr]); load halfword at addr</td><td>arm/words/memory.s:47<td></tr>
+<tr><td title="CSTORE">c!</td><td>CODEWORD</td><td>( c addr -- )</td><td>[addr] = byte(c); store byte c to addr</td><td>arm/words/memory.s:38<td></tr>
+<tr><td title="CFETCH">c@</td><td>CODEWORD</td><td>( addr -- c )</td><td>c = byte([addr]); load byte at addr</td><td>arm/words/memory.s:31<td></tr>
+<tr><td title="PLUSSTORE">+!</td><td>CODEWORD</td><td>( n addr -- )</td><td>[addr] = [addr] + n; add n to the word at addr</td><td>arm/words/memory.s:20<td></tr>
+<tr><td title="FILL">fill</td><td>CODEWORD</td><td>( addr n c -- )</td><td>fill n bytes from addr with c</td><td>arm/words/memory.s:3<td></tr>
+<tr><td title="MOVE">move</td><td>CODEWORD</td><td>( addr1 addr2 n -- )</td><td>copy n bytes from addr1 to addr2</td><td>arm/words/move.s:2<td></tr>
+<tr><td title="2FETCH">2@</td><td>CODEWORD</td><td>( addr - d )</td><td>fetch two cells at addr</td><td>arm/words/2fetch.s:1<td></tr>
+<tr><td title="2STORE">2!</td><td>CODEWORD</td><td>( d addr -- )</td><td>store two cells at addr</td><td>arm/words/2store.s:1<td></tr>
+<tr><td title="CHARPLUS">char+</td><td>CODEALIAS</td><td>1PLUS</td><td></td><td>core/words/char-plus.s:11<td></tr>
+<tr><td title="MYCHARS">chars</td><td>IMMED</td><td>( n1 -- n2 )</td><td>n2 = n1 * char-size (1)</td><td>core/words/chars.s:2<td></tr>
+<tr><td title="CELLS">cells</td><td>CODEWORD</td><td>( n1 -- n2 )</td><td>n2 = n1 * cellsize</td><td>arm/words/cells.s:1<td></tr>
+<tr><td title="CELL">cell</td><td>CONSTANT</td><td>cellsize</td><td></td><td>core/words/num-constants.s:11<td></tr>
+<tr><td title="CELLMINUS">cell-</td><td>CODEWORD</td><td>( n1 -- n2 )</td><td>n2 = n1 - cellsize</td><td>arm/words/cell-minus.s:1<td></tr>
+<tr><td title="CELLPLUS">cell+</td><td>CODEWORD</td><td>( n1 -- n2 )</td><td>n2 = n1 + cellsize</td><td>arm/words/cell-plus.s:1<td></tr>
+<tr><td title="ALIGN">align</td><td>COLON</td><td></td><td>align RAM space to cell size</td><td>core/words/align.s:4<td></tr>
+<tr><td title="HERE">here</td><td>COLON</td><td></td><td>return address of next free space in RAM</td><td>core/words/here.s:3<td></tr>
+<tr><td title="ALLOT">allot</td><td>COLON</td><td>( u -- )</td><td>allocate u bytes in RAM</td><td>core/words/allot.s:3<td></tr>
+<tr><td title="ALIGNED">aligned</td><td>COLON</td><td></td><td></td><td>core/words/aligned.s:12<td></tr>
+<tr><td title="TO_RAM">&gt;ram</td><td>COLON</td><td></td><td>compile new words to RAM</td><td>core/words/here.s:40<td></tr>
+<tr><td title="TO_FLASH">&gt;flash</td><td>COLON</td><td></td><td>compile new words to flash</td><td>core/words/here.s:27<td></tr>
+<tr><td title="MEMMODE">memmode</td><td>VALUE</td><td>0</td><td>0 compile to RAM, -1 compile to FLASH</td><td>core/words/memmode.s:3<td></tr>
+<tr><td title="VALIGN">valign</td><td>COLON</td><td>( -- )</td><td>align VP to cell boundary in variable RAM pool</td><td>core/words/valign.s:3<td></tr>
+<tr><td title="VHERE">vhere</td><td>COLON</td><td>( -- addr )</td><td>return variable pool pointer VP</td><td>core/words/vhere.s:3<td></tr>
+<tr><td title="VALLOT">vallot</td><td>COLON</td><td>( u -- )</td><td>allocate u bytes from the variable RAM pool</td><td>core/words/vallot.s:3<td></tr>
+<tr><td title="VP">vp</td><td>PVALUE</td><td>vp0</td><td>RAM pool pointer</td><td>core/words/ramhere.s:7<td></tr>
+<tr><td title="VPDOTMAX">vp.max</td><td>CONSTANT</td><td>vp.max</td><td>end of the RAM pool</td><td>core/words/ramhere.s:5<td></tr>
+<tr><td title="VP0">vp0</td><td>CONSTANT</td><td>vp0</td><td>start of the RAM pool</td><td>core/words/ramhere.s:3<td></tr>
+<tr><td title="DALIGN">dalign</td><td>COLON</td><td>( -- )</td><td>cell align dp</td><td>core/words/dalign.s:21<td></tr>
+<tr><td title="DHERE">dhere</td><td>COLON</td><td>( -- addr )</td><td>return dictionary pointer</td><td>core/words/dhere.s:3<td></tr>
+<tr><td title="DALLOT">dallot</td><td>DEFER</td><td>XT_CARETDALLOT</td><td></td><td>core/words/dallot.s:3<td></tr>
+<tr><td title="DP">dp</td><td>VALUE</td><td>dp0.ram</td><td>dictionary pointer</td><td>core/words/here.s:23<td></tr>
+<tr><td title="DP0DOTRAM">dp0.ram</td><td>CONSTANT</td><td>dp0.ram</td><td>start of RAM dictionary</td><td>core/words/here.s:10<td></tr>
+<tr><td title="DP_RAM">dp.ram</td><td>VALUE</td><td>dp0.ram</td><td>RAM dictionary pointer</td><td>core/words/here.s:12<td></tr>
+<tr><td title="DP_RAM_MAX">dp.ram.max</td><td>CONSTANT</td><td>dp.ram.max</td><td>end of RAM dictionary</td><td>core/words/here.s:14<td></tr>
+<tr><td title="DP0_FLASH">dp0.flash</td><td>CONSTANT</td><td>dp0.flash</td><td>initial flash dictionary pointer</td><td>core/words/here.s:17<td></tr>
+<tr><td title="DP_FLASH">dp.flash</td><td>VALUE</td><td>dp0.flash</td><td>flash dictionary pointer</td><td>core/words/here.s:20<td></tr>
+<tr><td title="UP_STORE">up!</td><td>CODEWORD</td><td>( addr -- )</td><td>set the user area pointer to addr</td><td>arm/words/up.s:8<td></tr>
+<tr><td title="UP_FETCH">up@</td><td>CODEWORD</td><td>( -- addr )</td><td>addr is the user area pointer</td><td>arm/words/up.s:2<td></tr>
+</table>
+<h2 id="STRING">STRING</h2>
+<table>
+<tr><th>Word</th><th>Type</th><th>Stack Signature</th><th>Description</th><th>Location</th></tr>
+<tr><td title="DOT_QUOTE">.&quot;</td><td>IMMED</td><td>(C: &quot;ccc&quot; -- )( -- )</td><td>compiles string into dictionary to be printed at runtime</td><td>core/words/dot-quote.s:3<td></tr>
+<tr><td title="SQUOTE">s&quot;</td><td>IMMED</td><td>(C: &quot;ccc&quot; -- )( -- addr u )</td><td>compiles a string to dictionary, at runtime leaves its addr/len on stack</td><td>core/words/squote.s:3<td></tr>
+<tr><td title="SUBMINUSSTRINGQ">sub-string?</td><td>COLON</td><td>( s1 s2 -- f )</td><td>f is true if s1 found in s2</td><td>core/words/search.s:32<td></tr>
+<tr><td title="NUMBER">number</td><td>COLON</td><td>(addr len -- [n|d size] f)</td><td>convert a string at addr to a number</td><td>core/words/number.s:2<td></tr>
+<tr><td title="TO_NUMBER">&gt;number</td><td>COLON</td><td>( ud1 c-addr1 u1 -- ud2 c-addr2 u2 )</td><td>convert a string to a number c-addr2/u2 is the unconverted string</td><td>core/words/to-number.s:3<td></tr>
+<tr><td title="DIGITQ">digit?</td><td>COLON</td><td>( c -- [ number | ] flag )</td><td>tries to convert a character to a number, set flag accordingly</td><td>core/words/digit-q.s:3<td></tr>
+<tr><td title="TOUPPER">toupper</td><td>COLON</td><td>( c -- C )</td><td>if c is a lowercase letter convert it to uppercase</td><td>core/words/to-upper.s:3<td></tr>
+<tr><td title="SLASHSTRING">/string</td><td>COLON</td><td>( addr1 u1 n -- addr2 u2 )</td><td>adjust string from addr1 to addr1+n, reduce length from u1 to u2 by n</td><td>core/words/slash-string.s:3<td></tr>
+<tr><td title="PARSE">parse</td><td>COLON</td><td>( char &quot;ccc&quot; -- c-addr u )</td><td>parse string from the input buffer delimited by char</td><td>core/words/parse.s:3<td></tr>
+<tr><td title="PARSENAME">parse-name</td><td>COLON</td><td>( &quot;name&quot; -- s )</td><td>parse whitespace delimited string from SOURCE</td><td>core/words/parse-name.s:3<td></tr>
+<tr><td title="CSKIP">cskip</td><td>COLON</td><td>( addr1 n1 c -- addr2 n2 )</td><td>skips leading occurrences of c in s1, s2 starts at the 1st non-c character</td><td>core/words/cskip.s:3<td></tr>
+<tr><td title="CSCAN">cscan</td><td>COLON</td><td>( ca1 u1 c -- ca1 u2 )</td><td>s2 is the longest prefix of s1 without c</td><td>core/words/cscan.s:3<td></tr>
+<tr><td title="SEARCH">search</td><td>COLON</td><td>( s1 s2 -- s3 f )</td><td>search s1 for s2 leaving flag and tail string s3. No match s3==s1</td><td>core/words/search.s:3<td></tr>
+<tr><td title="SIFT">sift</td><td>COLON</td><td>( s1 s2 -- s3 f )</td><td>find s1 in s2 leaving flag and tail string s3</td><td>core/words/search.s:39<td></tr>
+<tr><td title="BOUNDS">bounds</td><td>COLON</td><td>( addr len -- addr+len addr )</td><td>convert a string to an address range</td><td>core/words/bounds.s:2<td></tr>
+<tr><td title="COMPARE">compare</td><td>CODEWORD</td><td>( addr1 n1 addr2 n2 -- f )</td><td>f is true if the strings are different (based on WANT_IGNORECASE)</td><td>arm/words/compare.s:2<td></tr>
+<tr><td title="COUNT">count</td><td>COLON</td><td>( addr -- addr+1 n )</td><td>get count information out of a counted string</td><td>core/words/count.s:3<td></tr>
+<tr><td title="CFG_RECOGNIZER">cfg-recognizer</td><td>DATA</td><td></td><td></td><td>core/words/forth-recognizer.s:5<td></tr>
+<tr><td title="FORTHRECOGNIZER">forth-recognizer</td><td>VALUE</td><td>PFA_CFG_RECOGNIZER</td><td></td><td>core/words/forth-recognizer.s:3<td></tr>
+<tr><td title="SPLIT">split</td><td>COLON</td><td></td><td></td><td>core/words/rec-split.s:11<td></tr>
+<tr><td title="RECTYPE_SPLIT">rectype-split</td><td>DATA</td><td></td><td></td><td>core/words/rec-split.s:6<td></tr>
+<tr><td title="REC_SPLIT">rec-split</td><td>COLON</td><td></td><td></td><td>core/words/rec-split.s:2<td></tr>
+<tr><td title="REC_NUM">rec-num</td><td>COLON</td><td></td><td></td><td>core/words/rec-intnum.s:13<td></tr>
+<tr><td title="RECTYPE_DNUM">rectype-dnum</td><td>DATA</td><td></td><td></td><td>core/words/rec-intnum.s:8<td></tr>
+<tr><td title="RECTYPE_NUM">rectype-num</td><td>DATA</td><td></td><td></td><td>core/words/rec-intnum.s:3<td></tr>
+<tr><td title="RECTYPE_XT">rectype-xt</td><td>DATA</td><td></td><td></td><td>core/words/rec-find.s:15<td></tr>
+<tr><td title="REC_FIND">rec-find</td><td>COLON</td><td></td><td></td><td>core/words/rec-find.s:3<td></tr>
+<tr><td title="RECTYPE_NULL">rectype-null</td><td>DATA</td><td></td><td></td><td>core/words/rec-null.s:3<td></tr>
+<tr><td title="RECOGNIZE">recognize</td><td>COLON</td><td>(addr len recstack -- i*x rectype-? | rectype-null )</td><td>walk the recognizer stack</td><td>core/words/recognize.s:3<td></tr>
+</table>
+<h2 id="DICTIONARY">DICTIONARY</h2>
+<table>
+<tr><th>Word</th><th>Type</th><th>Stack Signature</th><th>Description</th><th>Location</th></tr>
+<tr><td title="TICK">&#x27;</td><td>COLON</td><td>( &quot;name&quot; -- xt )</td><td>leave xt of &quot;name&quot; on stack</td><td>core/words/tick.s:3<td></tr>
+<tr><td title="CCOMMA">c,</td><td>DEFER</td><td>( c -- )</td><td>append c to the dictionary</td><td>core/words/ccomma.s:3<td></tr>
+<tr><td title="COMMA">,</td><td>DEFER</td><td>( x -- )</td><td>append x to the dictionary</td><td>core/words/comma.s:3<td></tr>
+<tr><td>h,</td></tr>
+<tr><td>(c,)</td></tr>
+<tr><td>(,)</td></tr>
+<tr><td title="SCOMMA">s,</td><td>COLON</td><td>( addr u -- )</td><td>append string at addr to the dictionary (with count prefix)</td><td>core/words/scomma.s:11<td></tr>
+<tr><td title="CHKDALIGN">chkdalign</td><td>COLON</td><td>( -- )</td><td>check DP for cell alignment, throw if not</td><td>core/words/chkdalign.s:3<td></tr>
+<tr><td title="REVEAL">reveal</td><td>COLON</td><td>( -- )</td><td>makes the newest word entry visible in its wordlist</td><td>core/words/reveal.s:3<td></tr>
+<tr><td title="NEWEST">newest</td><td>DVARIABLE</td><td></td><td>newest word created, FFA[0] and WID[1]</td><td>core/words/newest.s:3<td></tr>
+<tr><td title="LATEST">latest</td><td>VARIABLE</td><td></td><td>CFA/XT of the latest word being defined</td><td>core/words/latest.s:3<td></tr>
+<tr><td title="VALUE">value</td><td>COLON</td><td>( x &quot;name&quot; -- )</td><td>create value &quot;name&quot; with initial of x</td><td>core/words/value.s:3<td></tr>
+<tr><td title="TO">to</td><td>IMMED</td><td>( x &quot;name&quot; -- )</td><td>set value &quot;name&quot; to x</td><td>core/words/alto.s:10<td></tr>
+<tr><td title="IS">is</td><td>IMMED</td><td>( xt &quot;name&quot; -- )</td><td>set deferred action &quot;name&quot; to xt</td><td>core/words/is.s:3<td></tr>
+<tr><td title="VARIABLE">variable</td><td>COLON</td><td>( &quot;&lt;spaces&gt;name&quot; -- )</td><td>create variable definition for name</td><td>core/words/variable.s:3<td></tr>
+<tr><td title="CONSTANT">constant</td><td>COLON</td><td>( -- x )(C: x &quot;name&quot; -- )</td><td>create constant &quot;name&quot; with value x</td><td>core/words/constant.s:3<td></tr>
+<tr><td title="COLONNONAME">:noname</td><td>COLON</td><td>( -- )</td><td>start an unnamed colon word</td><td>core/words/colon-noname.s:3<td></tr>
+<tr><td title="HEADER">header</td><td>COLON</td><td>( addr u wid -- ffa )</td><td>creates header (without CF/PF) for name at addr, in wordlist wid</td><td>core/words/header.s:4<td></tr>
+<tr><td title="FIND">find</td><td>COLON</td><td>( c-addr -- 0 | xt -1 | xt 1 )</td><td>search for word matching counted string, return xt if found</td><td>core/words/find.s:3<td></tr>
+<tr><td title="FINDXT">find-xt</td><td>COLON</td><td>( c-addr u -- 0 | xt -1 | xt 1 )</td><td>search for word s1, return xt if found</td><td>core/words/find-xt.s:3<td></tr>
+<tr><td title="FORGET">forget</td><td>COLON</td><td>( &quot;subs&quot; -- )</td><td>Remove most recent word matching substring from the RAM wordlist</td><td>core/words/forget.s:117<td></tr>
+<tr><td title="WORDS">words</td><td>COLON</td><td>( -- )</td><td>list words visible in current search order</td><td>core/words/words.s:11<td></tr>
+<tr><td title="EXECUTE">execute</td><td>CODEWORD</td><td>( xt -- )</td><td>execute XT at the top of the stack</td><td>arm/words/execute.s:2<td></tr>
+<tr><td title="EVALUATE">evaluate</td><td>IMMED</td><td>( a u -- )</td><td>interpret a Forth string of length u starting at address a</td><td>core/words/evaluate.s:49<td></tr>
+<tr><td title="NFA2STRING">nfa&gt;string</td><td>COLON</td><td>( nfa -- c-addr u )</td><td>Given NFA leave c-addr u string</td><td>core/words/dictopt-newb.s:211<td></tr>
+<tr><td title="NFA2XT">nfa&gt;xt</td><td>COLON</td><td>( nfa -- xt )</td><td>Given NFA find XT</td><td>core/words/dictopt-newb.s:165<td></tr>
+<tr><td title="LFA2FFA">lfa&gt;ffa</td><td>COLON</td><td>( lfa -- ffa )</td><td>Given LFA find FFA</td><td>core/words/dictopt-newb.s:216<td></tr>
+<tr><td title="FFA2NFA">ffa&gt;nfa</td><td>COLON</td><td>( ffa -- nfa )</td><td>Given FFA find NFA</td><td>core/words/dictopt-newb.s:226<td></tr>
+<tr><td title="XT2STRING">xt&gt;string</td><td>COLON</td><td>( xt -- c-addr u )</td><td>leave string associated with name of xt</td><td>core/words/xt2string.s:54<td></tr>
+<tr><td title="TO_BODY">&gt;body</td><td>COLON</td><td>( xt -- pfa )</td><td>given xt return pfa</td><td>core/words/to-body.s:3<td></tr>
+<tr><td title="FFA2STRING">ffa&gt;string</td><td>COLON</td><td>( ffa -- caddr u )</td><td>Given FFA leave c-addr u string</td><td>core/words/dictopt-newb.s:238<td></tr>
+<tr><td title="FFA2CFA">ffa2cfa</td><td>COLON</td><td>( ffa -- xt )</td><td>Given FFA find XT</td><td>core/words/dictopt-newb.s:205<td></tr>
+<tr><td title="FFA2LFA">ffa&gt;lfa</td><td>COLON</td><td>( ffa -- lfa )</td><td>Given FFA find LFA</td><td>core/words/dictopt-newb.s:221<td></tr>
+<tr><td title="XT2FFA">xt&gt;ffa</td><td>COLON</td><td>( xt -- ffa )</td><td>Given XT find FFA</td><td>core/words/dictopt-newb.s:231<td></tr>
+<tr><td title="XT2NFA">xt&gt;nfa</td><td>COLON</td><td>( xt -- nfa | 0 )</td><td>Given XT find NFA , 0 if not found, [NFA]==3 if NONAME|HEADLESS</td><td>core/words/dictopt-newb.s:94<td></tr>
+<tr><td title="XT2LFA">xt&gt;lfa</td><td>COLON</td><td>( xt -- lfa )</td><td>Given XT find LFA</td><td>core/words/dictopt-newb.s:247<td></tr>
+<tr><td title="QIP">?ip</td><td>COLON</td><td>( a -- f )</td><td>is a likely to be a valid IP address</td><td>core/words/debugger.s:151<td></tr>
+<tr><td title="QNFA">?nfa</td><td>COLON</td><td>( nfa -- nfa )</td><td>nfa when nfa!=0 and [nfa]!=3</td><td>core/words/dictopt-newb.s:182<td></tr>
+<tr><td>anybranch?</td></tr>
+<tr><td>branch?</td></tr>
+<tr><td title="COLONQ">colon?</td><td>COLON</td><td>( a -- f )</td><td>f is true if a contains XT of DOCOLON</td><td>core/words/dicthelp.s:83<td></tr>
+<tr><td>codeword?</td></tr>
+<tr><td>compile?</td></tr>
+<tr><td>condbranch?</td></tr>
+<tr><td title="EXITQ">exit?</td><td>COLON</td><td>( a -- f )</td><td>f is true if [a] is XT of EXIT | EXITI</td><td>core/words/dicthelp.s:98<td></tr>
+<tr><td>literal?</td></tr>
+<tr><td>loop?</td></tr>
+<tr><td title="SLITERALQ">sliteral?</td><td>COLON</td><td>( a -- f )</td><td>f is true if a contains XT of DOSLITERAL</td><td>core/words/dicthelp.s:38<td></tr>
+<tr><td>value?</td></tr>
+<tr><td>variable?</td></tr>
+<tr><td>xliteral?</td></tr>
+<tr><td title="IP2NAME">ip2name</td><td>COLON</td><td>( a -- u s true | u a false )</td><td>convert IP a to the name of its containing word, u = a - xt (in cells)</td><td>core/words/debugger.s:211<td></tr>
+<tr><td title="IP2XT">ip2xt</td><td>COLON</td><td>( a -- xt u true | a false )</td><td>convert IP to the XT of its containing word, u = a - xt (in cells)</td><td>core/words/debugger.s:181<td></tr>
+<tr><td title="FLAGDOTTABLE">flag.table</td><td>CONSTANT</td><td>0x100</td><td></td><td>core/words/flag.s:24<td></tr>
+<tr><td title="FLAGDOTINIT">flag.init</td><td>CONSTANT</td><td>0x080</td><td></td><td>core/words/flag.s:22<td></tr>
+<tr><td title="FLAGDOTDEFER">flag.defer</td><td>CONSTANT</td><td>0x040</td><td></td><td>core/words/flag.s:20<td></tr>
+<tr><td title="FLAGDOTVALUE">flag.value</td><td>CONSTANT</td><td>0x020</td><td></td><td>core/words/flag.s:18<td></tr>
+<tr><td title="FLAGDOTPVALUE">flag.pvalue</td><td>CONSTANT</td><td>0x200</td><td></td><td>core/words/flag.s:26<td></tr>
+<tr><td title="FLAGDOTIMMED">flag.immed</td><td>CONSTANT</td><td>0x010</td><td></td><td>core/words/flag.s:16<td></tr>
+<tr><td title="FLAGDOTCON">flag.con</td><td>CONSTANT</td><td>0x008</td><td></td><td>core/words/flag.s:14<td></tr>
+<tr><td title="FLAGDOTCOLON">flag.colon</td><td>CONSTANT</td><td>0x004</td><td></td><td>core/words/flag.s:12<td></tr>
+<tr><td title="FLAGDOTDVAR">flag.dvar</td><td>CONSTANT</td><td>0x002</td><td></td><td>core/words/flag.s:10<td></tr>
+<tr><td title="FLAGDOTVAR">flag.var</td><td>CONSTANT</td><td>0x001</td><td></td><td>core/words/flag.s:8<td></tr>
+<tr><td title="FLAGDOTCODE">flag.code</td><td>CONSTANT</td><td>0x000</td><td></td><td>core/words/flag.s:6<td></tr>
+<tr><td title="FLAGDOTCHILD">flag.child</td><td>CONSTANT</td><td>0x400</td><td></td><td>core/words/flag.s:28<td></tr>
+<tr><td title="FLAGDOTHEADER">flag.header</td><td>VALUE</td><td>0x00</td><td></td><td>core/words/flag.s:2<td></tr>
+</table>
+<h2 id="WORDLIST">WORDLIST</h2>
+<table>
+<tr><th>Word</th><th>Type</th><th>Stack Signature</th><th>Description</th><th>Location</th></tr>
+<tr><td title="EMPTYDOTFLASH">empty.flash</td><td>COLON</td><td>( -- )</td><td>empty the flash dictionary</td><td>core/words/empty.s:50<td></tr>
+<tr><td title="EMPTYDOTRAM">empty.ram</td><td>COLON</td><td>( -- )</td><td>empty the RAM dictionary</td><td>core/words/empty.s:29<td></tr>
+<tr><td title="WORDLIST">wordlist</td><td>COLON</td><td>( -- wid )</td><td>create a new, empty wordlist</td><td>core/words/wordlist.s:3<td></tr>
+<tr><td title="FORTH_WORDLIST">forth-wordlist</td><td>VALUE</td><td></td><td>FFA of last word; system default wordlist</td><td>core/macros.inc<td></tr>
+<tr><td title="RAM_WORDLIST">ram-wordlist</td><td>VALUE</td><td>0</td><td>FFA of last word; words compiled into RAM at runtime</td><td>core/words/ramwordlist.s:3<td></tr>
+<tr><td title="CORE_WORDLIST">core-wordlist</td><td>CONSTANT</td><td></td><td>FFA of last word; core words compiled at build time</td><td>core/macros.inc<td></tr>
+<tr><td title="ENVIRONMENT">environment</td><td>VALUE</td><td></td><td>FFA of last word; standard environment search list</td><td>core/macros.inc<td></tr>
+<tr><td>rv-wordlist</td></tr>
+<tr><td title="ARCH_WORDLIST">arm-wordlist</td><td>VALUE</td><td></td><td>FFA of last word; architecture specific words</td><td>core/macros.inc<td></tr>
+<tr><td title="CURRENT">current</td><td>VALUE</td><td>XT_RAM_WORDLIST</td><td>current compilation wordlist</td><td>core/words/current.s:3<td></tr>
+<tr><td title="GET_CURRENT">get-current</td><td>COLON</td><td>( -- wid )</td><td>get the current compilation word list</td><td>core/words/get-current.s:3<td></tr>
+<tr><td title="SETMINUSCURRENT">set-current</td><td>COLON</td><td></td><td></td><td>core/words/order.s:192<td></tr>
+<tr><td title="WLSCOPE">wlscope</td><td>DEFER</td><td>XT_GET_CURRENT</td><td></td><td>core/words/wlscope.s:3<td></tr>
+<tr><td title="SEARCH_WORDLIST">search-wordlist</td><td>COLON</td><td>( c-addr len wid -- [ 0 ] | [ xt [-1|1]] )</td><td>searches the word list wid for the word at c-addr/len</td><td>core/words/search-wordlist.s:3<td></tr>
+<tr><td title="SHOWWORDLIST">show-wordlist</td><td>COLON</td><td>( wid -- )</td><td>list words in wordlist wid</td><td>core/words/show-wordlist.s:3<td></tr>
+<tr><td title="TRAVERSEWORDLIST">traverse-wordlist</td><td>COLON</td><td>( xt wid -- )</td><td>execute xt (addr -- f) with FFA of each word in wordlist wid</td><td>core/words/traverse-wordlist.s:3<td></tr>
+<tr><td title="ORDER">order</td><td>COLON</td><td>( -- )</td><td>show currently configured search order</td><td>core/words/order.s:75<td></tr>
+<tr><td title="CFG_ORDER">cfg-order</td><td>DEFER</td><td>XT_ORDERDOTONLY</td><td>currently configured search order</td><td>core/words/order.s:16<td></tr>
+<tr><td title="ONLY">only</td><td>COLON</td><td>( -- )</td><td>set search order to RAM dictionary mode</td><td>core/words/order.s:56<td></tr>
+<tr><td title="CORE">core</td><td>COLON</td><td>( -- )</td><td>set search order to core words only mode</td><td>core/words/order.s:48<td></tr>
+<tr><td title="FORTH">forth</td><td>COLON</td><td>( -- )</td><td>set search order to FLASH dictionary mode</td><td>core/words/order.s:40<td></tr>
+<tr><td title="ORDERDOTFORTH">order.forth</td><td>DATA</td><td></td><td>FLASH dictionary mode search order</td><td>core/words/order.s:34<td></tr>
+<tr><td title="ORDERDOTCORE">order.core</td><td>DATA</td><td></td><td>core words only search order</td><td>core/words/order.s:28<td></tr>
+<tr><td title="ORDERDOTONLY">order.only</td><td>DATA</td><td></td><td>RAM dictionary mode search order</td><td>core/words/order.s:19<td></tr>
+<tr><td title="PREVIOUS">previous</td><td>COLON</td><td></td><td></td><td>core/words/order.s:182<td></tr>
+<tr><td title="SETMINUSORDER">set-order</td><td>COLON</td><td></td><td></td><td>core/words/order.s:146<td></tr>
+<tr><td title="GETMINUSORDER">get-order</td><td>COLON</td><td></td><td></td><td>core/words/order.s:107<td></tr>
+<tr><td title="W1">w1</td><td>VALUE</td><td>0</td><td></td><td>core/words/order.s:198<td></tr>
+<tr><td title="ORDERDOTTABLE">order.table</td><td>NVARIABLE</td><td>9</td><td></td><td>core/words/order.s:132<td></tr>
+<tr><td title="FROM_TOP">top&gt;</td><td>COLON</td><td></td><td></td><td>core/words/order.s:10<td></tr>
+<tr><td title="TO_TOP">&gt;top</td><td>COLON</td><td></td><td></td><td>core/words/order.s:5<td></tr>
+<tr><td title="TOP">top</td><td>VALUE</td><td>0</td><td></td><td>core/words/order.s:2<td></tr>
+</table>
+<h2 id="COMPILER">COMPILER</h2>
+<table>
+<tr><th>Word</th><th>Type</th><th>Stack Signature</th><th>Description</th><th>Location</th></tr>
+<tr><td title="COLON">:</td><td>COLON</td><td>( &quot;name&quot; -- )</td><td>create a colon word entry in the dictionary</td><td>core/words/colon.s:3<td></tr>
+<tr><td title="SEMICOLON">;</td><td>IMMED</td><td>( -- )</td><td>finish colon word definition</td><td>core/words/semicolon.s:3<td></tr>
+<tr><td title="SEMICOLONI">;i</td><td>IMMED</td><td>( -- )</td><td>finish interrupt colon word definition</td><td>core/words/semicoloni.s:3<td></tr>
+<tr><td title="LPAREN">(</td><td>IMMED</td><td>( &quot;ccc&quot; -- )</td><td>skip everything up to the closing bracket on the same line</td><td>core/words/l-paren.s:3<td></tr>
+<tr><td title="BACKSLASHHASH">\#</td><td>IMMED</td><td>( &quot;ccc&quot; -- )</td><td>skip everything up to the end of the current line</td><td>core/words/backslash.s:12<td></tr>
+<tr><td title="BACKSLASH">\</td><td>IMMED</td><td>( &quot;ccc&quot; -- )</td><td>skip everything up to the end of the current line</td><td>core/words/backslash.s:3<td></tr>
+<tr><td title="RECURSE">recurse</td><td>IMMED</td><td>(C: -- )</td><td>compile the XT of the word currently being defined into the dictionary</td><td>core/words/recurse.s:3<td></tr>
+<tr><td title="POSTPONE">postpone</td><td>IMMED</td><td>(C: &quot;name&quot; -- )</td><td>append the compilation semantics of &quot;name&quot; to the dictionary</td><td>core/words/postpone.s:3<td></tr>
+<tr><td title="IMMEDIATE">immediate</td><td>COLON</td><td>( -- )</td><td>set FFA of last created word to immediate (RAM words only)</td><td>core/words/immediate.s:40<td></tr>
+<tr><td title="STATE">state</td><td>VARIABLE</td><td></td><td>true when in compilation state, false otherwise</td><td>core/words/state.s:3<td></tr>
+<tr><td title="CREATE">create</td><td>COLON</td><td>(C: &quot;name&quot; -- )( -- a-addr )</td><td>create dictionary header for name (DATA)</td><td>core/words/create.s:3<td></tr>
+<tr><td title="BUILDS">&lt;builds</td><td>COLON</td><td>(C: &quot;name&quot; -- )( -- )</td><td>build dictionary header for name</td><td>core/words/builds.s:3<td></tr>
+<tr><td title="ENDBUILDS">builds&gt;</td><td>COLON</td><td>(C: &quot;name&quot; -- )( -- )</td><td>add exit &lt;builds ... builds&gt; ... does&gt; ... ; (so SEE will work)</td><td>core/words/builds.s:79<td></tr>
+<tr><td title="DOES">does&gt;</td><td>IMMED</td><td>()</td><td>compiles (does) followed by a jump and link to xdodoes</td><td>arm/words/does.s:3<td></tr>
+<tr><td title="CHAR">char</td><td>COLON</td><td>( &quot;name&quot; -- c )</td><td>parse name return first letter</td><td>core/words/char.s:3<td></tr>
+<tr><td title="LBRACKET">[</td><td>IMMED</td><td>( -- )</td><td>enter interpreter mode</td><td>core/words/left-bracket.s:2<td></tr>
+<tr><td title="RBRACKET">]</td><td>COLON</td><td>( -- )</td><td>enter compiler mode</td><td>core/words/right-bracket.s:3<td></tr>
+<tr><td title="BRACKETTICK">[&#x27;]</td><td>IMMED</td><td>(C: &quot;name&quot; -- xt )</td><td>parse &quot;name&quot; to XT at compile time</td><td>core/words/brackettick.s:3<td></tr>
+<tr><td title="BRACKETCOMPILE">[compile]</td><td>IMMED</td><td>( -- )(C: &quot;name&quot; -- )</td><td>compile code that will append XT of &quot;name&quot; to the dictionary</td><td>core/words/bracketcompile.s:3<td></tr>
+<tr><td title="BRACKETCHAR">[char]</td><td>IMMED</td><td>( -- )(C: &quot;ccc&quot; -- )</td><td>compile first letter of &quot;ccc&quot; as literal</td><td>core/words/bracketchar.s:3<td></tr>
+<tr><td title="COMPILE">compile</td><td>COLON</td><td>( -- )</td><td>append the XT that follows in the calling word to the dictionary</td><td>core/words/compile.s:3<td></tr>
+<tr><td title="XLITERAL">xliteral</td><td>IMMED</td><td></td><td></td><td>core/words/xliteral.s:3<td></tr>
+<tr><td title="LITERAL">literal</td><td>IMMED</td><td>(C: x -- )</td><td>compile code that will append x as a literal to the dictionary</td><td>core/words/literal.s:3<td></tr>
+<tr><td title="2LITERAL">2literal</td><td>IMMED</td><td>(C: d -- )</td><td>compile code that will append cell pair literal to the dictionary</td><td>core/words/2literal.s:3<td></tr>
+<tr><td title="SLITERAL">sliteral</td><td>IMMED</td><td>(C: s -- )</td><td>compile code that will append s as a literal to the dictionary</td><td>core/words/sliteral.s:3<td></tr>
+<tr><td title="UDEFER_STORE">Udefer!</td><td>COLON</td><td></td><td></td><td>core/words/udefer.s:7<td></tr>
+<tr><td title="UDEFER_FETCH">Udefer@</td><td>COLON</td><td></td><td></td><td>core/words/udefer.s:3<td></tr>
+<tr><td title="DEFER_STORE">defer!</td><td>COLON</td><td>( xt1 xt2 -- )</td><td>stores xt1 as the xt to be executed when xt2 is called</td><td>core/words/defer-store.s:2<td></tr>
+<tr><td title="DEFER_FETCH">defer@</td><td>COLON</td><td>( xt1 -- xt2 )</td><td>returns the XT associated with defer xt1</td><td>core/words/defer-fetch.s:2<td></tr>
+<tr><td title="DEFER">defer</td><td>COLON</td><td>( &quot;name&quot; -- )</td><td>create deferred word &quot;name&quot;</td><td>core/words/defer.s:3<td></tr>
+</table>
+<h2 id="FLOW">FLOW</h2>
+<table>
+<tr><th>Word</th><th>Type</th><th>Stack Signature</th><th>Description</th><th>Location</th></tr>
+<tr><td title="QABORT">?abort</td><td>COLON</td><td>( f s -- )</td><td>abort and type string s if f true</td><td>core/words/q-abort.s:3<td></tr>
+<tr><td title="ABORTQUOTE">abort&quot;</td><td>IMMED</td><td>( f -- )</td><td>abort with the enclosed string if f is true</td><td>core/words/abort-string.s:3<td></tr>
+<tr><td title="ABORT">abort</td><td>COLON</td><td>( i*x -- )(R: j*x -- )</td><td>throw EABRT exception (-1)</td><td>core/words/abort.s:3<td></tr>
+<tr><td title="TRAP_BASE">trap.base</td><td>CONSTANT</td><td>ram_vector_base</td><td>beginning of Forth interrupt table</td><td>core/words/traps.s:5<td></tr>
+<tr><td title="TRAP_STORE">trap!</td><td>COLON</td><td>( xt n -- )</td><td>TRAP: store xt at trap number n in RAM vector</td><td>core/words/traps.s:8<td></tr>
+<tr><td title="THROW">throw</td><td>COLON</td><td>( n -- )</td><td>throw exception n if n != 0</td><td>core/words/throw.s:2<td></tr>
+<tr><td title="CATCH">catch</td><td>COLON</td><td>( i*x xt -- j*x 0 | i*x n )</td><td>execute XT and check for exceptions</td><td>core/words/catch.s:6<td></tr>
+<tr><td title="HANDLER">handler</td><td>USER</td><td>USER_HANDLER</td><td>used by catch/throw</td><td>core/words/catch.s:3<td></tr>
+<tr><td title="FINISH">exit</td><td>CODEWORD</td><td>(R: addr -- )</td><td>loads addr into IP; compiled by exit</td><td>arm/words/exit.s:6<td></tr>
+<tr><td title="AHEAD">ahead</td><td>IMMED</td><td>( -- )(C: -- a )</td><td>unconditional jump past then</td><td>core/words/ahead.s:3<td></tr>
+<tr><td title="IF">if</td><td>IMMED</td><td>( f -- )(C: -- a )</td><td>if f is false jump past else or then</td><td>core/words/if.s:3<td></tr>
+<tr><td title="ELSE">else</td><td>IMMED</td><td>( -- )(C: a1 -- a2 )</td><td>jump past then</td><td>core/words/else.s:3<td></tr>
+<tr><td title="THEN">then</td><td>IMMED</td><td>( -- )(C: a -- )</td><td>ends an if, target of forward jumps</td><td>core/words/then.s:3<td></tr>
+<tr><td title="BEGIN">begin</td><td>IMMED</td><td>( -- )(C: -- a )</td><td>start of while/repeat, until or again loop</td><td>core/words/begin.s:3<td></tr>
+<tr><td title="UNTIL">until</td><td>IMMED</td><td>( f -- )(C: a -- )</td><td>if f is true jump back to begin, otherwise leave the loop</td><td>core/words/until.s:3<td></tr>
+<tr><td title="AGAIN">again</td><td>IMMED</td><td>( -- )(C: a -- )</td><td>unconditional jump back to begin</td><td>core/words/again.s:3<td></tr>
+<tr><td title="WHILE">while</td><td>IMMED</td><td>( f -- )(C: a1 -- a2 a1 )</td><td>if f is false jump past repeat</td><td>core/words/while.s:3<td></tr>
+<tr><td title="REPEAT">repeat</td><td>IMMED</td><td>( -- )(C: a1 a2 -- )</td><td>unconditional jump back to begin (over while)</td><td>core/words/repeat.s:3<td></tr>
+<tr><td title="DO">do</td><td>IMMED</td><td>( n1 n2 -- )(R: -- loop-sys )(C: -- a )(L: -- 0 )</td><td>n1=limit, n2=start do .. [+]loop</td><td>core/words/do.s:3<td></tr>
+<tr><td title="QDO">?do</td><td>IMMED</td><td>( n1 n2 -- )(R: -- | loop-sys )(C: -- a1 )(L: -- 0 a2 )</td><td>n1=limit, n2=start ?do .. [+]loop</td><td>core/words/qdo.s:3<td></tr>
+<tr><td title="I">i</td><td>CODEWORD</td><td>( -- n)</td><td>inner-most loop index</td><td>arm/words/i.s:2<td></tr>
+<tr><td title="J">j</td><td>CODEWORD</td><td>( -- n)</td><td>second loop index</td><td>arm/words/j.s:2<td></tr>
+<tr><td title="UNLOOP">unloop</td><td>CODEWORD</td><td>(R: loop-sys -- )</td><td>remove loop-sys, required if you want exit the word rather then leave the loop</td><td>arm/words/unloop.s:1<td></tr>
+<tr><td title="LEAVE">leave</td><td>IMMED</td><td>( -- )(R: loop-sys -- )</td><td>immediately leave the current DO..LOOP</td><td>core/words/leave.s:2<td></tr>
+<tr><td title="LOOP">loop</td><td>IMMED</td><td>( -- )(R: loop-sys -- loop-sys | )(C: a -- )(L: i*a -- )</td><td>update loop-sys and jump back to do/?do or exit loop</td><td>core/words/loop.s:3<td></tr>
+<tr><td title="PLUSLOOP">+loop</td><td>IMMED</td><td>( n -- )(R: loop-sys -- loop-sys | )(C: a -- )(L: i*a -- )</td><td>update loop-sys with n and jump back to do/?do or exit loop</td><td>core/words/plusloop.s:3<td></tr>
+<tr><td title="ENDLOOP">endloop</td><td>IMMED</td><td>(C: a -- )(L: i*a -- )</td><td>resolve all the jumps of the do..loop</td><td>core/words/endloop.s:3<td></tr>
+<tr><td title="MATCH">match</td><td>IMMED</td><td>( x -- x )</td><td>test value x for match..act..end..endmatch</td><td>core/words/match.s:3<td></tr>
+<tr><td title="ACT">act</td><td>IMMED</td><td>( x xt -- | x )</td><td>apply test xt ( x -- f ) if f is t then do body</td><td>core/words/match.s:8<td></tr>
+<tr><td title="END">end</td><td>IMMED</td><td>( -- )</td><td>close for act in match..act..end..endmatch</td><td>core/words/match.s:21<td></tr>
+<tr><td title="ENDMATCH">endmatch</td><td>IMMED</td><td>( x -- )</td><td>close for match in match..act..end..endmatch</td><td>core/words/match.s:28<td></tr>
+<tr><td title="CASE">case</td><td>IMMED</td><td>( x -- x )</td><td>test value x for case..of..endof..endcase</td><td>core/words/case.s:3<td></tr>
+<tr><td title="OF">of</td><td>IMMED</td><td>( x n -- | x )</td><td>if x equals n do body of..endof else leave x on stack</td><td>core/words/case.s:8<td></tr>
+<tr><td title="ENDOF">endof</td><td>IMMED</td><td>( -- )</td><td>close for of in of..endof</td><td>core/words/case.s:20<td></tr>
+<tr><td title="ENDCASE">endcase</td><td>IMMED</td><td>( x -- )</td><td>close for case in case..of..endof..endcase</td><td>core/words/case.s:27<td></tr>
+</table>
+<h2 id="IO">IO</h2>
+<table>
+<tr><th>Word</th><th>Type</th><th>Stack Signature</th><th>Description</th><th>Location</th></tr>
+<tr><td title="SERIAL_EMITQ">serial-emit?</td><td>CODEWORD</td><td></td><td></td><td>arm/mcu/ra4m1/words/usart.s:145<td></tr>
+<tr><td title="SERIAL_EMIT">serial-emit</td><td>CODEWORD</td><td></td><td></td><td>arm/mcu/ra4m1/words/usart.s:135<td></tr>
+<tr><td title="SERIAL_KEYQ">serial-key?</td><td>CODEWORD</td><td></td><td></td><td>arm/mcu/ra4m1/words/usart.s:120<td></tr>
+<tr><td title="SERIAL_KEY">serial-key</td><td>CODEWORD</td><td></td><td></td><td>arm/mcu/ra4m1/words/usart.s:110<td></tr>
+<tr><td title="EMITQ">emit?</td><td>DEFER</td><td>( -- f )</td><td>ready for emission?</td><td>core/words/emitq.s:2<td></tr>
+<tr><td title="SERIAL_EMIT_PAUSE">serial-emit-pause</td><td>COLON</td><td>( c -- )</td><td>emit c on serial connection, pause until able</td><td>core/words/emit.s:5<td></tr>
+<tr><td title="EMIT">emit</td><td>DEFER</td><td>( c -- )</td><td>emit single character, pause until able</td><td>core/words/emit.s:2<td></tr>
+<tr><td title="KEYQ">key?</td><td>DEFER</td><td>( -- f )</td><td>character ready to be received?</td><td>core/words/keyq.s:2<td></tr>
+<tr><td title="SERIAL_KEY_PAUSE">serial-key-pause</td><td>COLON</td><td>( -- c )</td><td>receive single character, pause until available</td><td>core/words/key.s:5<td></tr>
+<tr><td title="KEY">key</td><td>DEFER</td><td>( -- c )</td><td>receive single character, pause until available</td><td>core/words/key.s:2<td></tr>
+<tr><td title="TIB">tib</td><td>CODEWORD</td><td>( -- addr )</td><td>terminal input buffer address</td><td>arm/words/tib.s:5<td></tr>
+<tr><td title="NUMBERTIB">#tib</td><td>VARIABLE</td><td>( -- addr )</td><td>[addr] is number of characters stored in TIB</td><td>arm/words/tib.s:2<td></tr>
+<tr><td title="TO_IN">&gt;in</td><td>VARIABLE</td><td></td><td>holds current read position in TIB</td><td>core/words/to-in.s:2<td></tr>
+<tr><td title="SOURCETIB">source-tib</td><td>COLON</td><td>( -- s )</td><td>contents of TIB</td><td>core/words/source.s:6<td></tr>
+<tr><td title="SOURCE">source</td><td>DEFER</td><td>( -- s )</td><td>contents of current source</td><td>core/words/source.s:3<td></tr>
+<tr><td title="ACCEPT">accept</td><td>COLON</td><td>( ca u1 -- u2 )</td><td>receive up to u1 bytes or up to newline, store at ca; u2 is count of bytes received.</td><td>core/words/accept.s:3<td></tr>
+<tr><td title="REFILLTIB">refill-tib</td><td>COLON</td><td>( -- f )</td><td>refills TIB</td><td>core/words/refill.s:9<td></tr>
+<tr><td title="REFILL">refill</td><td>DEFER</td><td>( -- f )</td><td>refills current source</td><td>core/words/refill.s:3<td></tr>
+<tr><td title="REFILL_BUF_SIZE">refill-buf-size</td><td>CONSTANT</td><td>refill_buf_size</td><td></td><td>core/words/refill.s:6<td></tr>
+<tr><td title="CRLFQ">?crlf</td><td>COLON</td><td>( c -- f )</td><td>true if c is CR or LF</td><td>core/words/accept.s:44<td></tr>
+<tr><td title="BS">bs</td><td>COLON</td><td>( -- )</td><td>emit backspace</td><td>core/words/accept.s:34<td></tr>
+</table>
+<h2 id="OUTPUT">OUTPUT</h2>
+<table>
+<tr><th>Word</th><th>Type</th><th>Stack Signature</th><th>Description</th><th>Location</th></tr>
+<tr><td title="DOT">.</td><td>COLON</td><td>( n -- )</td><td>print n as signed number</td><td>core/words/dot.s:3<td></tr>
+<tr><td title="UDOT">u.</td><td>COLON</td><td>( u -- )</td><td>print u as unsigned</td><td>core/words/u-dot.s:3<td></tr>
+<tr><td title="UDOTR">u.r</td><td>COLON</td><td>( u u2 -- )</td><td>print u as unsigned, right aligned at width u2</td><td>core/words/u-dot-r.s:3<td></tr>
+<tr><td title="DDOT">d.</td><td>COLON</td><td>( d -- )</td><td>print d as signed number</td><td>core/words/d-dot.s:3<td></tr>
+<tr><td title="DDOTR">d.r</td><td>COLON</td><td>( d u -- )</td><td>print d as signed number, right aligned at width u</td><td>core/words/d-dot-r.s:3<td></tr>
+<tr><td title="UDDOT">ud.</td><td>COLON</td><td>( ud -- )</td><td>print ud as unsigned double</td><td>core/words/ud-dot.s:3<td></tr>
+<tr><td title="UDDOTR">ud.r</td><td>COLON</td><td>( ud u -- )</td><td>print ud as unsigned number, right aligned at width u</td><td>core/words/ud-dot-r.s:3<td></tr>
+<tr><td title="RDOT">r.</td><td>COLON</td><td>( n -- )</td><td>output n as 32 bit binary with crib</td><td>core/words/dump.s:95<td></tr>
+<tr><td title="RDOTDOT">r..</td><td>COLON</td><td>( n -- )</td><td>output n as 32 bit binary</td><td>core/words/dump.s:102<td></tr>
+<tr><td title="HEXDOT">hex.</td><td>COLON</td><td>( u -- )</td><td>output u as unsigned 32 bit hex</td><td>core/words/dump.s:82<td></tr>
+<tr><td title="8XDOT">8x.</td><td>COLON</td><td>( u -- )</td><td>display u as 8 digit hex no space</td><td>core/words/dump.s:69<td></tr>
+<tr><td title="2XDOT">2x.</td><td>COLON</td><td>( u -- )</td><td>display u as 2 digit hex</td><td>core/words/dump.s:59<td></tr>
+<tr><td title="XDOT">x.</td><td>COLON</td><td>( u -- )</td><td>display u without trailing space</td><td>core/words/dump.s:51<td></tr>
+<tr><td title="DOT8HEX">.8hex</td><td>COLON</td><td>( u -- )</td><td>display u as 8 digit hex</td><td>core/words/dump.s:42<td></tr>
+<tr><td title="SPACES">spaces</td><td>COLON</td><td>( u -- )</td><td>emit u spaces</td><td>core/words/spaces.s:3<td></tr>
+<tr><td title="SPACE">space</td><td>COLON</td><td>( -- )</td><td>emit a space</td><td>core/words/space.s:3<td></tr>
+<tr><td title="BL">bl</td><td>CONSTANT</td><td>32</td><td>space character</td><td>core/words/bl.s:3<td></tr>
+<tr><td title="CR">cr</td><td>COLON</td><td>( -- )</td><td>emit CR then emit LF</td><td>core/words/cr.s:2<td></tr>
+<tr><td title="TYPE">type</td><td>COLON</td><td>( s -- )</td><td>emit string s</td><td>core/words/type.s:3<td></tr>
+<tr><td title="ITYPE">itype</td><td>COLON</td><td>( s -- )</td><td>emit string s</td><td>core/words/type.s:14<td></tr>
+<tr><td title="BASE">base</td><td>USER</td><td>( -- a )</td><td>holds the number conversion radix</td><td>core/words/base.s:2<td></tr>
+<tr><td title="BINARY">binary</td><td>COLON</td><td>( -- )</td><td>set base to binary</td><td>core/words/binary.s:3<td></tr>
+<tr><td title="HEX">hex</td><td>COLON</td><td>( -- )</td><td>set base to hexadecimal</td><td>core/words/hex.s:3<td></tr>
+<tr><td title="DECIMAL">decimal</td><td>COLON</td><td>( -- )</td><td>set base to decimal</td><td>core/words/decimal.s:3<td></tr>
+<tr><td title="L_SHARP">&lt;#</td><td>COLON</td><td>( -- )</td><td>PNO: initialize HLD to PAD</td><td>core/words/sharp.s:3<td></tr>
+<tr><td title="SIGN">sign</td><td>COLON</td><td>( n -- )</td><td>PNO: place minus at HLD if n is negative</td><td>core/words/sign.s:3<td></tr>
+<tr><td title="SHARP_S">#s</td><td>COLON</td><td>( d -- 0 )</td><td>PNO: convert all digits until 0 (zero) is reached</td><td>core/words/sharp.s:24<td></tr>
+<tr><td title="SHARP">#</td><td>COLON</td><td>( d1 -- d2 )</td><td>PNO: convert one digit</td><td>core/words/sharp.s:8<td></tr>
+<tr><td title="HOLD">hold</td><td>COLON</td><td>( c -- )</td><td>PNO: prepend character to HLD, move HLD</td><td>core/words/hold.s:6<td></tr>
+<tr><td title="SHARP_G">#&gt;</td><td>COLON</td><td>( d -- s )</td><td>PNO: convert PNO buffer into a string</td><td>core/words/sharp.s:30<td></tr>
+<tr><td title="HLD">hld</td><td>VARIABLE</td><td></td><td>PNO: holds current write position in PNO buffer</td><td>core/words/hold.s:3<td></tr>
+<tr><td title="PAD">pad</td><td>COLON</td><td>( -- a )</td><td>temporary scratch buffer (256B); a is the end</td><td>core/words/pad.s:8<td></tr>
+</table>
+<h2 id="SYSTEM">SYSTEM</h2>
+<table>
+<tr><th>Word</th><th>Type</th><th>Stack Signature</th><th>Description</th><th>Location</th></tr>
+<tr><td title="COLD">cold</td><td>CODEWORD</td><td>( i*x -- )(R: j*y -- )</td><td>assembler part of startup sequence, booting the VM</td><td>arm/words/cold.s:1<td></tr>
+<tr><td title="WARM">warm</td><td>COLON</td><td>( -- )</td><td>high level part of the boot sequence, VM is running</td><td>arm/words/warm.s:2<td></tr>
+<tr><td title="INIT_RAM">init-ram</td><td>COLON</td><td>( -- )</td><td>startup/reset RAM initialization</td><td>core/words/init-ram.s:3<td></tr>
+<tr><td title="TURNKEY">turnkey</td><td>DEFER</td><td>( -- i*x )</td><td>startup/reset action</td><td>core/words/turnkey.s:3<td></tr>
+<tr><td title="APPLTURNKEY">appl-turnkey</td><td>COLON</td><td></td><td></td><td>arm/mcu/ra4m1/words/appl-turnkey.s:5<td></tr>
+<tr><td title="QUIT">quit</td><td>COLON</td><td>( -- )</td><td>top level frame of the VM, endless loop</td><td>core/words/quit.s:2<td></tr>
+<tr><td title="PAUSE">pause</td><td>DEFER</td><td>( -- )</td><td>multitasking: task switch point</td><td>core/words/pause.s:2<td></tr>
+<tr><td title="INTERPRET">interpret</td><td>COLON</td><td>( i*x -- j*x )</td><td>interpret SOURCE word by word</td><td>core/words/interpret.s:3<td></tr>
+<tr><td title="MS">ms</td><td>COLON</td><td></td><td></td><td>arm/mcu/ra4m1/words/delay.s:79<td></tr>
+<tr><td title="DOT_VER">.ver</td><td>COLON</td><td>( -- )</td><td>show amforth version</td><td>core/words/ver.s:3<td></tr>
+<tr><td title="DOT_BUILD">.build</td><td>ENVIRONMENT</td><td>( -- )</td><td>show build information</td><td>arm/mcu/ra4m1/words/build-info.s:16<td></tr>
+<tr><td title="BUILD_REV">build.rev</td><td>ENVIRONMENT</td><td>( -- addr u )</td><td>string with build revision</td><td>arm/mcu/ra4m1/words/build-info.s:7<td></tr>
+<tr><td title="BUILD_TIME">build.time</td><td>ENVIRONMENT</td><td>( -- addr u )</td><td>string with build time</td><td>arm/mcu/ra4m1/words/build-info.s:2<td></tr>
+<tr><td title="BUILD_CONFIG">build.config</td><td>ENVIRONMENT</td><td>( -- u )</td><td>build configuration flags</td><td>arm/mcu/ra4m1/words/build-info.s:12<td></tr>
+<tr><td title="CPU">cpu</td><td>ENVIRONMENT</td><td>( -- addr u )</td><td>string with cpu identifier</td><td>arm/mcu/ra4m1/words/env-cpu.s:2<td></tr>
+<tr><td title="BOARD">board</td><td>ENVIRONMENT</td><td>( -- addr u )</td><td>string with board identifier</td><td>arm/mcu/ra4m1/words/env-board.s:2<td></tr>
+<tr><td title="FORTHVERSION">version</td><td>ENVIRONMENT</td><td>( -- u )</td><td>amforth version number</td><td>core/words/env-forthversion.s:2<td></tr>
+<tr><td title="FORTHNAME">name</td><td>ENVIRONMENT</td><td>( -- s )</td><td>amforth name</td><td>core/words/env-forthname.s:2<td></tr>
+<tr><td title="SLASH_USER">/user</td><td>ENVIRONMENT</td><td>( -- u )</td><td>size of the user area</td><td>core/words/env-usersize.s:2<td></tr>
+<tr><td title="SET_BASE">set-base</td><td>COLON</td><td></td><td></td><td>core/words/set-base.s:6<td></tr>
+<tr><td title="BASES">bases</td><td>DATA</td><td></td><td></td><td>core/words/set-base.s:3<td></tr>
+<tr><td title="PROMPTREADY">.ready</td><td>DEFER</td><td>XT_PROMPTREADYDEFAULT</td><td></td><td>core/words/prompt-ready.s:3<td></tr>
+<tr><td title="PROMPTOK">.ok</td><td>DEFER</td><td>XT_PROMPTOKDEFAULT</td><td></td><td>core/words/prompt-ok.s:3<td></tr>
+<tr><td title="PROMPTINPUT">.input</td><td>DEFER</td><td>XT_PROMPTINPUT_DEFAULT</td><td></td><td>core/words/prompt-input.s:3<td></tr>
+<tr><td title="PROMPTERROR">.error</td><td>DEFER</td><td>XT_PROMPTERROR_DEFAULT</td><td></td><td>core/words/prompt-error.s:3<td></tr>
+<tr><td title="FIRST_BOOT_DONE">first-boot.done</td><td>COLON</td><td>( -- )</td><td>mark first-boot as completed</td><td>core/words/first-boot.s:11<td></tr>
+<tr><td title="QFIRST_BOOT">?first-boot</td><td>COLON</td><td>( -- f )</td><td>booting fresh uploaded amforth for the first time?</td><td>core/words/first-boot.s:7<td></tr>
+<tr><td title="FIRST_BOOT_MARKER">first-boot.marker</td><td>CONSTANT</td><td>first_boot_marker</td><td>initial content of the first-boot page</td><td>core/words/first-boot.s:4<td></tr>
+<tr><td title="FIRST_BOOT_START">first-boot.start</td><td>CONSTANT</td><td>first_boot</td><td>address of the first-boot page</td><td>core/words/first-boot.s:1<td></tr>
+</table>
+<h2 id="TOOLS">TOOLS</h2>
+<table>
+<tr><th>Word</th><th>Type</th><th>Stack Signature</th><th>Description</th><th>Location</th></tr>
+<tr><td title="DOTS">.s</td><td>COLON</td><td>( -- )</td><td>show data stack non-destructively</td><td>core/words/dot-s.s:3<td></tr>
+<tr><td title="DOTK">.k</td><td>COLON</td><td>( nN..n1 -- )</td><td>delete all entries in stack</td><td>core/words/dot-k.s:8<td></tr>
+<tr><td title="DOTRS">.rs</td><td>COLON</td><td>( u -- )</td><td>print return stack (top first) skipping top u cells, use raw IP addresses</td><td>core/words/debugger.s:299<td></tr>
+<tr><td title="DOTBT">.bt</td><td>COLON</td><td>( u -- )</td><td>print return stack (top first) skipping top u cells, use word names</td><td>core/words/debugger.s:250<td></tr>
+<tr><td title="DOTITC">.itc</td><td>COLON</td><td>( u1 u2 -- )</td><td>dump u1 XTs starting from current IP u2 cells down the return stack</td><td>core/words/debugger.s:329<td></tr>
+<tr><td title="DUMP">dump</td><td>COLON</td><td>( a u -- )</td><td>dump u lines of 16 bytes including [a]</td><td>core/words/dump.s:125<td></tr>
+<tr><td title="QASCII">?ascii</td><td>COLON</td><td>( c -- f )</td><td>f is true if c is printable character</td><td>core/words/dump.s:13<td></tr>
+<tr><td title="VDUMP">vdump</td><td>COLON</td><td>( addr u -- )</td><td>dump u bytes from addr as words</td><td>core/words/vdump.s:1<td></tr>
+<tr><td title="BREAK">break</td><td>CODEWORD</td><td>( -- )</td><td>activate the debugger (if enabled)</td><td>arm/interpreter.s:41<td></tr>
+<tr><td title="DEBUGPLUS">debug+</td><td>COLON</td><td>( -- )</td><td>enable debugger, break will interrupt execution</td><td>core/words/debugger.s:500<td></tr>
+<tr><td title="DEBUGMINUS">debug-</td><td>COLON</td><td>( -- )</td><td>disable debugger, break will do nothing</td><td>core/words/debugger.s:508<td></tr>
+<tr><td title="BARBAR">||</td><td>IMMED</td><td>( -- )</td><td>code after || is ignored during compilation if debugger is disabled</td><td>core/words/barbar.s:3<td></tr>
+<tr><td title="SHOW">show</td><td>COLON</td><td>( &quot;name&quot; -- )</td><td>SHOW: List words containing substring name</td><td>core/words/show.s:254<td></tr>
+</table>
+<h2 id="FLASH">FLASH</h2>
+<table>
+<tr><th>Word</th><th>Type</th><th>Stack Signature</th><th>Description</th><th>Location</th></tr>
+<tr><td title="FLASH_CELL">flash.cell</td><td>CONSTANT</td><td>flash_cell</td><td>size of the flash write cell (bytes)</td><td>core/words/flash-common.s:8<td></tr>
+<tr><td title="FLASH_PAGE">flash.page</td><td>CONSTANT</td><td>flash_page</td><td>size of the flash erase page (bytes)</td><td>core/words/flash-common.s:6<td></tr>
+<tr><td title="FLASH_ERASED">flash.erased</td><td>CONSTANT</td><td>flash_erased</td><td>value of an erased flash cell (4 bytes)</td><td>core/words/flash-common.s:10<td></tr>
+<tr><td title="FLASH_START">flash.start</td><td>CONSTANT</td><td>flash.start</td><td>start of the FLASH memory region</td><td>core/words/flash-common.s:12<td></tr>
+<tr><td title="FLASH_LOW">flash.low</td><td>CONSTANT</td><td>flash.low</td><td>start of the core dictionary in FLASH</td><td>core/words/flash-common.s:14<td></tr>
+<tr><td title="FLASH_MAX">flash.max</td><td>CONSTANT</td><td>flash.max</td><td>end of the FLASH memory region</td><td>core/words/flash-common.s:16<td></tr>
+<tr><td title="FLASH_ERASE">flash.erase</td><td>DEFER</td><td>( addr -- )</td><td>erase flash page at addr</td><td>core/words/flash-common.s:28<td></tr>
+<tr><td title="FLUSH">flush</td><td>COLON</td><td>( -- )</td><td>force flush (write) of flash.cache</td><td>core/words/flash-common.s:57<td></tr>
+<tr><td title="NALIGNED">naligned</td><td>CODEWORD</td><td>( n a1 -- a2 )</td><td>n = 2**u; a2 is a1 aligned (up) at n bytes</td><td>arm/words/naligned.s:3<td></tr>
+<tr><td title="STORE_I">!i</td><td>DEFER</td><td>( x addr -- )</td><td>write x at addr in flash</td><td>core/words/flash-common.s:21<td></tr>
+<tr><td title="PV_DO">pv.do</td><td>COLON</td><td>( xt -- )</td><td>run xt ( pv-xt -- f ) for every pvalue in forth-wordlist</td><td>core/words/pvalue.s:444<td></tr>
+<tr><td title="PV_INIT">pv.init</td><td>COLON</td><td>( -- )</td><td>replay pvarena records, set pvp</td><td>core/words/pvalue.s:303<td></tr>
+<tr><td title="VADDR">vaddr</td><td>COLON</td><td>( &quot;name&quot; -- addr )</td><td>RAM address of value &quot;name&quot;</td><td>core/words/pvalue.s:232<td></tr>
+<tr><td title="PV_STORE">pv.store</td><td>COLON</td><td>( x addr -- )</td><td>update pvalue identified by RAM addr to value x</td><td>core/words/pvalue.s:204<td></tr>
+<tr><td title="PVP">pvp</td><td>VALUE</td><td>( -- addr )</td><td>address of the next free cell in active arena</td><td>core/words/pvalue.s:196<td></tr>
+<tr><td title="PV_RESET_HARD">pv.reset-hard</td><td>COLON</td><td>( -- )</td><td>erase entire pvflash and reinitialize pvalue system</td><td>core/words/pvalue.s:457<td></tr>
+<tr><td title="2STORE_PVF">2!pvf</td><td>DEFER</td><td>( x1 x2 addr -- )</td><td>[addr] = x2, [addr+cellsize] = x1 (in the PV flash)</td><td>core/words/pvalue.s:188<td></tr>
+<tr><td title="PVFLASH_START">pvflash.start</td><td>CONSTANT</td><td>pvflash.start</td><td>start address of PV flash</td><td>core/words/pvalue.s:183<td></tr>
+<tr><td title="PVFLASH_SIZE">pvflash.size</td><td>CONSTANT</td><td>pvflash.size</td><td>total size of PV flash</td><td>core/words/pvalue.s:180<td></tr>
+<tr><td title="PVFLASH_PAGE">pvflash.page</td><td>CONSTANT</td><td>pvflash.page</td><td>size of PV flash page (erase size)</td><td>core/words/pvalue.s:171<td></tr>
+<tr><td title="PVFLASH_CELL">pvflash.cell</td><td>CONSTANT</td><td>pvflash.cell</td><td>size of PV flash cell (write size)</td><td>core/words/pvalue.s:174<td></tr>
+<tr><td title="PVFLASH_ERASED">pvflash.erased</td><td>CONSTANT</td><td>pvflash.erased</td><td>value of a cell in erased flash</td><td>core/words/pvalue.s:177<td></tr>
+<tr><td title="PVFLASH_ERASE">pvflash.erase</td><td>DEFER</td><td>( addr -- )</td><td>erase PV flash page at addr</td><td>core/words/pvalue.s:191<td></tr>
+<tr><td title="PVARENA_SIZE">pvarena.size</td><td>CONSTANT</td><td>pvarena.size</td><td>size of pvalue arena</td><td>core/words/pvalue.s:168<td></tr>
+<tr><td title="PVARENA_INIT">pvarena.init</td><td>COLON</td><td>( -- )</td><td>set pvarena to whichever arena should be current</td><td>core/words/pvalue.s:241<td></tr>
+<tr><td title="PVARENA_SWAP">pvarena.swap</td><td>COLON</td><td>( -- )</td><td>write fresh pvalues into the dormant arena and swap arenas</td><td>core/words/pvalue.s:386<td></tr>
+<tr><td title="PVARENA_ERASE">pvarena.erase</td><td>COLON</td><td>( addr -- )</td><td>erase arena at addr</td><td>core/words/pvalue.s:348<td></tr>
+<tr><td title="PVARENA">pvarena</td><td>VALUE</td><td>( -- addr )</td><td>start address of the active arena</td><td>core/words/pvalue.s:199<td></tr>
+<tr><td title="PVARENA_DORMANT">pvarena.dormant</td><td>COLON</td><td>( -- addr )</td><td>start address of the dormant arena</td><td>core/words/pvalue.s:333<td></tr>
+<tr><td title="PVARENA1">pvarena1</td><td>CONSTANT</td><td>pvarena1_lower</td><td>address of pvalue arena 1</td><td>core/words/pvalue.s:162<td></tr>
+<tr><td title="PVARENA2">pvarena2</td><td>CONSTANT</td><td>pvarena2_lower</td><td>address of pvalue arena 2</td><td>core/words/pvalue.s:165<td></tr>
+</table>
+<h2 id="OTHER">OTHER</h2>
+<table>
+<tr><th>Word</th><th>Type</th><th>Stack Signature</th><th>Description</th><th>Location</th></tr>
+<tr><td title="FALSE">false</td><td>CONSTANT</td><td>0</td><td></td><td>core/words/num-constants.s:9<td></tr>
+<tr><td title="TRUE">true</td><td>CONSTANT</td><td>-1</td><td></td><td>core/words/num-constants.s:8<td></tr>
+<tr><td title="MINUSONE">-1</td><td>CONSTANT</td><td>-1</td><td></td><td>core/words/num-constants.s:7<td></tr>
+<tr><td title="FOUR">4</td><td>CONSTANT</td><td>4</td><td></td><td>core/words/num-constants.s:6<td></tr>
+<tr><td title="TWO">2</td><td>CONSTANT</td><td>2</td><td></td><td>core/words/num-constants.s:5<td></tr>
+<tr><td title="ONE">1</td><td>CONSTANT</td><td>1</td><td></td><td>core/words/num-constants.s:4<td></tr>
+<tr><td title="ZERO">0</td><td>CONSTANT</td><td>0</td><td></td><td>core/words/num-constants.s:3<td></tr>
+<tr><td title="MAPSTACK">map-stack</td><td>COLON</td><td></td><td></td><td>core/words/map-stack.s:3<td></tr>
+<tr><td>forget.prior</td></tr>
+<tr><td title="M4FIX">m4fix</td><td>COLON</td><td></td><td></td><td>core/words/mop.s:56<td></tr>
+<tr><td title="MTOG">mtog</td><td>COLON</td><td></td><td></td><td>core/words/mop.s:52<td></tr>
+<tr><td title="MCLR">mclr</td><td>COLON</td><td></td><td></td><td>core/words/mop.s:48<td></tr>
+<tr><td title="MSET">mset</td><td>COLON</td><td></td><td></td><td>core/words/mop.s:44<td></tr>
+</table>
+<h2 id="MCU">MCU</h2>
+<table>
+<tr><th>Word</th><th>Type</th><th>Stack Signature</th><th>Description</th><th>Location</th></tr>
+<tr><td title="DOFLASH_ERASE">(flash.erase)</td><td>CODEWORD</td><td>( fa -- )</td><td>erase page containing fa</td><td>arm/mcu/ra4m1/words/flash.s:12<td></tr>
+<tr><td title="DOFLASH_WRITE">(flash.write)</td><td>CODEWORD</td><td>( fa -- )</td><td>write flash.cache to flash at fa</td><td>arm/mcu/ra4m1/words/flash.s:19<td></tr>
+<tr><td title="PLUSDWT">+dwt</td><td>CODEWORD</td><td>( -- )</td><td>start the DWT CYCCNT 32b counter</td><td>arm/mcu/ra4m1/words/dwt.s:36<td></tr>
+<tr><td title="MINUSDWT">-dwt</td><td>CODEWORD</td><td>( -- )</td><td>reset the DWT CYCCNT 32b counter to zero</td><td>arm/mcu/ra4m1/words/dwt.s:27<td></tr>
+<tr><td title="SYST_CSR">SYST_CSR</td><td>ARM_CONSTANT</td><td>0xE000E010</td><td></td><td>arm/mcu/ra4m1/words/delay.s:8<td></tr>
+<tr><td title="SYST_CVR">SYST_CVR</td><td>ARM_CONSTANT</td><td>0xE000E018</td><td></td><td>arm/mcu/ra4m1/words/delay.s:30<td></tr>
+<tr><td title="SYST_RVR">SYST_RVR</td><td>ARM_CONSTANT</td><td>0xE000E014</td><td></td><td>arm/mcu/ra4m1/words/delay.s:22<td></tr>
+<tr><td title="AT">at</td><td>CODEWORD</td><td></td><td></td><td>arm/mcu/ra4m1/words/at-usart.s:73<td></tr>
+<tr><td title="AT_UART_INIT">at-uart-init</td><td>CODEWORD</td><td></td><td></td><td>arm/mcu/ra4m1/words/at-usart.s:18<td></tr>
+<tr><td title="CALLOT">callot</td><td>COLON</td><td></td><td></td><td>arm/mcu/ra4m1/words/flash.s:39<td></tr>
+<tr><td title="DELAY_INIT">delay-init</td><td>ARM_COLON</td><td></td><td></td><td>arm/mcu/ra4m1/words/delay.s:37<td></tr>
+<tr><td title="DELAY_TICKS">delay-ticks</td><td>ARM_COLON</td><td></td><td></td><td>arm/mcu/ra4m1/words/delay.s:55<td></tr>
+<tr><td title="DP_CACHE">dp.cache</td><td>VALUE</td><td>0</td><td></td><td>arm/mcu/ra4m1/words/flash.s:3<td></tr>
+<tr><td title="DWT_MS">dwt-ms</td><td>CODEWORD</td><td>( n -- )</td><td>delay (busy) n milliseconds (max int delay is 89s)</td><td>arm/mcu/ra4m1/words/dwt.s:55<td></tr>
+<tr><td title="DWT_US">dwt-us</td><td>CODEWORD</td><td>( n -- )</td><td>delay (busy) n microseconds (max int delay is 89s)</td><td>arm/mcu/ra4m1/words/dwt.s:71<td></tr>
+<tr><td title="DWTDOTINIT">dwt.init</td><td>CODEWORD</td><td>( -- )</td><td>initialise the DWT CYCCNT 32b counter</td><td>arm/mcu/ra4m1/words/dwt.s:11<td></tr>
+<tr><td title="DWT_FETCH">dwt@</td><td>CODEWORD</td><td>( -- n )</td><td>read the DWT CYCCNT 32b counter</td><td>arm/mcu/ra4m1/words/dwt.s:46<td></tr>
+<tr><td title="FLASH_CACHE">flash.cache</td><td>NVARIABLE</td><td>flash_cell</td><td>/ cellsize</td><td>arm/mcu/ra4m1/words/flash.s:5<td></tr>
+<tr><td title="FLASH_SHADOW">flash.shadow</td><td>NVARIABLE</td><td>flash_cell</td><td>/ cellsize</td><td>arm/mcu/ra4m1/words/flash.s:7<td></tr>
+<tr><td title="FLASH_WRITE">flash.write</td><td>COLON</td><td>( fa -- )</td><td>write flash.cache to flash at fa - flash.cell</td><td>arm/mcu/ra4m1/words/flash.s:26<td></tr>
+<tr><td title="HALT">halt</td><td>CODEWORD</td><td></td><td></td><td>arm/mcu/ra4m1/words/appl-turnkey.s:1<td></tr>
+<tr><td title="LED_INIT">led-init</td><td>CODEWORD</td><td></td><td></td><td>arm/mcu/ra4m1/words/led.s:19<td></tr>
+<tr><td title="LED_OFF">led-off</td><td>CODEWORD</td><td></td><td></td><td>arm/mcu/ra4m1/words/led.s:27<td></tr>
+<tr><td title="LED_ON">led-on</td><td>CODEWORD</td><td></td><td></td><td>arm/mcu/ra4m1/words/led.s:33<td></tr>
+<tr><td title="RASTORE_I">ra!i</td><td>COLON</td><td>( x addr -- )</td><td>write x at addr in flash</td><td>arm/mcu/ra4m1/words/flash.s:84<td></tr>
+<tr><td title="UART_INIT">uart-init</td><td>CODEWORD</td><td></td><td></td><td>arm/mcu/ra4m1/words/usart.s:46<td></tr>
+<tr><td title="TILDESTORE_I">~!i</td><td>COLON</td><td>( x addr -- )</td><td>write x at addr in flash</td><td>arm/mcu/ra4m1/words/flash.s:47<td></tr>
+<tr><td title="TILDECOMMA">~,</td><td>COLON</td><td></td><td></td><td>arm/mcu/ra4m1/words/flash.s:150<td></tr>
+<tr><td title="TILDECSTORE_I">~c!i</td><td>COLON</td><td></td><td></td><td>arm/mcu/ra4m1/words/flash.s:78<td></tr>
+<tr><td title="TILDECCOMMA">~c,</td><td>COLON</td><td></td><td></td><td>arm/mcu/ra4m1/words/flash.s:140<td></tr>
+<tr><td title="TILDEDALLOT">~dallot</td><td>COLON</td><td>( u -- allocate u bytes in the dictionary )</td><td></td><td>arm/mcu/ra4m1/words/flash.s:161<td></tr>
+<tr><td title="TILDEFLASH_ERASE">~flash.erase</td><td>CODEALIAS</td><td>( addr -- )</td><td>erase FLASH page at addr</td><td>arm/mcu/ra4m1/words/flash.s:33<td></tr>
+<tr><td title="TILDEPVFLASH_ERASE">~pvflash.erase</td><td>CODEALIAS</td><td>( addr -- )</td><td>erase PVFLASH page at addr</td><td>arm/mcu/ra4m1/words/flash.s:118<td></tr>
+</table>
+<h2 id="UNCATEGORIZED">UNCATEGORIZED</h2>
+<table>
+<tr><th>Word</th><th>Type</th><th>Stack Signature</th><th>Description</th><th>Location</th></tr>
+<tr><td title="LPARENALIGINEDRPAREN">(aligned)</td><td>CODEWORD</td><td>( c-addr -- a-addr )</td><td></td><td>arm/words/do-aligned.s:2<td></tr>
+<tr><td title="DOCREATE">(create)</td><td>COLON</td><td>(C: &quot;name&quot; -- )</td><td>parse name, write header, set newest</td><td>core/words/do-create.s:3<td></tr>
+<tr><td title="DODOES">(does)</td><td>COLON</td><td>(R: addr -- )</td><td>addr of the synthetic jump after (does), stored in child&#x27;s CFA</td><td>arm/words/does.s:41<td></tr>
+<tr><td title="EXIT">(exit)</td><td>CODEWORD</td><td>(R: addr -- )</td><td>loads addr into IP; compiled by semicolon</td><td>arm/words/exit.s:1<td></tr>
+<tr><td title="EXITD">(exitd)</td><td>CODEWORD</td><td>( -- )</td><td>exit from a debugger word</td><td>arm/interpreter.s:31<td></tr>
+<tr><td title="EXITI">(exiti)</td><td>CODEWORD</td><td></td><td>return from interrupt handler; compiled by ;i.</td><td>arm/words/exiti.s:4<td></tr>
+<tr><td title="DOPP">(pp)</td><td>COLON</td><td></td><td></td><td>core/words/alto.s:71<td></tr>
+<tr><td title="QDOCHECK">(qdocheck)</td><td>COLON</td><td></td><td></td><td>core/words/qdo.s:13<td></tr>
+<tr><td title="XDODOES">(xdoes)</td><td>CODEWORD</td><td>( -- u)</td><td>prepares interpreter state for execution of the DOES&gt; wordlist, u is child&#x27;s PFA</td><td>arm/words/does.s:79<td></tr>
+<tr><td title="DOTCHAR">.char</td><td>COLON</td><td></td><td></td><td>core/words/mlc.s:128<td></tr>
+<tr><td title="COLONIMMED">:immed</td><td>COLON</td><td>( -- )</td><td>define an immediate word (for mcu that&#x27;s can&#x27;t use immediate)</td><td>core/words/immediate.s:26<td></tr>
+<tr><td title="SEMICOLOND">;d</td><td>IMMED</td><td></td><td></td><td>core/words/debugger2.s:18<td></tr>
+<tr><td title="CON_REGABI">REGABI</td><td>CONSTANT</td><td>REGABI</td><td></td><td>core/words/dicthelp.s:268<td></tr>
+<tr><td title="CON_REGITC">REGITC</td><td>CONSTANT</td><td>REGITC</td><td></td><td>core/words/dicthelp.s:269<td></tr>
+<tr><td title="CON_REGNUM">REGNUM</td><td>CONSTANT</td><td>REGNUM</td><td></td><td>core/words/dicthelp.s:267<td></tr>
+<tr><td title="CON_DONEXT">XT.DONEXT</td><td>CONSTANT</td><td>DO_NEXT</td><td></td><td>core/words/dicthelp.s:9<td></tr>
+<tr><td title="LBRACKDEFINEDRBRACK">[defined]</td><td>IMMED</td><td>( &quot;name&quot; -- f )</td><td>f is true if name defined</td><td>core/words/immediate.s:56<td></tr>
+<tr><td title="LBRACKUNDEFINEDRBRACK">[undefined]</td><td>IMMED</td><td>( &quot;name -- f )</td><td>f is true if name undefined</td><td>core/words/immediate.s:71<td></tr>
+<tr><td title="CARETCOMMA">^,</td><td>COLON</td><td>( x -- )</td><td>append x to RAM dictionary</td><td>core/words/comma.s:5<td></tr>
+<tr><td title="CARETCCOMMA">^c,</td><td>COLON</td><td></td><td></td><td>core/words/ccomma.s:5<td></tr>
+<tr><td title="CARETDALLOT">^dallot</td><td>COLON</td><td></td><td></td><td>core/words/dallot.s:5<td></tr>
+<tr><td title="CCOUNT">ccount</td><td>VARIABLE</td><td></td><td></td><td>core/words/mlc.s:109<td></tr>
+<tr><td title="CIMAG">cimag</td><td>VARIABLE</td><td></td><td></td><td>core/words/mlc.s:106<td></tr>
+<tr><td title="COUNTUNDERANDUNDERTESTQ">count_and_test?</td><td>COLON</td><td></td><td></td><td>core/words/mlc.s:144<td></tr>
+<tr><td title="CREAL">creal</td><td>VARIABLE</td><td></td><td></td><td>core/words/mlc.s:105<td></tr>
+<tr><td title="DEBUG_BREAK">debug.break</td><td>USER</td><td>USER_DEBUG_BREAK</td><td>XT of debugger, invoked when BREAK is reached</td><td>core/words/debugger2.s:5<td></tr>
+<tr><td title="DEBUG_NEXT">debug.next</td><td>USER</td><td>USER_DEBUG_NEXT</td><td>next debug action, 0 if none</td><td>core/words/debugger2.s:2<td></tr>
+<tr><td title="DEBUGDOTRDEPTH">debug.rdepth</td><td>CONSTANT</td><td>2</td><td>step until rdepth, argument is desired rdepth</td><td>core/words/debugger.s:388<td></tr>
+<tr><td title="DEBUGDOTSTEP">debug.step</td><td>CONSTANT</td><td>1</td><td>single step, no argument</td><td>core/words/debugger.s:385<td></tr>
+<tr><td title="DEBUG_BUF">debug_buf</td><td>CODEWORD</td><td>( -- addr )</td><td>debugger input buffer address</td><td>arm/interpreter.s:53<td></tr>
+<tr><td title="DECDOT">dec.</td><td>COLON</td><td>( n -- )</td><td>print n in base 10</td><td>core/words/output.s:11<td></tr>
+<tr><td title="DOCELL">docell</td><td>COLON</td><td></td><td></td><td>core/words/mlc.s:211<td></tr>
+<tr><td title="DOESCAPE">doescape</td><td>COLON</td><td></td><td></td><td>core/words/mlc.s:177<td></tr>
+<tr><td title="DOROW">dorow</td><td>COLON</td><td></td><td></td><td>core/words/mlc.s:221<td></tr>
+<tr><td title="ESCAPESQ">escapes?</td><td>COLON</td><td></td><td></td><td>core/words/mlc.s:139<td></tr>
+<tr><td title="FLAGDOTALIAS">flag.alias</td><td>CONSTANT</td><td>0x800</td><td></td><td>core/words/flag.s:30<td></tr>
+<tr><td title="INIT_DP_FLASH">init.dp.flash</td><td>COLON</td><td>( -- )</td><td>set dp.flash to the first erased cell after end of flash dictionary</td><td>core/words/here.s:87<td></tr>
+<tr><td title="INITUNDERVARS">init_vars</td><td>COLON</td><td></td><td></td><td>core/words/mlc.s:155<td></tr>
+<tr><td title="MANDELBROT">mandelbrot</td><td>COLON</td><td></td><td></td><td>core/words/mlc.s:237<td></tr>
+<tr><td title="MAXITER">maxiter</td><td>CONSTANT</td><td>20</td><td></td><td>core/words/mlc.s:100<td></tr>
+<tr><td title="MAXVAL">maxval</td><td>CONSTANT</td><td>20</td><td></td><td>core/words/mlc.s:102<td></tr>
+<tr><td title="MINVAL">minval</td><td>CONSTANT</td><td>-19</td><td></td><td>core/words/mlc.s:101<td></tr>
+<tr><td title="PP">pp</td><td>IMMED</td><td></td><td></td><td>core/words/alto.s:59<td></tr>
+<tr><td title="QNOP">qnop</td><td>COLON</td><td></td><td></td><td>core/words/qnop.s:3<td></tr>
+<tr><td title="RESCALE">rescale</td><td>CONSTANT</td><td>640</td><td></td><td>core/words/mlc.s:103<td></tr>
+<tr><td title="SUNDERESCAPE">s_escape</td><td>CONSTANT</td><td>2560</td><td></td><td>core/words/mlc.s:104<td></tr>
+<tr><td title="SHOWDOTFLASH">show.flash</td><td>COLON</td><td></td><td></td><td>core/words/show.s:278<td></tr>
+<tr><td title="SHOWDOTPAGE">show.page</td><td>COLON</td><td></td><td></td><td>core/words/show.s:288<td></tr>
+<tr><td title="SHOWDOTRAM">show.ram</td><td>COLON</td><td></td><td></td><td>core/words/show.s:268<td></tr>
+<tr><td title="SYNONYM">synonym</td><td>COLON</td><td>( &quot;&lt;spaces&gt;new-name&quot; &quot;name&quot; -- )</td><td>create alias of existing word</td><td>core/words/synonym.s:19<td></tr>
+<tr><td title="TPILE">tpile</td><td>VARIABLE</td><td>( -- f )</td><td>transpiling status</td><td>core/words/tpile.s:13<td></tr>
+<tr><td title="TPILEPLUS">tpile+</td><td>COLON</td><td>( -- )</td><td>enable transpiling during compilation</td><td>core/words/tpile.s:16<td></tr>
+<tr><td title="TPILEMINUS">tpile-</td><td>COLON</td><td>( -- )</td><td>disable transpiling during compilation</td><td>core/words/tpile.s:20<td></tr>
+<tr><td title="ZIUNDERSQ">zi_sq</td><td>COLON</td><td></td><td></td><td>core/words/mlc.s:120<td></tr>
+<tr><td title="ZIMAG">zimag</td><td>VARIABLE</td><td></td><td></td><td>core/words/mlc.s:108<td></tr>
+<tr><td title="ZRUNDERSQ">zr_sq</td><td>COLON</td><td></td><td></td><td>core/words/mlc.s:112<td></tr>
+<tr><td title="ZREAL">zreal</td><td>VARIABLE</td><td></td><td></td><td>core/words/mlc.s:107<td></tr>
+</table>
+<h2 id="LEGEND">LEGEND</h2>
+<h3>Parameter notation</h3>
+<table>
+<tr><th>symbol</th><th>meaning</th></tr>
+<tr><td>n</td><td>signed number, single cell</td></tr>
+<tr><td>u</td><td>unsigned number, single cell</td></tr>
+<tr><td>d</td><td>signed number, double cell ( low high )</td></tr>
+<tr><td>ud</td><td>unsigned number, double cell ( low high )</td></tr>
+<tr><td>x</td><td>single cell</td></tr>
+<tr><td>f</td><td>logical flag, 0 is false, not 0 is true</td></tr>
+<tr><td>a</td><td>cell aligned address</td></tr>
+<tr><td>ca</td><td>character aligned address</td></tr>
+<tr><td>fa</td><td>cell aligned address in FLASH</td></tr>
+<tr><td>xt</td><td>execution token (XT)</td></tr>
+<tr><td>c</td><td>character (byte)</td></tr>
+<tr><td>s</td><td>string = ( address length ) cell pair</td></tr>
+<tr><td>i*x</td><td>some unknown number of cells</td></tr>
+<tr><td>&quot;name&quot;</td><td>name consumed from input buffer</td></tr>
+<tr><td>&quot;ccc&quot;</td><td>string consumed from input buffer</td></tr>
+<tr><td>wid</td><td>XT of a wordlist word</td></tr>
+<tr><td>ffa</td><td>flag field address</td></tr>
+<tr><td>lfa</td><td>link field address</td></tr>
+<tr><td>nfa</td><td>name field address</td></tr>
+<tr><td>cfa</td><td>code field address (same as XT)</td></tr>
+<tr><td>pfa</td><td>parameter field address</td></tr>
+<tr><td>loop-sys</td><td>do..loop index/limit state</td></tr>
+</table>
+<h3>Stack notation</h3>
+<table>
+<tr><th>notation</th><th>stack</th></tr>
+<tr><td>( -- )</td><td>parameter/data stack</td></tr>
+<tr><td>(R: -- )</td><td>return stack</td></tr>
+<tr><td>(C: -- )</td><td>control flow stack (data stack at compile time)</td></tr>
+<tr><td>(L: -- )</td><td>leave stack</td></tr>
+<tr><td>( -- j*x | i*x )</td><td>alternative outcomes</td></tr>
+<tr><td>( -- [ j*x ] i*x )</td><td>optional outcomes</td></tr>
+<tr><td>( xu .. x1 )</td><td>u values of type x indexed 1 to u</td></tr>
+</table>
+<h3>Other terminology</h3>
+<table>
+<tr><th>term</th><th>meaning</th></tr>
+<tr><td>TOS</td><td>top of stack</td></tr>
+<tr><td>NOS</td><td>next on stack</td></tr>
+<tr><td>3OS, 4OS</td><td>3rd, 4th, ... on stack</td></tr>
+<tr><td>TIB</td><td>terminal input buffer</td></tr>
+<tr><td>PNO</td><td>pictured numeric output</td></tr>
+</table>
+</body>
+</html>

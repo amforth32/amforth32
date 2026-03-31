@@ -1,5 +1,6 @@
 # Theme Settings
-remote_theme: just-the-docs/just-the-docs
+# remote_theme: just-the-docs/just-the-docs
+theme: just-the-docs
 
 # Navigation Settings
 # This enables the search bar in the sidebar
