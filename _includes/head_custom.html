@@ -1,4 +1,7 @@
 <script>
+  /* Implements automatic switching between light and dark theme based on OS settings. */
+
+  /* Don't render the document until applyTheme is called to avoid jarring flashes */
   document.documentElement.style.visibility = "hidden";
 
   function applyTheme(theme) {
@@ -22,7 +25,8 @@
     return 'light';
   }
 
-  /* Re-apply theme on navigation (critical for pages with subitems / children) */
+  /* Re-apply theme on navigation (critical for pages with subitems / children).
+    To help with jarring flashes on partial page changes. */
   function reapplyOnNavigation() {
     const preferred = getPreferredTheme();
     /* Small delay because navigation often triggers after DOM updates */
