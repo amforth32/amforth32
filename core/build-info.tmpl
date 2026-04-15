@@ -1,0 +1,23 @@
+
+ENVIRONMENT "build.time", BUILD_TIME /* ( -- addr u ) string with build time */
+    STRING "%d"
+    .word XT_EXIT
+END BUILD_TIME
+
+ENVIRONMENT "build.rev", BUILD_REV /* ( -- addr u ) string with build revision */
+    STRING "%r"
+    .word XT_EXIT
+END BUILD_REV
+
+ENV_CONSTANT "build.config", BUILD_CONFIG, BUILD_CONFIG /* ( -- u ) build configuration flags */
+END BUILD_CONFIG
+
+ENVIRONMENT ".build", DOT_BUILD /* ( -- ) show build information */
+    STRING "build: "
+    .word XT_TYPE
+    .word XT_ENV_BUILD_TIME, XT_TYPE, XT_SPACE
+    .word XT_ENV_BUILD_REV, XT_TYPE, XT_SPACE
+    STRING "cfg:$"
+    .word XT_TYPE, XT_ENV_BUILD_CONFIG, XT_HEXDOT
+    .word XT_EXIT
+END DOT_BUILD

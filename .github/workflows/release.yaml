@@ -1,0 +1,129 @@
+name: Release
+on:
+  push:
+    tags:
+      - 'v*'
+jobs:
+
+  build-arm:
+    runs-on: ubuntu-latest
+    env:
+      # These should match arm/dev/Makefile
+      CROSS: arm-none-eabi-
+      TC_VER: 15.2.rel1
+    steps:
+      - run: echo "TC_DIR=${{ github.workspace }}/toolchain/${CROSS}${TC_VER}" >> $GITHUB_ENV
+      - uses: actions/checkout@v4
+      - name: Cache Toolchain Installation
+        id: cache-toolchain
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.TC_DIR }}
+          key: ${{ runner.os }}-${{ env.CROSS }}-${{ env.TC_VER }}
+
+      - name: Install ARM GNU Toolchain
+        if: steps.cache-toolchain.outputs.cache-hit != 'true'
+        run: cd arm/dev && make toolchain
+
+      - name: Build QEMU virt
+        run: cd arm/mcu/qemu && VERSION=${{github.ref_name}} make dist
+
+      - name: Build RA4M1/UNOR4
+        run: cd arm/mcu/ra4m1 && VERSION=${{github.ref_name}} make dist
+
+      - name: Upload ARM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: arm-artifacts
+          path: dist/*.tgz
+
+  build-arm-linux:
+    runs-on: ubuntu-latest
+    env:
+      # These should match arm/dev/Makefile
+      CROSS:  arm-none-linux-gnueabihf-
+      TC_VER: 15.2.rel1
+    steps:
+      - run: echo "TC_DIR=${{ github.workspace }}/toolchain/${CROSS}${TC_VER}" >> $GITHUB_ENV
+      - uses: actions/checkout@v4
+      - name: Cache Toolchain Installation
+        id: cache-toolchain
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.TC_DIR }}
+          key: ${{ runner.os }}-${{ env.CROSS }}-${{ env.TC_VER }}
+
+      - name: Install ARM GNU Toolchain
+        if: steps.cache-toolchain.outputs.cache-hit != 'true'
+        run: cd arm/dev && make toolchain
+
+      - name: Build Linux/RPi
+        run: cd arm/mcu/linux && VERSION=${{github.ref_name}} make dist
+
+      - name: Upload ARM/Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: arm-linux-artifacts
+          path: dist/*.tgz
+
+  build-riscv:
+    runs-on: ubuntu-latest
+    env:
+      # These should match rv/dev/Makefile
+      CROSS: riscv-none-elf-
+      TC_VER: 15.2.0-1
+    steps:
+      - run: echo "TC_DIR=${{ github.workspace }}/toolchain/${CROSS}${TC_VER}" >> $GITHUB_ENV
+      - uses: actions/checkout@v4
+      - name: Cache Toolchain Installation
+        id: cache-toolchain
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.TC_DIR }}
+          key: ${{ runner.os }}-${{ env.CROSS }}-${{ env.TC_VER }}
+
+      - name: Install RISC-V GNU Toolchain
+        if: steps.cache-toolchain.outputs.cache-hit != 'true'
+        run: cd rv/dev && make toolchain
+
+      - name: Build QEMU virt
+        run: cd rv/mcu/qemu && VERSION=${{github.ref_name}} make dist
+
+      - name: Build CH32V307
+        run: cd rv/mcu/ch32v307 && VERSION=${{github.ref_name}} make dist
+
+      - name: Upload RISC-V artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: riscv-artifacts
+          path: dist/*.tgz
+
+  release:
+    needs: [build-arm, build-riscv, build-arm-linux]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download ARM artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: arm-artifacts
+          path: dist
+
+      - name: Download ARM/Linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: arm-linux-artifacts
+          path: dist
+
+      - name: Download RISC-V artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: riscv-artifacts
+          path: dist
+
+      - name: Create release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "dist/*.tgz"
+          omitBody: true

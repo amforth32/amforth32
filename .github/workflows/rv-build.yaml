@@ -1,0 +1,76 @@
+name: RISC-V
+permissions:
+  contents: write
+on:
+  push:
+    branches: [ '**' ]
+    tags-ignore: [ '**' ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      # These should match rv/dev/Makefile
+      TC_VER: 15.2.0-1
+      CROSS: riscv-none-elf-
+    steps:
+      - run: echo "TC_DIR=${{ github.workspace }}/toolchain/${CROSS}${TC_VER}" >> $GITHUB_ENV
+      - uses: actions/checkout@v4
+
+      - name: Cache Toolchain Installation
+        id: cache-toolchain
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.TC_DIR }}
+          key: ${{ runner.os }}-${{ env.CROSS }}-${{ env.TC_VER }}
+
+      - name: Install ARM GNU Toolchain
+        if: steps.cache-toolchain.outputs.cache-hit != 'true'
+        run: cd rv/dev && make toolchain
+
+      - name: Build CH32 for 307
+        run: cd rv/mcu/ch32v307 && TARGET=307 WANT_IGNORECASE=1 make all
+
+      - name: Build CH32 for 307 (WANT_ITC)
+        run: cd rv/mcu/ch32v307 && TARGET=307 WANT_ITC=1 make all
+
+      # It seems we need to update the index otherwise the qemu install fails
+      - name: apt-get update
+        run: sudo apt-get update
+        
+      # This doesn't seem to be able to install the RISC-V packages, unfortunately
+      # Possibly because of the bad index but apt-get update ahead of time doesn't fix it.
+      # - name: Cache and Install QEMU RISC-V 32
+      #   uses: awalsh128/cache-apt-pkgs-action@latest
+      #   with:
+      #     packages: qemu-system-riscv32
+      #     version: 3 # Change this to manually bust the cache
+
+      # This doesn't work either, installs but fails to cache dependencies:
+      # qemu-system-riscv32: error while loading shared libraries: libfdt.so.1:
+      #    cannot open shared object file: No such file or directory
+      # - name: Cache and Install QEMU RISC-V 32
+      #   uses: tecolicom/actions-use-apt-tools@v1
+      #   with:
+      #     tools: [ qemu-system-misc ]
+
+      - name: Install QEMU RISC-V 32
+        run: sudo apt-get install qemu-system-riscv32
+
+      - name: Build QEMU virt
+        run: cd rv/mcu/qemu && WANT_IGNORECASE=1 make all
+
+      - name: QEMU virt Core Tests
+        run: cd rv/mcu/qemu && TIMEOUT=5s make tests
+
+      - name: Build QEMU virt (WANT_ITC)
+        run: cd rv/mcu/qemu && WANT_IGNORECASE=1 WANT_ITC=1 make all
+
+      - name: QEMU virt Core Tests
+        run: cd rv/mcu/qemu && TIMEOUT=5s make tests
+
+      - name: Update Refcards
+        if: github.ref == 'refs/heads/main'
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: dist/refcards
+          target-folder: refcards/rv

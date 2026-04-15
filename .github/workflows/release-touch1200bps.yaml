@@ -1,0 +1,24 @@
+
+name: Release touch1200bps
+on:
+  push:
+    tags:
+      - 'touch1200bps-v*'
+jobs:   
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Build distribution tarballs
+        run: cd arm/mcu/ra4m1 && make dist1200bps
+      - name: Create release
+        uses: ncipollo/release-action@v1
+        id: create_release
+        with:
+          artifacts: "arm/mcu/ra4m1/touch1200bps/dist/*.tgz"
+          omitBody: true

@@ -1,0 +1,5 @@
+*.bkp
+*.svd
+*.elf
+build/
+touch1200bps/touch1200bps

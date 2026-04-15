@@ -1,0 +1,69 @@
+\ These tests should only be run against emulated targets with faux PVFLASH in RAM.
+\ They start with erasing the PVFLASH!
+hex
+
+\ test values
+#42 value pvt1
+#42 value pvt2
+
+TESTING pvarena.erase
+
+pvarena1 pvarena.erase
+T{ pvarena1 @ -> pvflash.erased }T
+T{ pvarena1 pvarena.size + cell- @ -> pvflash.erased }T
+
+pvarena2 pvarena.erase
+T{ pvarena2 @ -> pvflash.erased }T
+T{ pvarena2 pvarena.size + cell- @ -> pvflash.erased }T
+
+TESTING pv.init initial
+
+pv.init
+T{ pvarena -> pvarena1 }T \ initialized to arena1
+T{ pvarena @ -> $80000000 }T \ initial arena ID
+T{ pvarena cell+ @ -> pvflash.erased invert }T \ arena marked dirty
+T{ pvp -> pvarena1 cell+ cell+ }T \ pvp points at first pvrecord slot
+ 
+TESTING pv.store
+\ We are using regular values here, which should be mostly fine,
+\ but that means pvarena.swap won't find them in the dictionary (wrong flags),
+\ so their records will be gone after the swap
+
+1 vaddr pvt1 pv.store
+T{ pvt1 pvp -> 1 pvarena #4 cells + }T
+T{ pvp cell- @ -> 1 }T
+T{ pvp cell- cell- @ -> vaddr pvt1 }T
+
+2 vaddr pvt1 pv.store
+T{ pvt1 pvp -> 2 pvarena #6 cells + }T
+
+3 vaddr pvt2 pv.store
+T{ pvt2 pvp -> 3 pvarena #8 cells + }T
+
+4 vaddr pvt1 pv.store
+T{ pvt1 pvp -> 4 pvarena #10 cells + }T
+
+5 vaddr pvt2 pv.store
+T{ pvt2 pvp -> 5 pvarena #12 cells + }T
+
+TESTING pv.init reinitialization
+\ reset the values and pvp
+0 to pvp
+0 vaddr pvt1 !
+0 vaddr pvt2 !
+pv.init
+
+T{ pvarena -> pvarena1 }T
+T{ pvp -> pvarena #12 cells + }T
+T{ pvt1 -> 4 }T
+T{ pvt2 -> 5 }T
+
+TESTING pvarena.swap
+
+\ count pvalues in the system
+0 :noname drop 1+ true ; pv.do constant pvcount
+
+pvarena.swap
+T{ pvarena -> pvarena2 }T \ pvarena2 is current arena now
+T{ pvp -> pvcount 1+ cells 2* pvarena + }T \ pvcount records were written (1+ for arena record)
+T{ pvarena1 @ -> pvflash.erased }T \ pvarena1 erased

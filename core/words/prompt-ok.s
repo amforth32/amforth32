@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: GPL-3.0-only
+
+DEFER ".ok", PROMPTOK, XT_PROMPTOKDEFAULT
+END PROMPTOK
+
+NONAME ".ok.default", PROMPTOKDEFAULT
+    .word XT_STATE,XT_FETCH,XT_DROP
+    STRING " ok"
+    .word XT_TYPE
+    .word XT_EXIT
+END PROMPTOKDEFAULT

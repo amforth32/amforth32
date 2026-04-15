@@ -1,0 +1,56 @@
+name: ARM/Linux
+permissions:
+  contents: write
+on:
+  push:
+    branches: [ '**' ]
+    tags-ignore: [ '**' ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      # These should match arm/mcu/linux/dev/Makefile
+      TC_VER: 15.2.rel1
+      CROSS: arm-none-linux-gnueabihf-
+    steps:
+      - run: echo "TC_DIR=${{ github.workspace }}/toolchain/${CROSS}${TC_VER}" >> $GITHUB_ENV
+      - uses: actions/checkout@v4
+
+      - name: Cache Toolchain Installation
+        id: cache-toolchain
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.TC_DIR }}
+          key: ${{ runner.os }}-${{ env.CROSS }}-${{ env.TC_VER }}
+
+      - name: Install ARM GNU Toolchain
+        if: steps.cache-toolchain.outputs.cache-hit != 'true'
+        run: cd arm/dev && make toolchain
+
+      - name: Build Linux/RaspPi
+        run: | 
+          cd arm/mcu/linux && WANT_IGNORECASE=1 make all
+          make segments
+          make sections
+
+      - name: Cache and Install QEMU USER ARM
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: qemu-user-static
+          version: 1 # Change this to manually bust the cache
+
+      - name: QEMU Core Tests
+        run: cd arm/mcu/linux && TIMEOUT=5s make tests
+
+      - name: Build Linux/RaspPi (WANT_ITC)
+        run: cd arm/mcu/linux && WANT_IGNORECASE=1 WANT_ITC=1 make all
+
+      - name: QEMU Core Tests (WANT_ITC)
+        run: cd arm/mcu/linux && TIMEOUT=5s make tests
+
+      - name: Update Refcards
+        if: github.ref == 'refs/heads/main'
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: dist/refcards
+          target-folder: refcards/arm-linux

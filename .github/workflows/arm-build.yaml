@@ -1,0 +1,71 @@
+name: ARM
+permissions:
+  contents: write
+on:
+  push:
+    branches: [ '**' ]
+    tags-ignore: [ '**' ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      # These should match arm/dev/Makefile
+      TC_VER: 15.2.rel1
+      CROSS: arm-none-eabi-
+    steps:
+      - run: echo "TC_DIR=${{ github.workspace }}/toolchain/${CROSS}${TC_VER}" >> $GITHUB_ENV
+      - uses: actions/checkout@v4
+
+      - name: Cache Toolchain Installation
+        id: cache-toolchain
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.TC_DIR }}
+          key: ${{ runner.os }}-${{ env.CROSS }}-${{ env.TC_VER }}
+
+      - name: Install ARM GNU Toolchain
+        if: steps.cache-toolchain.outputs.cache-hit != 'true'
+        run: cd arm/dev && make toolchain
+
+      - name: Build RA4M1 (WANT_ITC)
+        run: cd arm/mcu/ra4m1 && WANT_ITC=1 make all
+
+      - name: Build RA4M1
+        run: cd arm/mcu/ra4m1 && WANT_IGNORECASE=1 make all
+
+      - name: Build LM4120 (WANT_ITC)
+        run: cd arm/mcu/lm4f120 && WANT_ITC=1 make all
+
+      - name: Build LM4F120 (TARGET=LM4)
+        run: cd arm/mcu/lm4f120 && TARGET=LM4 make all
+
+      - name: Build LM4120 (WANT_IGNORECASE)
+        run: cd arm/mcu/lm4f120 && WANT_IGNORECASE=1 make all
+
+      - name: Cache and Install QEMU ARM
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: qemu-system-arm
+          version: 1 # Change this to manually bust the cache
+
+      - name: LM4F120 Core Tests (WANT_ITC)
+        run: cd arm/mcu/lm4f120 && TIMEOUT=5s make tests
+
+      - name: Build QEMU virt (WANT_ITC)
+        run: cd arm/mcu/qemu && WANT_IGNORECASE=1 WANT_ITC=1 make all
+
+      - name: QEMU Core Tests (WANT_ITC)
+        run: cd arm/mcu/qemu && TIMEOUT=5s make tests
+
+      - name: Build QEMU virt
+        run: cd arm/mcu/qemu && WANT_IGNORECASE=1 make all
+
+      - name: QEMU Core Tests
+        run: cd arm/mcu/qemu && TIMEOUT=5s make tests
+
+      - name: Update Refcards
+        if: github.ref == 'refs/heads/main'
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: dist/refcards
+          target-folder: refcards/arm

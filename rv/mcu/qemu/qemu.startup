@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: GPL-3.0-only
+
+.option norvc               # no opportunistic use of compressed ... 
+.option norelax             # instructions or other such optimisations 
+
+.global PFA_COLD
+.global _start
+
+.section .init
+_start:
+	la gp, __global_pointer$
+	la sp, _eusrstack 
+
+    j PFA_COLD
+
