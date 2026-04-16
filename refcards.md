@@ -13,7 +13,6 @@ The legend is included at the end of the reference card.
 
 ## RISC-V 32 rv32im
 * [CH32V307](refcards/rv/rv-307.html)
-* [Hifive1](refcards/rv/rv-HIFIVE1.html)
 * [QEMU -M virt](refcards/rv/rv-QEM.html)
 
 ## ARM 32 Cortex-M4

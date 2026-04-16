@@ -22,7 +22,7 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 </head>
 <body>
 <h1>AmForth32 Reference Card</h1>
-<h2>CORTEX-M4 / UNO R4 WIFI main@201689e 2026-04-15T18:54:15+00:00</h2>
+<h2>CORTEX-M4 / UNO R4 WIFI main@9f8f701 2026-03-31T13:46:15+00:00</h2>
 <p>
 <a href="#STACK">STACK</a> | <a href="#COMPARE">COMPARE</a> | <a href="#MATH">MATH</a> | <a href="#MIXED">MIXED</a> | <a href="#DOUBLE">DOUBLE</a> | <a href="#MEMORY">MEMORY</a> | <a href="#STRING">STRING</a> | <a href="#DICTIONARY">DICTIONARY</a> | <a href="#WORDLIST">WORDLIST</a> | <a href="#COMPILER">COMPILER</a> | <a href="#FLOW">FLOW</a> | <a href="#IO">IO</a> | <a href="#OUTPUT">OUTPUT</a> | <a href="#SYSTEM">SYSTEM</a> | <a href="#TOOLS">TOOLS</a> | <a href="#FLASH">FLASH</a> | <a href="#OTHER">OTHER</a> | <a href="#MCU">MCU</a> | <a href="#UNCATEGORIZED">UNCATEGORIZED</a> | <a href="#LEGEND">LEGEND</a>
 </p>
@@ -315,26 +315,28 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 <tr><td title="RAM_WORDLIST">ram-wordlist</td><td>VALUE</td><td>0</td><td>FFA of last word; words compiled into RAM at runtime</td><td>core/words/ramwordlist.s:3<td></tr>
 <tr><td title="CORE_WORDLIST">core-wordlist</td><td>CONSTANT</td><td></td><td>FFA of last word; core words compiled at build time</td><td>core/macros.inc<td></tr>
 <tr><td title="ENVIRONMENT">environment</td><td>VALUE</td><td></td><td>FFA of last word; standard environment search list</td><td>core/macros.inc<td></tr>
-<tr><td title="ARCH_WORDLIST">arch-wordlist</td><td>VALUE</td><td></td><td>FFA of last word; architecture specific words</td><td>core/macros.inc<td></tr>
+<tr><td>rv-wordlist</td></tr>
+<tr><td title="ARCH_WORDLIST">arm-wordlist</td><td>VALUE</td><td></td><td>FFA of last word; architecture specific words</td><td>core/macros.inc<td></tr>
 <tr><td title="CURRENT">current</td><td>VALUE</td><td>XT_RAM_WORDLIST</td><td>current compilation wordlist</td><td>core/words/current.s:3<td></tr>
-<tr><td title="GET_CURRENT">get-current</td><td>COLON</td><td>( -- wid )</td><td>get current compilation word list</td><td>core/words/current.s:6<td></tr>
-<tr><td title="SETMINUSCURRENT">set-current</td><td>COLON</td><td>( wid -- )</td><td>set current compilation word list to wid</td><td>core/words/current.s:10<td></tr>
+<tr><td title="GET_CURRENT">get-current</td><td>COLON</td><td>( -- wid )</td><td>get the current compilation word list</td><td>core/words/get-current.s:3<td></tr>
+<tr><td title="SETMINUSCURRENT">set-current</td><td>COLON</td><td></td><td></td><td>core/words/order.s:192<td></tr>
 <tr><td title="WLSCOPE">wlscope</td><td>DEFER</td><td>XT_GET_CURRENT</td><td></td><td>core/words/wlscope.s:3<td></tr>
 <tr><td title="SEARCH_WORDLIST">search-wordlist</td><td>COLON</td><td>( c-addr len wid -- [ 0 ] | [ xt [-1|1]] )</td><td>searches the word list wid for the word at c-addr/len</td><td>core/words/search-wordlist.s:3<td></tr>
 <tr><td title="SHOWWORDLIST">show-wordlist</td><td>COLON</td><td>( wid -- )</td><td>list words in wordlist wid</td><td>core/words/show-wordlist.s:3<td></tr>
 <tr><td title="TRAVERSEWORDLIST">traverse-wordlist</td><td>COLON</td><td>( xt wid -- )</td><td>execute xt (addr -- f) with FFA of each word in wordlist wid</td><td>core/words/traverse-wordlist.s:3<td></tr>
-<tr><td title="ORDER">order</td><td>COLON</td><td>( -- )</td><td>show currently configured search order</td><td>core/words/order.s:78<td></tr>
+<tr><td title="ORDER">order</td><td>COLON</td><td>( -- )</td><td>show currently configured search order</td><td>core/words/order.s:75<td></tr>
 <tr><td title="CFG_ORDER">cfg-order</td><td>DEFER</td><td>XT_ORDERDOTONLY</td><td>currently configured search order</td><td>core/words/order.s:16<td></tr>
-<tr><td title="ONLY">only</td><td>COLON</td><td>( -- )</td><td>set search order to RAM dictionary mode</td><td>core/words/order.s:59<td></tr>
-<tr><td title="CORE">core</td><td>COLON</td><td>( -- )</td><td>set search order to core words only mode</td><td>core/words/order.s:51<td></tr>
-<tr><td title="FORTH">forth</td><td>COLON</td><td>( -- )</td><td>set search order to FLASH dictionary mode</td><td>core/words/order.s:43<td></tr>
-<tr><td title="ORDERDOTFORTH">order.forth</td><td>DATA</td><td></td><td>FLASH dictionary mode search order</td><td>core/words/order.s:36<td></tr>
-<tr><td title="ORDERDOTCORE">order.core</td><td>DATA</td><td></td><td>core words only search order</td><td>core/words/order.s:29<td></tr>
+<tr><td title="ONLY">only</td><td>COLON</td><td>( -- )</td><td>set search order to RAM dictionary mode</td><td>core/words/order.s:56<td></tr>
+<tr><td title="CORE">core</td><td>COLON</td><td>( -- )</td><td>set search order to core words only mode</td><td>core/words/order.s:48<td></tr>
+<tr><td title="FORTH">forth</td><td>COLON</td><td>( -- )</td><td>set search order to FLASH dictionary mode</td><td>core/words/order.s:40<td></tr>
+<tr><td title="ORDERDOTFORTH">order.forth</td><td>DATA</td><td></td><td>FLASH dictionary mode search order</td><td>core/words/order.s:34<td></tr>
+<tr><td title="ORDERDOTCORE">order.core</td><td>DATA</td><td></td><td>core words only search order</td><td>core/words/order.s:28<td></tr>
 <tr><td title="ORDERDOTONLY">order.only</td><td>DATA</td><td></td><td>RAM dictionary mode search order</td><td>core/words/order.s:19<td></tr>
-<tr><td title="PREVIOUS">previous</td><td>COLON</td><td>( -- )</td><td>drop first wordlist from the search order</td><td>core/words/order.s:183<td></tr>
-<tr><td title="SETMINUSORDER">set-order</td><td>COLON</td><td>( widn ... wid1 n -- )</td><td>set search order to the list of wids on stack</td><td>core/words/order.s:147<td></tr>
-<tr><td title="GETMINUSORDER">get-order</td><td>COLON</td><td>( -- widn ... wid1 n )</td><td>put wids of the search order on stack</td><td>core/words/order.s:108<td></tr>
-<tr><td title="ORDERDOTTABLE">order.table</td><td>NVARIABLE</td><td>9</td><td></td><td>core/words/order.s:133<td></tr>
+<tr><td title="PREVIOUS">previous</td><td>COLON</td><td></td><td></td><td>core/words/order.s:182<td></tr>
+<tr><td title="SETMINUSORDER">set-order</td><td>COLON</td><td></td><td></td><td>core/words/order.s:146<td></tr>
+<tr><td title="GETMINUSORDER">get-order</td><td>COLON</td><td></td><td></td><td>core/words/order.s:107<td></tr>
+<tr><td title="W1">w1</td><td>VALUE</td><td>0</td><td></td><td>core/words/order.s:198<td></tr>
+<tr><td title="ORDERDOTTABLE">order.table</td><td>NVARIABLE</td><td>9</td><td></td><td>core/words/order.s:132<td></tr>
 <tr><td title="FROM_TOP">top&gt;</td><td>COLON</td><td></td><td></td><td>core/words/order.s:10<td></tr>
 <tr><td title="TO_TOP">&gt;top</td><td>COLON</td><td></td><td></td><td>core/words/order.s:5<td></tr>
 <tr><td title="TOP">top</td><td>VALUE</td><td>0</td><td></td><td>core/words/order.s:2<td></tr>
@@ -486,11 +488,10 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 <tr><td title="INTERPRET">interpret</td><td>COLON</td><td>( i*x -- j*x )</td><td>interpret SOURCE word by word</td><td>core/words/interpret.s:3<td></tr>
 <tr><td title="MS">ms</td><td>COLON</td><td></td><td></td><td>arm/mcu/ra4m1/words/delay.s:79<td></tr>
 <tr><td title="DOT_VER">.ver</td><td>COLON</td><td>( -- )</td><td>show amforth version</td><td>core/words/ver.s:3<td></tr>
-<tr><td title="DOT_BUILD">.build</td><td>ENVIRONMENT</td><td>( -- )</td><td>show build information</td><td>arm/mcu/ra4m1/words/build-info.s:15<td></tr>
+<tr><td title="DOT_BUILD">.build</td><td>ENVIRONMENT</td><td>( -- )</td><td>show build information</td><td>arm/mcu/ra4m1/words/build-info.s:16<td></tr>
 <tr><td title="BUILD_REV">build.rev</td><td>ENVIRONMENT</td><td>( -- addr u )</td><td>string with build revision</td><td>arm/mcu/ra4m1/words/build-info.s:7<td></tr>
 <tr><td title="BUILD_TIME">build.time</td><td>ENVIRONMENT</td><td>( -- addr u )</td><td>string with build time</td><td>arm/mcu/ra4m1/words/build-info.s:2<td></tr>
-<tr><td title="BUILD_CONFIG">build.config</td><td>ENV_CONSTANT</td><td>( -- u )</td><td>build configuration flags</td><td>arm/mcu/ra4m1/words/build-info.s:12<td></tr>
-<tr><td title="ARCH">arch</td><td>ENV_CONSTANT</td><td>( -- u )</td><td>cpu architecture, 1=ARM/2=RV</td><td>arm/words/env-arch.s:1<td></tr>
+<tr><td title="BUILD_CONFIG">build.config</td><td>ENVIRONMENT</td><td>( -- u )</td><td>build configuration flags</td><td>arm/mcu/ra4m1/words/build-info.s:12<td></tr>
 <tr><td title="CPU">cpu</td><td>ENVIRONMENT</td><td>( -- addr u )</td><td>string with cpu identifier</td><td>arm/mcu/ra4m1/words/env-cpu.s:2<td></tr>
 <tr><td title="BOARD">board</td><td>ENVIRONMENT</td><td>( -- addr u )</td><td>string with board identifier</td><td>arm/mcu/ra4m1/words/env-board.s:2<td></tr>
 <tr><td title="FORTHVERSION">version</td><td>ENVIRONMENT</td><td>( -- u )</td><td>amforth version number</td><td>core/words/env-forthversion.s:2<td></tr>
@@ -583,9 +584,9 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 <tr><td title="DOFLASH_WRITE">(flash.write)</td><td>CODEWORD</td><td>( fa -- )</td><td>write flash.cache to flash at fa</td><td>arm/mcu/ra4m1/words/flash.s:19<td></tr>
 <tr><td title="PLUSDWT">+dwt</td><td>CODEWORD</td><td>( -- )</td><td>start the DWT CYCCNT 32b counter</td><td>arm/mcu/ra4m1/words/dwt.s:36<td></tr>
 <tr><td title="MINUSDWT">-dwt</td><td>CODEWORD</td><td>( -- )</td><td>reset the DWT CYCCNT 32b counter to zero</td><td>arm/mcu/ra4m1/words/dwt.s:27<td></tr>
-<tr><td title="ARM_SYST_CSR">ARM_SYST_CSR</td><td>ARM_CONSTANT</td><td>0xE000E010</td><td></td><td>arm/mcu/ra4m1/words/delay.s:8<td></tr>
-<tr><td title="ARM_SYST_CVR">ARM_SYST_CVR</td><td>ARM_CONSTANT</td><td>0xE000E018</td><td></td><td>arm/mcu/ra4m1/words/delay.s:30<td></tr>
-<tr><td title="ARM_SYST_RVR">ARM_SYST_RVR</td><td>ARM_CONSTANT</td><td>0xE000E014</td><td></td><td>arm/mcu/ra4m1/words/delay.s:22<td></tr>
+<tr><td title="SYST_CSR">SYST_CSR</td><td>ARM_CONSTANT</td><td>0xE000E010</td><td></td><td>arm/mcu/ra4m1/words/delay.s:8<td></tr>
+<tr><td title="SYST_CVR">SYST_CVR</td><td>ARM_CONSTANT</td><td>0xE000E018</td><td></td><td>arm/mcu/ra4m1/words/delay.s:30<td></tr>
+<tr><td title="SYST_RVR">SYST_RVR</td><td>ARM_CONSTANT</td><td>0xE000E014</td><td></td><td>arm/mcu/ra4m1/words/delay.s:22<td></tr>
 <tr><td title="AT">at</td><td>CODEWORD</td><td></td><td></td><td>arm/mcu/ra4m1/words/at-usart.s:73<td></tr>
 <tr><td title="AT_UART_INIT">at-uart-init</td><td>CODEWORD</td><td></td><td></td><td>arm/mcu/ra4m1/words/at-usart.s:18<td></tr>
 <tr><td title="CALLOT">callot</td><td>COLON</td><td></td><td></td><td>arm/mcu/ra4m1/words/flash.s:39<td></tr>
@@ -650,8 +651,6 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 <tr><td title="DOCELL">docell</td><td>COLON</td><td></td><td></td><td>core/words/mlc.s:211<td></tr>
 <tr><td title="DOESCAPE">doescape</td><td>COLON</td><td></td><td></td><td>core/words/mlc.s:177<td></tr>
 <tr><td title="DOROW">dorow</td><td>COLON</td><td></td><td></td><td>core/words/mlc.s:221<td></tr>
-<tr><td title="ERR_WORDLIST">err-wordlist</td><td>CONSTANT</td><td>90b</td><td></td><td>core/words/throwerr.s:77<td></tr>
-<tr><td title="ERRQ">err?</td><td>COLON</td><td>( n -- c-addr u )</td><td>search err-wordlist for err num = n and return error string</td><td>core/words/throwerr.s:109<td></tr>
 <tr><td title="ESCAPESQ">escapes?</td><td>COLON</td><td></td><td></td><td>core/words/mlc.s:139<td></tr>
 <tr><td title="FLAGDOTALIAS">flag.alias</td><td>CONSTANT</td><td>0x800</td><td></td><td>core/words/flag.s:30<td></tr>
 <tr><td title="INIT_DP_FLASH">init.dp.flash</td><td>COLON</td><td>( -- )</td><td>set dp.flash to the first erased cell after end of flash dictionary</td><td>core/words/here.s:87<td></tr>

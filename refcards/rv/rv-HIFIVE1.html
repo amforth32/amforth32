@@ -22,7 +22,7 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 </head>
 <body>
 <h1>AmForth32 Reference Card</h1>
-<h2>RV32IMAFC / QEMU main@9f8f701 2026-03-31T13:46:56+00:00</h2>
+<h2>RV32IM / SiFive Hifive1 main@9f8f701 2026-03-31T13:46:20+00:00</h2>
 <p>
 <a href="#STACK">STACK</a> | <a href="#COMPARE">COMPARE</a> | <a href="#MATH">MATH</a> | <a href="#MIXED">MIXED</a> | <a href="#DOUBLE">DOUBLE</a> | <a href="#MEMORY">MEMORY</a> | <a href="#STRING">STRING</a> | <a href="#DICTIONARY">DICTIONARY</a> | <a href="#WORDLIST">WORDLIST</a> | <a href="#COMPILER">COMPILER</a> | <a href="#FLOW">FLOW</a> | <a href="#IO">IO</a> | <a href="#OUTPUT">OUTPUT</a> | <a href="#SYSTEM">SYSTEM</a> | <a href="#TOOLS">TOOLS</a> | <a href="#FLASH">FLASH</a> | <a href="#OTHER">OTHER</a> | <a href="#MCU">MCU</a> | <a href="#UNCATEGORIZED">UNCATEGORIZED</a> | <a href="#LEGEND">LEGEND</a>
 </p>
@@ -417,10 +417,10 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 <h2 id="IO">IO</h2>
 <table>
 <tr><th>Word</th><th>Type</th><th>Stack Signature</th><th>Description</th><th>Location</th></tr>
-<tr><td title="SERIAL_EMITQ">serial-emit?</td><td>CODEWORD</td><td></td><td></td><td>rv/mcu/qemu/words/serial.qem:55<td></tr>
-<tr><td title="SERIAL_EMIT">serial-emit</td><td>CODEWORD</td><td></td><td></td><td>rv/mcu/qemu/words/serial.qem:39<td></tr>
-<tr><td title="SERIAL_KEYQ">serial-key?</td><td>CODEWORD</td><td></td><td></td><td>rv/mcu/qemu/words/serial.qem:30<td></tr>
-<tr><td title="SERIAL_KEY">serial-key</td><td>CODEWORD</td><td></td><td></td><td>rv/mcu/qemu/words/serial.qem:23<td></tr>
+<tr><td title="SERIAL_EMITQ">serial-emit?</td><td>CODEWORD</td><td></td><td></td><td>rv/mcu/hifive1/words/usart.s:98<td></tr>
+<tr><td title="SERIAL_EMIT">serial-emit</td><td>CODEWORD</td><td></td><td></td><td>rv/mcu/hifive1/words/usart.s:83<td></tr>
+<tr><td title="SERIAL_KEYQ">serial-key?</td><td>CODEWORD</td><td></td><td></td><td>rv/mcu/hifive1/words/usart.s:56<td></tr>
+<tr><td title="SERIAL_KEY">serial-key</td><td>CODEWORD</td><td></td><td></td><td>rv/mcu/hifive1/words/usart.s:43<td></tr>
 <tr><td title="EMITQ">emit?</td><td>DEFER</td><td>( -- f )</td><td>ready for emission?</td><td>core/words/emitq.s:2<td></tr>
 <tr><td title="SERIAL_EMIT_PAUSE">serial-emit-pause</td><td>COLON</td><td>( c -- )</td><td>emit c on serial connection, pause until able</td><td>core/words/emit.s:5<td></tr>
 <tr><td title="EMIT">emit</td><td>DEFER</td><td>( c -- )</td><td>emit single character, pause until able</td><td>core/words/emit.s:2<td></tr>
@@ -488,12 +488,12 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 <tr><td title="INTERPRET">interpret</td><td>COLON</td><td>( i*x -- j*x )</td><td>interpret SOURCE word by word</td><td>core/words/interpret.s:3<td></tr>
 <tr><td title="MS">ms</td><td>COLON</td><td>( u -- )</td><td>u ms delay loop</td><td>rv/words/ms.s:3<td></tr>
 <tr><td title="DOT_VER">.ver</td><td>COLON</td><td>( -- )</td><td>show amforth version</td><td>core/words/ver.s:3<td></tr>
-<tr><td title="DOT_BUILD">.build</td><td>ENVIRONMENT</td><td>( -- )</td><td>show build information</td><td>rv/mcu/qemu/words/build-info.s:16<td></tr>
-<tr><td title="BUILD_REV">build.rev</td><td>ENVIRONMENT</td><td>( -- addr u )</td><td>string with build revision</td><td>rv/mcu/qemu/words/build-info.s:7<td></tr>
-<tr><td title="BUILD_TIME">build.time</td><td>ENVIRONMENT</td><td>( -- addr u )</td><td>string with build time</td><td>rv/mcu/qemu/words/build-info.s:2<td></tr>
-<tr><td title="BUILD_CONFIG">build.config</td><td>ENVIRONMENT</td><td>( -- u )</td><td>build configuration flags</td><td>rv/mcu/qemu/words/build-info.s:12<td></tr>
-<tr><td title="CPU">cpu</td><td>ENVIRONMENT</td><td>( -- addr u )</td><td>string with cpu identifier</td><td>rv/mcu/qemu/words/env-cpu.s:3<td></tr>
-<tr><td title="BOARD">board</td><td>ENVIRONMENT</td><td>( -- addr u )</td><td>string with board identifier</td><td>rv/mcu/qemu/words/env-board.s:3<td></tr>
+<tr><td title="DOT_BUILD">.build</td><td>ENVIRONMENT</td><td>( -- )</td><td>show build information</td><td>rv/mcu/hifive1/words/build-info.s:16<td></tr>
+<tr><td title="BUILD_REV">build.rev</td><td>ENVIRONMENT</td><td>( -- addr u )</td><td>string with build revision</td><td>rv/mcu/hifive1/words/build-info.s:7<td></tr>
+<tr><td title="BUILD_TIME">build.time</td><td>ENVIRONMENT</td><td>( -- addr u )</td><td>string with build time</td><td>rv/mcu/hifive1/words/build-info.s:2<td></tr>
+<tr><td title="BUILD_CONFIG">build.config</td><td>ENVIRONMENT</td><td>( -- u )</td><td>build configuration flags</td><td>rv/mcu/hifive1/words/build-info.s:12<td></tr>
+<tr><td title="CPU">cpu</td><td>ENVIRONMENT</td><td>( -- addr u )</td><td>string with cpu identifier</td><td>rv/mcu/hifive1/words/env-cpu.s:2<td></tr>
+<tr><td title="BOARD">board</td><td>ENVIRONMENT</td><td>( -- addr u )</td><td>string with board identifier</td><td>rv/mcu/hifive1/words/env-board.s:2<td></tr>
 <tr><td title="FORTHVERSION">version</td><td>ENVIRONMENT</td><td>( -- u )</td><td>amforth version number</td><td>core/words/env-forthversion.s:2<td></tr>
 <tr><td title="FORTHNAME">name</td><td>ENVIRONMENT</td><td>( -- s )</td><td>amforth name</td><td>core/words/env-forthname.s:2<td></tr>
 <tr><td title="SLASH_USER">/user</td><td>ENVIRONMENT</td><td>( -- u )</td><td>size of the user area</td><td>core/words/env-usersize.s:2<td></tr>
@@ -580,11 +580,22 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 <h2 id="MCU">MCU</h2>
 <table>
 <tr><th>Word</th><th>Type</th><th>Stack Signature</th><th>Description</th><th>Location</th></tr>
-<tr><td title="BUILD_TYPE">build-type</td><td>ENVIRONMENT</td><td></td><td></td><td>rv/mcu/qemu/words/env-cpu.s:8<td></tr>
-<tr><td title="SERIAL_INIT">serial.init</td><td>COLON</td><td></td><td></td><td>rv/mcu/qemu/words/serial.qem:15<td></tr>
-<tr><td title="TYPE0">type0</td><td>COLON</td><td></td><td></td><td>rv/mcu/qemu/words/type0.s:3<td></tr>
-<tr><td title="USART1_INIT">usart1.init</td><td>COLON</td><td></td><td></td><td>rv/mcu/qemu/words/serial.qem:8<td></tr>
-<tr><td title="APPLTURNKEY">wch-turnkey</td><td>COLON</td><td>( -- )</td><td>SYSTEM:</td><td>rv/mcu/qemu/words/applturnkey.s:2<td></tr>
+<tr><td title="INIT_USART">+usart</td><td>CODEWORD</td><td></td><td></td><td>rv/mcu/hifive1/words/usart.s:11<td></tr>
+<tr><td title="FETCH_CYCLE">@cycle</td><td>COLON</td><td></td><td></td><td>rv/mcu/hifive1/words/csr.s:18<td></tr>
+<tr><td title="BLACK">black</td><td>CODEWORD</td><td></td><td></td><td>rv/mcu/hifive1/words/leds.s:60<td></tr>
+<tr><td title="BLUE">blue</td><td>CODEWORD</td><td></td><td></td><td>rv/mcu/hifive1/words/leds.s:30<td></tr>
+<tr><td title="CYAN">cyan</td><td>CODEWORD</td><td></td><td></td><td>rv/mcu/hifive1/words/leds.s:48<td></tr>
+<tr><td title="GREEN">green</td><td>CODEWORD</td><td></td><td></td><td>rv/mcu/hifive1/words/leds.s:24<td></tr>
+<tr><td title="APPLTURNKEY">hifive-turnkey</td><td>COLON</td><td></td><td></td><td>rv/mcu/hifive1/words/applturnkey.s:2<td></tr>
+<tr><td title="LED_INIT">led-init</td><td>CODEWORD</td><td></td><td></td><td>rv/mcu/hifive1/words/leds.s:8<td></tr>
+<tr><td title="MAGENTA">magenta</td><td>CODEWORD</td><td></td><td></td><td>rv/mcu/hifive1/words/leds.s:54<td></tr>
+<tr><td title="MTIME">mtime</td><td>COLON</td><td></td><td></td><td>rv/mcu/hifive1/words/mtime.s:6<td></tr>
+<tr><td title="MTIMECMP">mtimecmp</td><td>COLON</td><td></td><td></td><td>rv/mcu/hifive1/words/mtime.s:11<td></tr>
+<tr><td title="RED">red</td><td>CODEWORD</td><td></td><td></td><td>rv/mcu/hifive1/words/leds.s:17<td></tr>
+<tr><td title="SERIAL_LASTCHAR">serial-lastchar</td><td>VARIABLE</td><td>( -- addr )</td><td></td><td>rv/mcu/hifive1/words/usart.s:40<td></tr>
+<tr><td title="TYPE0">type0</td><td>COLON</td><td></td><td></td><td>rv/mcu/hifive1/words/type0.s:2<td></tr>
+<tr><td title="WHITE">white</td><td>CODEWORD</td><td></td><td></td><td>rv/mcu/hifive1/words/leds.s:36<td></tr>
+<tr><td title="YELLOW">yellow</td><td>CODEWORD</td><td></td><td></td><td>rv/mcu/hifive1/words/leds.s:42<td></tr>
 </table>
 <h2 id="UNCATEGORIZED">UNCATEGORIZED</h2>
 <table>
