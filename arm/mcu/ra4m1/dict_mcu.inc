@@ -9,3 +9,6 @@
 .include "words/at-usart.s"
 
 .include "words/dwt.s"
+
+.include "words/agt.s"
+.include "words/icu.s"

@@ -4,16 +4,10 @@ IRQ_VECTORS:
 
 /*  RA4M1 User Manual
     13.3.1 Interrupt Vector Table
-
-    13.2.6 ICU Event Link Setting Register n (IELSRn)
-    Address: 0x40006300 + 4n :
-    * IELS[7:0] - ICU Event Link Select ; 0 = disabled, otherwise Event Table 13.4.
-    * IR[16] - Interrupt Status Flag ; write 0 to clear request
-    * DTCE[24] - DTC Activation Enable ; activates DTC instead of NVIC
-    
+    ARM_ICTR.INTLINESNUM=0 => 32 interrupts
 */
 
-.word 0 @ 16: ICU.IELSR0
+.word led_handler @ 16: ICU.IELSR0 = AGT0
 .word 0 @ 17: ICU.IELSR1
 .word 0 @ 18: ICU.IELSR2
 .word 0 @ 19: ICU.IELSR3
