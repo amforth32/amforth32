@@ -195,7 +195,7 @@ clean:
 ## Make distribution tarball for the target (expects VERSION and DIST_TARGET)
 dist: all
 	mkdir -p $(AMFORTH)/dist
-	cp readme.md $(AMFORTH)/LICENSE.txt $(AMFORTH)/tools/amforth-shell.py build/
+	cp readme.md $(AMFORTH)/LICENSE $(AMFORTH)/tools/amforth-shell.py build/
 	cd build && tar -zcf $(AMFORTH)/dist/amforth32-$(VERSION)-$(DIST_TARGET).tgz *
 
 ## Show build configuration
