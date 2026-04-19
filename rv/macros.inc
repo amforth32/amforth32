@@ -21,13 +21,13 @@
 .endm
 
 .macro savetos
-  addi s4, s4, -4
+  dsp -1
   sw s3, 0(s4)
 .endm
 
 .macro loadtos
   lw s3, 0(s4)
-  addi s4,s4,4
+  dsp +1
 .endm
 
 .macro push register
@@ -129,8 +129,41 @@ PFA_NOP:
 .endm
 
 .macro throw , exception
-    savetos                /* for good order        */
     li s3,\exception       /* load exception number */
     la s1, XT_THROW        /* move XT to W reg      */
     j DO_EXECUTE           /* execute via ITC VM    */
 .endm
+
+.macro dsp n
+
+       addi s4 , s4 , \n*cellsize
+
+.if WANT_DSPCHECK==YES
+    .if \n < 0
+        la t6 , RAM_lower_datastack
+        bgeu s4 , t6 , .Ldsp_ok_\@
+        lw s4 , USER_SP0(s6)
+        throw EDSOVR
+     .else
+        la t6 , RAM_upper_datastack
+        bleu s4 , t6 , .Ldsp_ok_\@
+        lw s4 , USER_SP0(s6)
+        throw EDSUND
+    .endif
+.Ldsp_ok_\@:
+.endif
+.endm
+
+.macro RAMAFILL name , char
+/* fill [RAM_lower_name..RAM_upper_name) with char */
+
+    la t0 , RAM_lower_\name
+    la t1 , RAM_upper_\name
+    li t2 , \char
+
+1:  sb t2 , 0(t0)
+    addi t0 , t0, 1
+    bltu t0 , t1 , 1b
+
+.endm
+    

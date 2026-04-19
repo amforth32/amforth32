@@ -7,6 +7,13 @@ CODEWORD "cold", COLD /* ( i*x -- )(R: j*y -- ) assembler part of the boot seque
    MCUs may override this to inject additional initialization at specific points.
 */
 
+.if WANT_DSPCHECK==YES
+  RAMAFILL runover     , 0x66  /* b before - overflow  */
+  RAMAFILL datastack   , 0x44  /* D DATASTACK          */
+  RAMAFILL rununder    , 0x77  /* w after  - underflow */
+  RAMAFILL returnstack , 0x55  /* U returnstack        */
+.endif
+
   la s5, RAM_upper_returnstack
   la s4, RAM_upper_datastack # TW hack
 .if WANT_DEBUGGER == YES

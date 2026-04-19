@@ -23,11 +23,11 @@ UP      .req r11
 .endm
 
 .macro savetos @ Push TOS on Datastack - a common, often used factor.
-    str TOS, [DSP, #-4]!
+    dspQ -1
 .endm
 
 .macro loadtos
-    ldr TOS, [DSP], #4
+    dspQ +1
 .endm
 
 // push register to the data stack (n2 n1 -- n2 n1 reg)
@@ -74,7 +74,6 @@ UP      .req r11
 
 
 .macro throw exception
-  savetos               /* for good order        */
   ldr TOS, =\exception   /* load exception number */
   ldr FW, =XT_THROW  /* load XT of THROW to W reg */
   b DO_EXECUTE          /* execute via ITC VM    */
@@ -139,4 +138,44 @@ PFA_NOP:
    str \register, [r0]
    pop {r0}
 .endif
+.endm
+
+.macro dspQ n
+.if WANT_DSPCHECK == YES
+    .if \n < 0
+        ldr r5, =RAM_lower_datastack
+        sub r5, r5, #\n * cellsize
+        cmp DSP, r5
+        bhs .Ldsp_ok_\@
+        ldr DSP, [UP, #USER_SP0]
+        throw EDSOVR
+    .Ldsp_ok_\@:
+        str TOS, [DSP, #\n * cellsize]!
+    .else
+        ldr r5, =RAM_upper_datastack
+        sub r5, r5, #\n * cellsize
+        cmp DSP, r5
+        bls .Ldsp_ok_\@
+        ldr DSP, [UP, #USER_SP0]
+        throw EDSUND
+    .Ldsp_ok_\@:
+        ldr TOS, [DSP], #\n * cellsize
+    .endif
+.else
+    .if \n < 0
+        str TOS, [DSP, #\n * cellsize]!
+    .else
+        ldr TOS, [DSP], #\n * cellsize
+    .endif
+.endif
+.endm
+
+.macro RAMAFILL name, char
+/* fill [RAM_lower_name..RAM_upper_name) with char */
+    ldr r0, =RAM_lower_\name
+    ldr r1, =RAM_upper_\name
+    movs r2, #\char
+1:  strb r2, [r0], #1
+    cmp  r0, r1
+    blo  1b
 .endm

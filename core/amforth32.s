@@ -5,7 +5,13 @@
 # Allocate core system RAM areas: stacks, tib, user areas, ...
 # TODO: should this be configurable?
 RAMALLOT ram_vector, 256*cellsize, 4
+.if WANT_DSPCHECK==YES
+RAMALLOT runover , 15*cellsize
+.endif
 RAMALLOT datastack, datastack_size, 4
+.if WANT_DSPCHECK==YES
+RAMALLOT rununder , 15*cellsize
+.endif
 RAMALLOT returnstack, returnstack_size, 4
 RAMALLOT leavestack, leavestack_size, 4
 RAMALLOT userarea, userarea_size, 4
