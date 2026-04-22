@@ -186,7 +186,7 @@ SECTIONS
 		PROVIDE(RAM_lower_res = . );
 		KEEP(*(amres))
 		PROVIDE(RAM_upper_res = . );
-	} >RAM AT>FLASH :forth
+	} >RAM AT>FLASH :forth_ram
 
 	PROVIDE(RAM_size_res = RAM_upper_res - RAM_lower_res) ;
 	PROVIDE(FSH_lower_res = LOADADDR(amramres)) ;
