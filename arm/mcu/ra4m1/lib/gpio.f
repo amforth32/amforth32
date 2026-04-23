@@ -53,7 +53,7 @@
 \ https://github.com/adafruit/Adafruit-GFX-Library/blob/master/glcdfont.c
 \ from above 5x7 font adjusted to be a 6x8 font ( 1 << and trailing col)
 
-#include ./lib/font.f
+#include font.f
 
 \ font should be sent >flash but left as current memmode 
 
