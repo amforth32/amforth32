@@ -30,8 +30,43 @@ CODEWORD "led-off", LED_OFF
    str r1, [r0]
 NEXT
 
+
+
 CODEWORD  "led-on", LED_ON
    ldr r1, =5
    ldr r0, =RA4_P102PFS
    str r1, [r0]
 NEXT
+
+.equ RA4_P112PFS , 0x40040870
+
+CODEWORD "q.init" QDOTINIT
+   ldr r0, =RA4_PWPR
+   ldr r1, =0   @ clear B0WI bit
+   strb r1, [r0]
+   ldr r1, =64   @ set PFSWE bit
+   strb r1, [r0]
+   b PFA_QDOTOFF
+NEXT
+
+CODEWORD "q.unlock" , QDOTUNLOCK
+   ldr r0, =RA4_PWPR
+   ldr r1, =0   @ clear B0WI bit
+   strb r1, [r0]
+   ldr r1, =64   @ set PFSWE bit
+   strb r1, [r0]
+NEXT
+
+CODEWORD "q.off", QDOTOFF
+   ldr r1, =4
+   ldr r0, =RA4_P112PFS
+   str r1, [r0]
+NEXT
+
+
+CODEWORD  "q.on", QDOTON
+   ldr r1, =5
+   ldr r0, =RA4_P112PFS
+   str r1, [r0]
+NEXT
+   
