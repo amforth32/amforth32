@@ -18,6 +18,9 @@
 .include "words/rec-split.s"
 .include "words/forth-recognizer.s"
 
+.include "words/mtask-common.s"
+.include "words/isr-common.s"
+
 # these move from pri-
 .include "words/dabs.s"
 .include "words/base.s"
@@ -199,6 +202,10 @@
 .include "words/dump.s"
 .include "words/testing.s"
 
+.if WANT_RECORD == YES
+.include "words/record.s"
+.endif
+
 .if WANT_TRANSPILER == YES
 .include "words/tpile.s"
 .endif
@@ -270,3 +277,5 @@
 .include "words/empty.s"
 .include "words/builds.s"
 
+.include "words/ms.s"
+.include "words/led-task.s"

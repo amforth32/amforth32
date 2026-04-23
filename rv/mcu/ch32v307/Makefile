@@ -9,11 +9,12 @@ DIST_TARGET ?= rv-ch32-307
 
 QEMU_RV32 ?= qemu-system-riscv32
 WLINK ?= $(HOME)/.cargo/bin/wlink
+WCHISP ?= $(HOME)/.cargo/bin/wchisp
 MINICOM ?= minicom
 OPENOCD ?= openocd
 OPENCFG ?= dev/wch-riscv.cfg
 
-UU=$(AMFORTH)/tools/uu
+USBSHELL=python3 $(AMFORTH)/tools/usbshell.py
 
 # ----------------------------------------------------------------------
 # ----------------------------------------------------------------------
@@ -36,18 +37,13 @@ include $(AMFORTH)/rv/dev/Makefile
 
 .PHONY: info shell speed save uu 
 
-## Upload hex file to the device  
+## Upload hex file to device via wlink debugger
 upload:
 	$(WLINK) flash build/amforth.hex
 
-## Connect via USB 
-uu:
-	$(UU) 
-
-## Connect via minicom 
-min:
-	$(RM) minicom.cap
-	$(MINICOM) -D $(MODEM) --color=on -C minicom.cap
+## Upload bin file to device via boot(loader) and boot/rst press
+boot:
+	$(WCHISP) flash build/amforth.bin
 
 #? --- Debugging ---
 ## Start GDB 
@@ -60,3 +56,14 @@ gdb:
 ## Start OpenOCD
 ocd:
 	$(OPENOCD) -f $(OPENCFG)
+
+#? --- Other shells ---
+
+## Connect via USB 
+usb:
+	$(USBSHELL) 
+
+## Connect via minicom 
+min:
+	$(RM) minicom.cap
+	$(MINICOM) -D $(MODEM) --color=on -C minicom.cap

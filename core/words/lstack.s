@@ -1,14 +1,17 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
-VALUE "lp0", LP0, RAM_upper_leavestack /* start of the leave stack */
+USER "lp0", LP0, USER_LP0 /* start of the leave stack */
 END LP0
 
-VARIABLE "lp", LP /* leave stack pointer */
+USER "lp", LP, USER_LP /* leave stack pointer address */
 END LP
 
+COLON "lp@", LP_FETCH /* ( -- addr ) current value of the leave stack pointer */
+    .word XT_LP, XT_FETCH, XT_EXIT
+END LP_FETCH
+
 COLON "l>", L_FROM /* ( -- x ) (L: x -- ) move TOS from leave stack to data stack */
-    .word XT_LP
-    .word XT_FETCH
+    .word XT_LP_FETCH
     .word XT_FETCH
     .word XT_DOLITERAL
     .word 4
@@ -18,8 +21,7 @@ COLON "l>", L_FROM /* ( -- x ) (L: x -- ) move TOS from leave stack to data stac
 END L_FROM
 
 COLON "l@", L_FETCH /* ( -- x ) (L: x -- x ) copy TOS from leave stack to data stack */
-    .word XT_LP
-    .word XT_FETCH
+    .word XT_LP_FETCH
     .word XT_FETCH
     .word XT_EXIT
 END L_FETCH
@@ -28,23 +30,21 @@ COLON ">l", TO_L /* ( x -- )(L: -- x ) move TOS from data stack to leave stack *
     .word XT_DOLITERAL,-4
     .word XT_LP
     .word XT_PLUSSTORE
-    .word XT_LP
-    .word XT_FETCH
+    .word XT_LP_FETCH
     .word XT_STORE
     .word XT_EXIT
 END TO_L
 
 COLON "ldrop", LDROP /* (L: x -- ) remove TOS from leave stack */
-    .word XT_DOLITERAL
-    .word 4
+    .word XT_DOLITERAL, 4
     .word XT_LP
     .word XT_PLUSSTORE
     .word XT_EXIT
 END LDROP
 
 COLON "ldepth", LDEPTH /* ( -- n ) n is current depth of the leave stack */
-    .word XT_LP0
-    .word XT_LP, XT_FETCH
+    .word XT_LP0, XT_FETCH
+    .word XT_LP_FETCH
     .word XT_MINUS
     .word XT_TWO, XT_RSHIFT /* cells */
     .word XT_EXIT
@@ -61,8 +61,7 @@ COLON "2l>", 2L_FROM /* ( -- x2 x1 ) (L: x1 x2 -- ) move cell pair from top of l
 END 2L_FROM
 
 COLON "2l@", 2L_FETCH /* ( -- x2 x1 ) (L: x1 x2 -- x1 x2 ) copy cell pair from top of leave stack to data stack */
-    .word XT_LP
-    .word XT_FETCH
+    .word XT_LP_FETCH
     .word XT_DUP
     .word XT_FETCH
     .word XT_SWAP

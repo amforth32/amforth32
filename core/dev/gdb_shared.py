@@ -26,12 +26,12 @@ CodeFlashStart = get_sym_val("flash.low", 0)
 CodeFlashEnd = get_sym_val("flash.max", 0)
 CodeRamStart = get_sym_val("dp0.ram", 0)
 CodeRamEnd = get_sym_val("dp.ram.max", 0)
-RAM_lower_datastack = get_sym_val("RAM_lower_datastack", 0x20000000)
-RAM_upper_datastack = get_sym_val("RAM_upper_datastack", 0x20000080)
-RAM_lower_returnstack = get_sym_val("RAM_lower_returnstack", 0x20000080)
-RAM_upper_returnstack = get_sym_val("RAM_upper_returnstack", 0x20000100)
-RAM_lower_userarea = get_sym_val("RAM_lower_userarea", 0x20000100)
-RAM_upper_userarea = get_sym_val("RAM_upper_userarea", 0x20000188)
+RAM_lower_datastack = get_sym_val("RAM_lower_TASK0_datastack", 0x20000000)
+RAM_upper_datastack = get_sym_val("RAM_upper_TASK0_datastack", 0x20000080)
+RAM_lower_returnstack = get_sym_val("RAM_lower_TASK0_returnstack", 0x20000080)
+RAM_upper_returnstack = get_sym_val("RAM_upper_TASK0_returnstack", 0x20000100)
+RAM_lower_userarea = get_sym_val("RAM_lower_TASK0_userarea", 0x20000100)
+RAM_upper_userarea = get_sym_val("RAM_upper_TASK0_userarea", 0x20000188)
 
 def value(val):
     # If val is in the flash code range, treat it as address

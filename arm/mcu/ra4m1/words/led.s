@@ -35,3 +35,18 @@ CODEWORD  "led-on", LED_ON
    ldr r0, =RA4_P102PFS
    str r1, [r0]
 NEXT
+END LED_ON
+
+CODEWORD "led?", LEDQ
+    savetos
+    movs TOS , #0
+    ldr     r0, =RA4_P102PFS
+    ldr     r0, [r0]
+    tst     r0, (1<<1)              @ test bit 1
+    ite     ne
+    mvnne   TOS, #0                @ true: TOS = -1 (0xFFFFFFFF)
+    moveq   TOS, #0                @ false: TOS = 0
+NEXT
+END LEDQ
+   
+

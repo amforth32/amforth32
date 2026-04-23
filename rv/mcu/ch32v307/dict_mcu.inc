@@ -1,13 +1,10 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
-# MFD wrong chip .include "words/pll.s"
-
 .include "words/usart.s"
 .include "words/gpio.s"
 
 .include "words/led.s"
-.include "words/blink.s"
-
+.include "words/starting.s"
 .include "words/applturnkey.s"
 
 .include "words/type0.s" 
@@ -24,13 +21,14 @@
 .include "words/t9.s"
 .endif
 
-.include "words/usb.s"
-
 .if WANT_FLOAT
     .include "words/float.s"
 .endif
 
-#.include "words/pc.s"
-#.include "words/fast.s"
-
 .include "words/wordswap.s"
+
+.if WANT_USB == YES
+#.include "words/usb-new.s"
+.include "words/usbhs.s"
+.endif 
+
