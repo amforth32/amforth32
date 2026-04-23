@@ -2,6 +2,6 @@
 # Helper word for 
 
 CODEWORD "(exiti)", EXITI /* return from interrupt handler; compiled by ;i. */
-    # TODO: this likely needs more work
-    bx lr
+     add sp , sp , #4
+     pop {r4-r11,pc}
 END EXITI

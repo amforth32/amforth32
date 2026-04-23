@@ -70,8 +70,8 @@
 
 .equ WANT_FLOAT , NO
 
-.equ WANT_DEBUGGER, YES
-.equ WANT_TRANSPILER, YES
+.equ WANT_DEBUGGER, NO
+.equ WANT_TRANSPILER, NO
 
 .equ WANT_CASE         , YES
 .equ WANT_MATCH        , YES

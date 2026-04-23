@@ -260,13 +260,13 @@ SECTIONS
     {
         . = ALIGN(256) ;
         
-        PROVIDE(RAM_lower_fi = . ) ;
+        PROVIDE(RAM_lower_forthvector = . ) ;
         . = . + 256 ;
-        PROVIDE(RAM_upper_fi = . ) ;
+        PROVIDE(RAM_upper_forthvector = . ) ;
 
     } >RAM :forth_ram
 
-	ASSERT(RAM_upper_res <= RAM_lower_fi ,"*ERROR* amramres and amramlo overlap")
+	ASSERT(RAM_upper_res <= RAM_lower_forthvector ,"*ERROR* amramres and amramlo overlap")
 
 	/* 
 		amramhi contains:
@@ -303,7 +303,7 @@ SECTIONS
 
     } >RAM :forth_ram
 
-	ASSERT(RAM_upper_fi <= vp0 ,"*ERROR* amramlo and amramhi overlap") 
+	ASSERT(RAM_upper_forthvector <= vp0 ,"*ERROR* amramlo and amramhi overlap") 
 
 	/* Sections at the high end of RAM */
 

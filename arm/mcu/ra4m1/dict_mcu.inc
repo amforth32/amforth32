@@ -11,3 +11,4 @@
 
 .include "words/dwt.s"
 .include "words/gpio.s"
+.include "words/systick.s"

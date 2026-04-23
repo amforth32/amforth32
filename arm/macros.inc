@@ -140,3 +140,13 @@ PFA_NOP:
    pop {r0}
 .endif
 .endm
+
+.macro RAMAFILL name, char
+/* fill [RAM_lower_name..RAM_upper_name) with char */
+    ldr r0, =RAM_lower_\name
+    ldr r1, =RAM_upper_\name
+    movs r2, #\char
+1:  strb r2, [r0], #1
+    cmp  r0, r1
+    blo  1b
+.endm
