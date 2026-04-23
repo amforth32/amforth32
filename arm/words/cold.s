@@ -5,6 +5,14 @@ CODEWORD "cold", COLD /* ( i*x -- )(R: j*y -- ) assembler part of startup sequen
 
    MCUs may override this to inject additional initialization at specific points.
 */
+
+.if WANT_DSPCHECK==YES
+    RAMAFILL runover     , 0x66  /* b before - overflow  */
+    RAMAFILL datastack   , 0x44  /* D DATASTACK          */
+    RAMAFILL rununder    , 0x77  /* w after  - underflow */
+    RAMAFILL returnstack , 0x55  /* U returnstack        */
+.endif
+
    ldr r0, =RAM_upper_returnstack
    mov sp, r0
    ldr DSP, =RAM_upper_datastack
