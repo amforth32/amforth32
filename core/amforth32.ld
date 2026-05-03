@@ -264,6 +264,10 @@ SECTIONS
         . = . + 256 ;
         PROVIDE(RAM_upper_forthvector = . ) ;
 
+        PROVIDE(RAM_lower_exceptionstack = . ) ;
+        . = . + 256 ;
+        PROVIDE(RAM_upper_exceptionstack = . ) ;
+
     } >RAM :forth_ram
 
 	ASSERT(RAM_upper_res <= RAM_lower_forthvector ,"*ERROR* amramres and amramlo overlap")

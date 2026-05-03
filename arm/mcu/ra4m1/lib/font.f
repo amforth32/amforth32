@@ -28,6 +28,9 @@
 \
 \ Data extracted from the above and modifed for use with amforth32 GPLv3
 
+\ NB font.f is available in words/font.s so there is not need to load
+\ if (already) included in dict_mcu.inc
+
 \ >flash
 create font
 $00 c, $00 c, $00 c, $00 c, $00 c, $00 c, \ 0 '?'

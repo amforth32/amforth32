@@ -39,6 +39,7 @@ END LED_ON
 
 CODEWORD "led?", LEDQ
     savetos
+    movs TOS , #0
     ldr     r0, =RA4_P102PFS
     ldr     r0, [r0]
     tst     r0, (1<<1)              @ test bit 1
@@ -48,3 +49,4 @@ CODEWORD "led?", LEDQ
 NEXT
 END LEDQ
    
+

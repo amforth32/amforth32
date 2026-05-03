@@ -18,7 +18,7 @@
 
 
 .equ WANT_TIMER6       , NO
-.equ WANT_SYSTICK      , NO
+.equ WANT_SYSTICK      , YES
 
 .equ WANT_PORTD        , NO
 .equ WANT_PORTC        , YES 

@@ -3,12 +3,7 @@
 .equ SYST_CVR,   0xE000E018
 .equ SYST_CALIB, 0xE000E01C
 
-@ -------------------------------------------------------
-@ SYSTICK-INIT  ( -- )
-@ SysTick max count, processor clock, interrupt enabled
-@ -------------------------------------------------------
-
-CODEWORD "systick.init", SYSTICK_INIT /* ( -- ) init (but do not start) systick */
+CODEWORD "systick.init", SYSTICK_INIT /* ( -- ) init with $00ffffff count (but do not start) systick */
     ldr     r0, =SYST_RVR
     ldr     r1, =0x00FFFFFF        @ max count
     str     r1, [r0]
@@ -18,6 +13,16 @@ CODEWORD "systick.init", SYSTICK_INIT /* ( -- ) init (but do not start) systick 
     str     r1, [r0]
     NEXT
 END SYSTICK_INIT
+
+CODEWORD "systick!" , SYSTICK_STORE /* ( n -- ) write max count */
+    ldr     r0, =SYST_RVR
+    str     TOS , [r0]
+    ldr     r0, =SYST_CVR
+    mov     r1, #0
+    str     r1, [r0]               @ clear CVR — forces reload
+    loadtos
+    NEXT
+END SYSTICK_STORE   
 
 CODEWORD "systick-", SYSTICKMINUS /* ( -- ) clear systick interrupt flag */
     ldr     r0, =SYST_CSR
@@ -55,16 +60,7 @@ CODEWORD "-systick", MINUSSYSTICK /* ( -- ) stop systick */
     NEXT
 END MINUSSYSTICK
 
-CODEWORD "+int" , PLUSINT
-    cpsie   i                      @ clear PRIMASK, enable all maskable interrupts
-    NEXT
-END PLUSINT    
 
-CODEWORD "-int" , MINUSINT
-    cpsid   i                      @ set PRIMASK, disable all maskable interrupts
-    NEXT
-END MINUSINT
-
-CONSTANT "systick#" SYSTICKHASH , 15
+CONSTANT "systick#" SYSTICKHASH , 15 /* ( -- n ) ISR slot number */
 END SYSTICKHASH
 

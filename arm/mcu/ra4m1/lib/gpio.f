@@ -1,3 +1,5 @@
+-int
+
 \ PCNTR1 PODR PDR
 \ 00..15 direction 0 input 1 ouput PDR
 \ 16..31 output 0 low 1 high PODR
@@ -52,11 +54,6 @@
  
 \ https://github.com/adafruit/Adafruit-GFX-Library/blob/master/glcdfont.c
 \ from above 5x7 font adjusted to be a 6x8 font ( 1 << and trailing col)
-
-#include font.f
-
-\ font should be sent >flash but left as current memmode 
-
 
 \ Procedure for Specifying the Pin Functions
 \ To specify the I/O pin functions:
@@ -129,130 +126,34 @@ $33313223 , $400408B4 , $40040048 , $2000 , \ M10 P213 PLXLED
 : D06+ [ 6 gpio.mask ] literal [ 6 gpio.posr ] literal h! ;
 : D06- [ 6 gpio.mask ] literal [ 6 gpio.porr ] literal h! ;
 
+: D07+ [ 7 gpio.mask ] literal [ 7 gpio.posr ] literal h! ;
+: D07- [ 7 gpio.mask ] literal [ 7 gpio.porr ] literal h! ;
+
 \ PoP set D6 as output 
 \ need pfs.unlock first, but led-init unlocks in applturnkey
 
+\ : ~D06 1 #14 lshift [ 6 gpio.pfs ] literal ! ;
 : D06~ %100 [ 6 gpio.pfs ] literal ! ;
+: D07~ %100 [ 7 gpio.pfs ] literal ! ;
 
 \ There is always synonym / alias 
 
-\ ======================================================================
-\ LED MATRIX 8 ROWS by 12 COLUMNS CHARLIEPLEXED 
-\ ======================================================================
-
-\ The charliplex array is modeled as an array of leds, each with a
-\ cartesian position (row,col)
-
-\ (0,0) ..... (0,11)
-\ .
-\ .
-\ .
-\ (7,0) ..... (7,11)
-
-\ To light an LED need to know which of the (internal) pins M00..M10 to
-\ make high and which make low (having first made all of M00..M10 high z
-\ - inputs) This is provided by m.map which is a lookup table. The entry
-\ for row*12+col is a byte with the high pin number in the upper nibble
-\ and the low pin number in the lower nibble. So (0,0) maps to M07 high
-\ and M03 low etc. 
-
-create m.map 
-$73 c, $37 c, $74 c, $47 c, $34 c, $43 c, $78 c, $87 c, $38 c, $83 c, $48 c, $84 c,
-$70 c, $07 c, $30 c, $03 c, $40 c, $04 c, $80 c, $08 c, $76 c, $67 c, $36 c, $63 c,
-$46 c, $64 c, $86 c, $68 c, $06 c, $60 c, $75 c, $57 c, $35 c, $53 c, $45 c, $54 c,
-$85 c, $58 c, $05 c, $50 c, $65 c, $56 c, $71 c, $17 c, $31 c, $13 c, $41 c, $14 c,
-$81 c, $18 c, $01 c, $10 c, $61 c, $16 c, $51 c, $15 c, $72 c, $27 c, $32 c, $23 c,
-$42 c, $24 c, $82 c, $28 c, $02 c, $20 c, $62 c, $26 c, $52 c, $25 c, $12 c, $21 c,
-$7a c, $a7 c, $3a c, $a3 c, $4a c, $a4 c, $8a c, $a8 c, $0a c, $a0 c, $6a c, $a6 c,
-$5a c, $a5 c, $1a c, $a1 c, $2a c, $a2 c, $79 c, $97 c, $39 c, $93 c, $49 c, $94 c,
-
-: m.highz ( -- ) \ Make all internal pins M00..M10 high Z - inputs 
-    0 $4004080c ! 0 $40040810 ! 0 $4004082c ! 0 $40040830 !
-    0 $40040834 ! 0 $4004083c ! 0 $40040890 ! 0 $40040894 !
-    0 $40040898 ! 0 $400408b0 ! 0 $400408b4 !
-;
-
-\ set internal charlieplex pin Mn high or low where n=0..10 from M00..M10
-\ this relies on M00..M10 starting at row #20 in the gpio table 
-
-: m.high ( n -- ) #20 + 5 swap gpio.pfs ! ;
-: m.low  ( n -- ) #20 + 4 swap gpio.pfs ! ;
-
-: m.led ( i j -- ) \ turn on LED array (row=i,col=j) 
-    m.highz
-    swap #12 * + m.map + c@   \ find (row=i,col=j)
-    dup #4 rshift m.high      \ high nibble is high
-        %1111 and m.low       \  low nibble is low 
-;
-
-variable m.pixtau
-
-: m.col ( i a  -- ) \ display one column/byte 
-    8 0 do
-\        dwt@ 10000 + m.pixtau ! begin        
-            dup c@ 1 i lshift and if \ i a
-                over i swap  m.led
-            then
-\        dwt@ m.pixtau @ - 0> until
-    loop 2drop
-;
-
-\ some example PoP words
-
-\ uses words/dwt.s to provide the timing functions for
-\ persistence of vision. Via timer interrupts would be 
-\ better. Minimal attention has been paid to aesthetics
-\ at the begining/end of string to be scrolled. The 12
-\ col rolling window simply rolls into the 0 filled buffer.    
-
-: loops ( n -- ) >in @ swap 0 do dup >in ! interpret loop drop ;
-
-variable m.buf #21 cells allot \ max strlen is 12 
-variable m.tau                 \
-#48000 #100 * constant m.ftime \ rolling window of 12 cols/bytes 
-                               \ is displayed for this time 100ms
-
-\ usage
-\ start the timer  
-
-dwt.init +dwt
-
-\ s" amforth32" m.play 
-\ timeout 30 
-\ 5 loops s"  amforth32" m.play
-\ NB the extra space at the front helps with aesthetics 
-
-: m.play ( a n -- )
-    m.buf #21 cells 0 fill
-    #12 min dup >r 0 ?do
-        dup i + c@ 6 * font + m.buf i 6 * + 6 move
-    loop drop
-    m.buf 6 r> * + m.buf do
-        dwt@ m.ftime + m.tau !
-        begin 
-            #12 0 do
-                i j i + m.col
-            loop 
-        dwt@ m.tau @ - 0> until 
-    loop
-    m.highz
-;
-
-\ This display part of the font
-\ timeout 30 
-\ m.font
-
-: m.font ( -- )
-    [char] z 6 * font + [char] a 6 * font + do
-        dwt@ m.ftime + m.tau !
-        begin 
-            #12 0 do
-                i j i + m.col
-            loop 
-        dwt@ m.tau @ - 0> until 
-    loop
-    m.highz
-;        
+  
 
 
+\ $40006300 constant IELSR0
+\ $40006004 constant IRQCR4
+\ $E000E100 constant NVIC.ISER0
+
+\ : irq4.isr
+\     IELSR0 @ 1 16 lshift invert and IELSR0 !   \ clear IR bit 16 only
+\     led? if led-off else led-on then
+\ ;i
+
+\ : irq4.init
+\     $05 IELSR0 !              \ map IRQ4 event 0x05 to NVIC slot 0
+\     $00 IRQCR4 c!             \ falling edge
+\     $01 NVIC.ISER0 !          \ enable NVIC slot 0
+\     ['] irq4.isr 16 trap!     \ install Forth handler at vector 16
+\ ;
 

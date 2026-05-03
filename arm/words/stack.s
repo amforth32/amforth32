@@ -1,6 +1,6 @@
 
 CODEWORD  "depth", DEPTH /* ( -- n ) n is current dept of the data stack */
-  ldr r1, =RAM_upper_datastack 
+  ldr r1, [UP,#USER_SP0]
   sub r1, DSP 
   savetos
   asrs TOS, r1, #2 
@@ -10,7 +10,7 @@ END DEPTH
 CODEWORD  "rdepth", RDEPTH /* ( -- n ) n is current dept of the return stack */
   savetos
   mov TOS, sp
-  ldr r1, =RAM_upper_returnstack
+  ldr r1, [UP,#USER_RP0]
   sub r1, TOS 
   asrs TOS, r1, #2 
   NEXT

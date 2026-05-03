@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
-VALUE "lp0", LP0, RAM_upper_leavestack /* start of the leave stack */
+VALUE "lp0", LP0, RAM_upper_TASK0_leavestack /* start of the leave stack */
 END LP0
 
 VARIABLE "lp", LP /* leave stack pointer */

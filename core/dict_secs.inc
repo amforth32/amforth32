@@ -18,6 +18,8 @@
 .include "words/rec-split.s"
 .include "words/forth-recognizer.s"
 
+.include "words/mtask-common.s"
+
 # these move from pri-
 .include "words/dabs.s"
 .include "words/base.s"
@@ -270,3 +272,5 @@
 .include "words/empty.s"
 .include "words/builds.s"
 
+.include "words/ms.s"
+.include "words/led-task.s"

@@ -2,22 +2,22 @@
 IRQ_VECTORS:
 /* .include "arm/vectors.s" */
 
-.word RAM_upper_returnstack @ 00: Stack top address
+.word RAM_upper_TASK0_returnstack @ 00: Stack top address
 
 .word PFA_COLD        @ 01: Reset Vector
 .word isrstub         @ 02: NMI
-.word faulthandler    @ 03: HARD fault
-.word nullhandler     @ 04: MPU fault
-.word nullhandler     @ 05: bus fault
-.word nullhandler     @ 06: usage fault
+.word 0               @ 03: HARD fault
+.word 0     @ 04: MPU fault
+.word 0     @ 05: bus fault
+.word 0     @ 06: usage fault
 .word 0               @ 07: Reserved
 .word 0               @ 08: Reserved
 .word 0               @ 09: Reserved
 .word 0               @ 10: Reserved
-.word nullhandler     @ 11: SVCall handler
-.word nullhandler     @ 12: Debug monitor handler
+.word 0     @ 11: SVCall handler
+.word 0     @ 12: Debug monitor handler
 .word 0               @ 13: Reserved
-.word nullhandler     @ 14: PendSV handler
+.word 0     @ 14: PendSV handler
 .word isrstub         @ 15: SysTick handler
 
 
@@ -32,7 +32,7 @@ IRQ_VECTORS:
     
 */
 
-.word 0 @ 16: ICU.IELSR0
+.word isrstub @ 16: ICU.IELSR0
 .word 0 @ 17: ICU.IELSR1
 .word 0 @ 18: ICU.IELSR2
 .word 0 @ 19: ICU.IELSR3

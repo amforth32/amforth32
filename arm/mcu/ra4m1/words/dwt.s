@@ -83,7 +83,32 @@ CODEWORD "dwt-us" , DWT_US /* ( n -- ) delay (busy) n microseconds (max int dela
     loadtos 
     NEXT
 END DWT_US
-        
+
+#======================================================================
+# transpiling dwt-add.f on 2026/04/26 07:25:34
+# : dwt.dt \# ( xt -- n ) ticks taken to execute XT at system clock
+#     >r dwt@ >r rp@ cell+ @ execute dwt@ r> - rdrop
+# ;
+# 
+
+# ----------------------------------------------------------------------
+COLON "dwt.dt", DWTDOTDT /* ( xt -- n ) ticks taken to execute XT at system clock  */
+	.word XT_TO_R
+	.word XT_DWT_FETCH
+	.word XT_TO_R
+	.word XT_RP_FETCH
+	.word XT_CELLPLUS
+	.word XT_FETCH
+	.word XT_EXECUTE
+	.word XT_DWT_FETCH
+	.word XT_R_FROM
+	.word XT_MINUS
+	.word XT_RDROP
+	.word XT_EXIT
+END DWTDOTDT
+# ----------------------------------------------------------------------
+#=====================================================================
+
 /*
 > show dwt
 LFA..... (LFA)... FFA..... (FFA)... NFA..... XT...... (XT).... 

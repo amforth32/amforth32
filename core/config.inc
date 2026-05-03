@@ -61,10 +61,21 @@
     See core/words/g-mark.s and core/words/qnop.s.
 */
 
+
+# Multitasking
+# TASKN 2..
+
+.set TASKN , 4
+.global TASKN
+
 # Feature flags
 
 .equ YES , 1
 .equ NO  , 0
+
+# Cortex M
+
+.equ CORTEXM , YES
 
 # Optional Forth word groups
 
@@ -85,4 +96,4 @@
 # Other configuration parameters
 
 # This can also be enabled with an environment variable with the same name
-# .equ WANT_IGNORECASE, YES
+.equ WANT_IGNORECASE, YES

@@ -4,7 +4,7 @@ NEXT
 
 COLON "appl-turnkey", APPLTURNKEY
   .word XT_DECIMAL
-  .word XT_DELAY_INIT
+#  .word XT_DELAY_INIT
   .word XT_UART_INIT
 
   @ Emit the AmForth greeting
