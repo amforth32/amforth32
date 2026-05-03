@@ -12,6 +12,10 @@ COLON "appl-turnkey", APPLTURNKEY
   .word XT_SPACE,XT_ENV_BOARD,XT_TYPE, XT_CR
   .word XT_ENV_DOT_BUILD
 
+  @ Turn on the free running counter
+  .word XT_MSDOTINIT
+
+
   @ Turn on the onboard LED to indicate that we successfully got here
   @ If the bootloader is in control the LED is softly pulsing.
   .word XT_LED_INIT, XT_LED_ON

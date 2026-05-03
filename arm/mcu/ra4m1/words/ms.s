@@ -60,6 +60,11 @@ MS_0001: /* begin */
 END MS
 # ----------------------------------------------------------------------
 
+CODEALIAS "ms.init", MSDOTINIT, DWTDOTINIT /* ( -- ) start free running counter that back ms */ 
+END MSDOTINIT
+
+CODEALIAS "tick@", TICKFETCH, DWT_FETCH /* ( -- ) fetch free running counter value */ 
+END TICKFETCH
 
 
 
