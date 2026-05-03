@@ -7,3 +7,5 @@
 
 // RAM 1M (seel linux.ld)
 .equ rampool_size, 200*1024 // 200K
+
+.equ CORTEXM , NO
