@@ -154,8 +154,8 @@ CODEWORD "cold", COLD /* ( i*x -- )(R: j*y -- ) assembler part of the boot seque
 
   # This is the same as in quit, in order to prepare for whatever the user might want to do within "init".
 
-  la s5, RAM_upper_returnstack
-  la s4, RAM_upper_datastack # TW hack
+  la s5, RAM_upper_TASK0_returnstack
+  la s4, RAM_upper_TASK0_datastack
 .if WANT_DEBUGGER == YES
   mv s7, zero # zero out the DEBUG register
 .endif

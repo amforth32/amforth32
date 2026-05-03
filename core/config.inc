@@ -73,7 +73,7 @@
 .equ YES , 1
 .equ NO  , 0
 
-# Cortex M
+# Cortex M default should be yes
 
 .equ CORTEXM , YES
 
