@@ -1,12 +1,18 @@
 /*
-Found 1 name(s) that resolve to multiple XT symbols:
+Found 3 name(s) that resolve to multiple XT symbols:
   name='1ms':
-    xtname='XT_N1MS'  file='./arm/words/ms.s'
-    xtname='XT_1MS'  file='./arm/mcu/ra4m1/words/ms.s'
+    xtname='XT_N1MS'  file='./rv/words/ms.s'
+    xtname='XT_1MS'  file='./rv/mcu/ch32v307/words/ms.s'
+  name='led.init':
+    xtname='XT_LEDDOTINIT'  file='./rv/mcu/ch32v307/words/led.s'
+    xtname='XT_LED_INIT'  file='./rv/mcu/ch32v307/words/led.s'
+  name='^led':
+    xtname='XT_CARETLED'  file='./rv/mcu/ch32v307/words/led.s'
+    xtname='XT_TOGLED'  file='./rv/mcu/ch32v307/words/led.s'
 */
 #======================================================================
 #======================================================================
-# transpiling mtask-common.f on 2026/05/02 03:31:31
+# transpiling ../../../../forth/mtask-common.f on 2026/05/08 17:04:31
 # \# # SPDX-License-Identifier: GPL-3.0-only
 # 
 # {
@@ -19,6 +25,14 @@ Found 1 name(s) that resolve to multiple XT symbols:
 # 
 # : vacant \# ( -- ) a task that does nothing
 #     begin pause again
+# ;
+# 
+# : reserve \# ( a -- ) wait for resource to be available and claim
+#     begin pause dup @ until false swap !
+# ;
+# 
+# : release \# ( a -- ) mark resource as not available
+#     true swap !
 # ;
 # 
 # :~ init-user \# ( -- )
@@ -67,6 +81,26 @@ Found 1 name(s) that resolve to multiple XT symbols:
 #     >body r> symbol USER_IP + !
 # ;
 # 
+# : task.warm \# ( n -- ) reset task n
+#     dup 1 taskn 1- within not if symbol ENTASK throw then
+#     task-block * symbol RAM_lower_TASK0_userarea + >r
+# 
+#     r@ symbol USER_XT  + @ >body r@ symbol USER_IP + !
+#     r@ symbol USER_SP0 + @       r@ symbol USER_SP + !
+#     r@ symbol USER_RP0 + @       r@ symbol USER_RP + !
+#     r@ symbol USER_LP0 + @       r@ symbol USER_LP + !
+# 
+#     0 r@ symbol USER_LOOP_INDEX + !
+#     0 r@ symbol USER_LOOP_LIMIT + !
+#     0 r@ symbol USER_STATUS     + !
+# 
+#     rdrop
+# ;
+# 
+# : task.warm-all \# ( -- ) reset all tasks execept operator
+#     taskn 1- 1 ?do i task.warm loop
+# ;
+# 
 # : +task \# ( n -- ) make task n active
 #     dup 1 taskn 1- within not if symbol ENTASK throw then
 #     task-block * symbol RAM_lower_TASK0_userarea +
@@ -83,7 +117,7 @@ Found 1 name(s) that resolve to multiple XT symbols:
 #     symbol XT_NOP is pause
 # ;
 # 
-# : multi \# ( -- ) enable task switchin
+# : multi \# ( -- ) enable task switching
 #     ['] mtpause is pause
 # ;
 # 
@@ -163,6 +197,25 @@ VACANT_0001: /* begin */
 	.word XT_DOBRANCH,VACANT_0001 /* again */
 	.word XT_EXIT
 END VACANT
+# ----------------------------------------------------------------------
+COLON "reserve", RESERVE /* ( a -- ) wait for resource to be available and claim */
+RESERVE_0001: /* begin */
+	.word XT_PAUSE
+	.word XT_DUP
+	.word XT_FETCH
+	.word XT_DOCONDBRANCH,RESERVE_0001 /* until */
+	.word XT_FALSE
+	.word XT_SWAP
+	.word XT_STORE
+	.word XT_EXIT
+END RESERVE
+# ----------------------------------------------------------------------
+COLON "release", RELEASE /* ( a -- ) mark resource as not available  */
+	.word XT_TRUE
+	.word XT_SWAP
+	.word XT_STORE
+	.word XT_EXIT
+END RELEASE
 # ----------------------------------------------------------------------
 # ----------------------------------------------------------------------
 NONAME "init-user", INITMINUSUSER /* ( -- )  */
@@ -367,6 +420,101 @@ TASKBANG_0001: /* then */
 	.word XT_EXIT
 END TASKBANG
 # ----------------------------------------------------------------------
+COLON "task.warm", TASKDOTWARM /* ( n -- ) reset task n  */
+	.word XT_DUP
+	.word XT_ONE
+	.word XT_TASKN
+	.word XT_1MINUS
+	.word XT_WITHIN
+	.word XT_NOT
+	.word XT_DOCONDBRANCH,TASKDOTWARM_0001 /* if */
+	.word XT_DOLITERAL
+	.word ENTASK
+	.word XT_THROW
+TASKDOTWARM_0001: /* then */
+	.word XT_TASK_BLOCK
+	.word XT_STAR
+	.word XT_DOLITERAL
+	.word RAM_lower_TASK0_userarea
+	.word XT_PLUS
+	.word XT_TO_R
+	.word XT_R_FETCH
+	.word XT_DOLITERAL
+	.word USER_XT
+	.word XT_PLUS
+	.word XT_FETCH
+	.word XT_TO_BODY
+	.word XT_R_FETCH
+	.word XT_DOLITERAL
+	.word USER_IP
+	.word XT_PLUS
+	.word XT_STORE
+	.word XT_R_FETCH
+	.word XT_DOLITERAL
+	.word USER_SP0
+	.word XT_PLUS
+	.word XT_FETCH
+	.word XT_R_FETCH
+	.word XT_DOLITERAL
+	.word USER_SP
+	.word XT_PLUS
+	.word XT_STORE
+	.word XT_R_FETCH
+	.word XT_DOLITERAL
+	.word USER_RP0
+	.word XT_PLUS
+	.word XT_FETCH
+	.word XT_R_FETCH
+	.word XT_DOLITERAL
+	.word USER_RP
+	.word XT_PLUS
+	.word XT_STORE
+	.word XT_R_FETCH
+	.word XT_DOLITERAL
+	.word USER_LP0
+	.word XT_PLUS
+	.word XT_FETCH
+	.word XT_R_FETCH
+	.word XT_DOLITERAL
+	.word USER_LP
+	.word XT_PLUS
+	.word XT_STORE
+	.word XT_ZERO
+	.word XT_R_FETCH
+	.word XT_DOLITERAL
+	.word USER_LOOP_INDEX
+	.word XT_PLUS
+	.word XT_STORE
+	.word XT_ZERO
+	.word XT_R_FETCH
+	.word XT_DOLITERAL
+	.word USER_LOOP_LIMIT
+	.word XT_PLUS
+	.word XT_STORE
+	.word XT_ZERO
+	.word XT_R_FETCH
+	.word XT_DOLITERAL
+	.word USER_STATUS
+	.word XT_PLUS
+	.word XT_STORE
+	.word XT_RDROP
+	.word XT_EXIT
+END TASKDOTWARM
+# ----------------------------------------------------------------------
+COLON "task.warm-all", TASKDOTWARMMINUSALL /* ( -- ) reset all tasks execept operator */
+	.word XT_TASKN
+	.word XT_1MINUS
+	.word XT_ONE
+	.word XT_QDOCHECK, XT_DOCONDBRANCH,TASKDOTWARMMINUSALL_0001 /* ?do */
+	.word XT_DODO
+TASKDOTWARMMINUSALL_0002: /* do */
+	.word XT_I
+	.word XT_TASKDOTWARM
+	.word XT_DOLOOP,TASKDOTWARMMINUSALL_0002 /* loop */
+TASKDOTWARMMINUSALL_0001: /* (for ?do IF required) */
+	.word XT_EXIT
+END TASKDOTWARMMINUSALL
+# ----------------------------------------------------------------------
 COLON "+task", PLUSTASK /* ( n -- ) make task n active */
 	.word XT_DUP
 	.word XT_ONE
@@ -428,7 +576,7 @@ COLON "single", SINGLE /* ( -- ) disable task switching  */
 	.word XT_EXIT
 END SINGLE
 # ----------------------------------------------------------------------
-COLON "multi", MULTI /* ( -- ) enable task switchin  */
+COLON "multi", MULTI /* ( -- ) enable task switching  */
 	.word XT_DOXLITERAL
 	.word XT_MTPAUSE
 	.word XT_DOXLITERAL

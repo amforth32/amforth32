@@ -24,7 +24,7 @@
 .include "words/t9.s"
 .endif
 
-.include "words/usb.s"
+#.include "words/usb.s"
 
 .if WANT_FLOAT
     .include "words/float.s"
@@ -34,3 +34,5 @@
 #.include "words/fast.s"
 
 .include "words/wordswap.s"
+.include "words/usb-new.s"
+.include "words/usb-pure.s"

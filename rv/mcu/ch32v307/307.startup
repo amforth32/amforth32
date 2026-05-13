@@ -436,7 +436,11 @@ _master_int:   # interrupt entry
      #           ra,t0-t2,a0-a1,a2-a7,t3-t6
      
      # if non-zero trap in RAM then assume colon word and use
-     # else look in C _vector_base and use 
+     # else look in C _vector_base and use
+
+     la      t0, IN_ISRQ_ram # set in-isr? software flag
+     li      t1, -1          # 0 is NOT in isr and -1 is
+     sw      t1, 0(t0)       # in (any) isr 
 
      csrr t0, mcause         # what caused the trap 
      li t1, 0x7FFFFFFF       # %0111111.....1111
@@ -447,7 +451,9 @@ _master_int:   # interrupt entry
      add t1,t1,t0            # [t1] should be XT of isr
      lw t2, (t1)             # t2 has XT
 
-     beq t2,zero,2f          # 0= then fall back on any C isr 
+     beq t2,zero,2f          # 0= then fall back on any C isr
+
+     /* push Forth VM registers to special stack */ 
 
      sw s1,   0(s11)         # this where Forth context save   
      sw s2,   4(s11)
@@ -461,6 +467,28 @@ _master_int:   # interrupt entry
      sw s10, 36(s11)
 
      addi s11, s11, 40 
+
+     /*
+        required so that isr has access for loops
+        s6 restored to interrupted task value by
+        pop in exiti
+     */  
+     
+     la s6, ISR_UP
+
+     /*
+        run Forth ISR on its own DSP RSP
+        for RV this is not needed as will
+        run on the interrupted tasks stacks
+
+     lw s4, USER_SP0(s6)
+     lw s5, USER_RP0(s6)
+
+        currently THIS IS THE flashed case
+        need to remake next time
+        Sat 09 May 26 08:08:33
+
+     */
 
      mv s1, t2               # Forth XT of colon word found in
 

@@ -3,6 +3,10 @@
 
 .globl PFA_COLD 
 
+
+.equ cellsize , 4 
+.include "user.inc"
+
 # startup ----------------------------------------------------------------------
 
 # this is placed in section .init but is included here are values from config.inc

@@ -17,5 +17,10 @@ CODEWORD "(exiti)", EXITI /* return from interrupt handler; compiled by ;i. */
      lw s9,  32(s11)
      lw s10, 36(s11)
 
+     /* clear in isr software flag */
+     
+     la      t0, IN_ISRQ_ram
+     sw      zero, 0(t0)
+
      mret 
 END EXITI

@@ -19,6 +19,7 @@
 .include "words/forth-recognizer.s"
 
 .include "words/mtask-common.s"
+.include "words/isr-common.s"
 
 # these move from pri-
 .include "words/dabs.s"

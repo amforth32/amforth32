@@ -1,11 +1,10 @@
 CODEWORD "mtpause", MTPAUSE
 
     /* Skip if in interrupt (using software flag) */
-    /*
-    la      t0, in_isr_flag
+
+    la      t0, IN_ISRQ_ram
     lw      t1, 0(t0)
     bnez    t1, MTPAUSE_done
-    */
 
     csrr    t1, 0x800            /* save interrupt state */
     li      t0, 0x6000           /* disable...           */

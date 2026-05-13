@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: GPL-3.0-only
 COLON "wch-turnkey", APPLTURNKEY # ( -- ) SYSTEM: 
 
-#  .word XT_LED_INIT
-#  .word XT_MINUSLED
+  .word XT_LED_INIT , XT_MINUSLED    
+  .word XT_MSDOTINIT 
 
   .word XT_DECIMAL
 
