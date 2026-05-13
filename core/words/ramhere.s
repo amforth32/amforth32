@@ -21,3 +21,61 @@ NONAME "ram,", RAMCOMMA /* ( x -- ) allocate 1 cell in RAM, store x in it, compi
         .word XT_STORE /* store x in the allocated space */
         .word XT_EXIT
 END RAMCOMMA
+
+#======================================================================
+# transpiling nram.f on 2026/05/13 10:49:15
+# : nram, \# ( x n -- ) allocate n cells in ram, store x in each , store starting RAM address in dictionary
+#     memmode if
+#         dup >r 0 ?do dup vp i cells + ! loop drop
+#         vp , r> cells vallot
+#     else
+#         dp cell+ , 0 ?do dup , loop drop
+#     then
+# ;
+# 
+# 
+
+# ----------------------------------------------------------------------
+COLON "nram,", NRAMCOMMA /* ( x n -- ) allocate n cells in ram, store x in each , store starting RAM address in dictionary  */
+	.word XT_MEMMODE
+	.word XT_DOCONDBRANCH,NRAMCOMMA_0001 /* if */
+	.word XT_DUP
+	.word XT_TO_R
+	.word XT_ZERO
+	.word XT_QDOCHECK, XT_DOCONDBRANCH,NRAMCOMMA_0002 /* ?do */
+	.word XT_DODO
+NRAMCOMMA_0003: /* do */
+	.word XT_DUP
+	.word XT_VP
+	.word XT_I
+	.word XT_CELLS
+	.word XT_PLUS
+	.word XT_STORE
+	.word XT_DOLOOP,NRAMCOMMA_0003 /* loop */
+NRAMCOMMA_0002: /* (for ?do IF required) */
+	.word XT_DROP
+	.word XT_VP
+	.word XT_COMMA
+	.word XT_R_FROM
+	.word XT_CELLS
+	.word XT_VALLOT
+	.word XT_DOBRANCH,NRAMCOMMA_0004
+NRAMCOMMA_0001: /* else */
+	.word XT_DP
+	.word XT_CELLPLUS
+	.word XT_COMMA
+	.word XT_ZERO
+	.word XT_QDOCHECK, XT_DOCONDBRANCH,NRAMCOMMA_0005 /* ?do */
+	.word XT_DODO
+NRAMCOMMA_0006: /* do */
+	.word XT_DUP
+	.word XT_COMMA
+	.word XT_DOLOOP,NRAMCOMMA_0006 /* loop */
+NRAMCOMMA_0005: /* (for ?do IF required) */
+	.word XT_DROP
+NRAMCOMMA_0004: /* then */
+	.word XT_EXIT
+END NRAMCOMMA
+# ----------------------------------------------------------------------
+#=====================================================================
+#======================================================================
