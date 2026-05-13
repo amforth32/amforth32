@@ -51,3 +51,6 @@ END MSDOTINIT
 CODEALIAS "tick@", TICKFETCH, CNTPCTFETCH /* ( -- ) fetch free running counter value */ 
 END TICKFETCH
 
+CODEALIAS "ms.tickf" , MSDOTTICKF , CNTFRQFETCH
+END MSDOTTICKF
+

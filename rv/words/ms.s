@@ -45,6 +45,9 @@ MS_0001: /* begin */
 	.word XT_EXIT
 END MS
 
+CONSTANT "ms.tickf",MSDOTTICKF,10000000
+END MSDOTTICKF
+
 CODEALIAS "ms.init", MSDOTINIT, NOP /* ( -- ) start free running counter that backs ms */ 
 END MSDOTINIT
 
