@@ -34,5 +34,5 @@
 #.include "words/fast.s"
 
 .include "words/wordswap.s"
-.include "words/usb-new.s"
-.include "words/usb-pure.s"
+#.include "words/usb-new.s"
+#.include "words/usb-pure.s"
