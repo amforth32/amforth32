@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
-CODEWORD "(exiti)", EXITI /* return from interrupt handler; compiled by ;i. */
+HEADLESS "(exiti)", EXITI /* return from interrupt handler; compiled by ;i. */
 
      # context restore for regs not included in HPE 
 

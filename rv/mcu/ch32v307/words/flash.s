@@ -79,6 +79,10 @@ END TILDECSTORE_I
 
 CODEWORD "(h!i)", INT_STORE # ( -- ) 
 
+      csrr    t4, 0x800            /* save interrupt state */
+      li      t0, 0x6000           /* disable...           */
+      csrw    0x800, t0            /* ...                  */
+
       li   t3, R32_FLASH_STATR
 1:    lw   t1, 0(t3)          # contents of status
       andi t1, t1, 1          # busy
@@ -119,6 +123,8 @@ CODEWORD "(h!i)", INT_STORE # ( -- )
       li  t2, ~(1<<0)          # Set PG bit 
       and t1, t1, t2          # 
       sw  t1, 0(t0)           #
+
+      csrw    0x800, t4           /* restore interrupt state */ 
 
       NEXT
 END INT_STORE

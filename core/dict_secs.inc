@@ -202,6 +202,10 @@
 .include "words/dump.s"
 .include "words/testing.s"
 
+.if WANT_RECORD == YES
+.include "words/record.s"
+.endif
+
 .if WANT_TRANSPILER == YES
 .include "words/tpile.s"
 .endif

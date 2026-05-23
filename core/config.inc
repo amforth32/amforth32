@@ -73,6 +73,10 @@
 .equ YES , 1
 .equ NO  , 0
 
+# Record recognizer type 
+
+.equ WANT_RECORD , YES
+
 # Cortex M default should be yes
 
 .equ CORTEXM , YES

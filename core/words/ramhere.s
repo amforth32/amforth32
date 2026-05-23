@@ -36,7 +36,7 @@ END RAMCOMMA
 # 
 
 # ----------------------------------------------------------------------
-COLON "nram,", NRAMCOMMA /* ( x n -- ) allocate n cells in ram, store x in each , store starting RAM address in dictionary  */
+NONAME "nram,", NRAMCOMMA /* ( x n -- ) allocate n cells in ram, store x in each , store starting RAM address in dictionary  */
 	.word XT_MEMMODE
 	.word XT_DOCONDBRANCH,NRAMCOMMA_0001 /* if */
 	.word XT_DUP

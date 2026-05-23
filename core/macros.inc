@@ -181,6 +181,24 @@ PFA_\Label:
     .word \Label\()_ram            
 .endm
 
+.macro NONVAR Name, Label, N
+    .p2align 2,0x55
+    .word 0x03
+    .global _\Label
+    .type _\Label, STT_FUNC
+_\Label:
+XT_\Label: .word PFA_DOVARIABLE
+PFA_\Label: 
+    .section amramlo,"aw",%nobits
+    .balign 4
+    # Capture current location counter
+    .set \Label\()_ram, .          
+    .space 4*\N
+    .section amforth
+    # Write the captured address into flash
+    .word \Label\()_ram            
+.endm
+
 .macro USER Name, Label, UOffset
    HEADER Flag_variable, "\Name", \Label, PFA_DOUSER
    .word \UOffset
@@ -281,6 +299,15 @@ PFA_\Label:
     HEADER Flag_none, "\Name", \Label, PFA_DODATA
 .endm
 
+.macro NODATA Name, Label
+    .p2align 2,0x55
+    .word 0x03
+    .global _\Label
+    .type _\Label, STT_FUNC
+_\Label:
+XT_\Label: .word PFA_DODATA
+PFA_\Label: 
+.endm
 
 # ===================
 # environment contains colon words only

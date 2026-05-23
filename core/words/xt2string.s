@@ -1,9 +1,21 @@
+/*
+Found 3 name(s) that resolve to multiple XT symbols:
+  name='1ms':
+    xtname='XT_N1MS'  file='./rv/words/ms.s'
+    xtname='XT_1MS'  file='./rv/mcu/ch32v307/words/ms.s'
+  name='led.init':
+    xtname='XT_LEDDOTINIT'  file='./rv/mcu/ch32v307/words/led.s'
+    xtname='XT_LED_INIT'  file='./rv/mcu/ch32v307/words/led.s'
+  name='^led':
+    xtname='XT_CARETLED'  file='./rv/mcu/ch32v307/words/led.s'
+    xtname='XT_TOGLED'  file='./rv/mcu/ch32v307/words/led.s'
+*/
 #======================================================================
 #======================================================================
-# transpiling xt2string.f on 2026/03/13 19:41:45
+# transpiling xt2string.f on 2026/05/16 06:52:50
 # \ # SPDX-License-Identifier: GPL-3.0-only
 # 
-# : xt>string \# ( xt c-addr u ) leave string associated with name of xt
+# : xt>string \# ( xt -- c-addr u ) leave string associated with name of xt
 # {
 # /*
 # xt>string always returns a valid string. If xt>nfa leaves a zero NFA
@@ -40,6 +52,7 @@
 #            symbol XT_DODO          of s" (do)" endof
 #            symbol XT_DOLOOP        of s" (loop)" endof
 #            symbol XT_DOPLUSLOOP    of s" (+loop)" endof
+#            symbol XT_EXIT          of s" (exit)" endof
 #            drop s" nn|hl" false
 #        endcase
 #        { .else }
@@ -223,10 +236,20 @@ XT2STRING_001D: /* else */
 	STRING "(+loop)"
 	.word XT_DOBRANCH,XT2STRING_0020
 XT2STRING_001F: /* else */
+	.word XT_DOLITERAL
+	.word XT_EXIT
+	.word XT_OVER
+	.word XT_EQUAL
+	.word XT_DOCONDBRANCH,XT2STRING_0021 /* if */
+	.word XT_DROP
+	STRING "(exit)"
+	.word XT_DOBRANCH,XT2STRING_0022
+XT2STRING_0021: /* else */
 	.word XT_DROP
 	STRING "nn|hl"
 	.word XT_FALSE
 	.word XT_DROP
+XT2STRING_0022: /* then */
 XT2STRING_0020: /* then */
 XT2STRING_001E: /* then */
 XT2STRING_001C: /* then */

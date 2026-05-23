@@ -71,7 +71,39 @@ CODEWORD "led.pulse" , LED_PULSE # ( u -- ) LED: make arbitary delay for blinky 
 
      NEXT
 
-.else
+.endif
+
+.ifdef TARGET_305
+# ----------------------------------------------------------------------
+COLON "led.init", LED_INIT /* ( -- ) init GPIO onboard LED */
+	.word XT_ZERO
+	.word XT_PLUS_PA
+	.word XT_DOLITERAL
+	.word 0b1000
+	.word XT_PLUS_PA
+	.word XT_DOLITERAL
+	.word 3
+	.word XT_PA_TILDE
+	.word XT_EXIT
+END LED_INIT
+# ----------------------------------------------------------------------
+COLON "+led", PLUSLED /* ( -- ) turn on onboard LED */
+	.word XT_DOLITERAL
+	.word 0b1000
+	.word XT_MINUS_PA
+	.word XT_EXIT
+END PLUSLED
+# ----------------------------------------------------------------------
+COLON "-led", MINUSLED /* ( -- ) turn off onboard LED */
+	.word XT_DOLITERAL
+	.word 0b1000
+	.word XT_PLUS_PA
+	.word XT_EXIT
+END MINUSLED
+# ----------------------------------------------------------------------
+.endif
+
+.ifdef TARGET_307
 
 # These are from CH32FV2x_V3xRM.PDF section 10.3.1
 #.equ R32_GPIOB_CFGLR,   0x40010C00 # PB port configuration register low
@@ -136,46 +168,46 @@ CODEWORD "^led" , TOGLED # ( -- ) LED: toggle (not) on-board LED jumpered to PC0
 2:
 NEXT 
 
-CODEWORD "led.delay" , LED_DELAY # ( -- ) LED: make arbitary delay for blinky
-.equ led_cycles , 2000000 * 8
-        li  t0 , led_cycles
-10:
-        addi t0, t0, -1
-        bne t0, zero, 10b
-NEXT
+# CODEWORD "led.delay" , LED_DELAY # ( -- ) LED: make arbitary delay for blinky
+# .equ led_cycles , 2000000 * 8
+#         li  t0 , led_cycles
+# 10:
+#         addi t0, t0, -1
+#         bne t0, zero, 10b
+# NEXT
 
-CODEWORD "led.pulse" , LED_PULSE # ( u -- ) LED: make arbitary delay for blinky u=[0..3]
-.equ led_cycles , 96000000 / 40
+# CODEWORD "led.pulse" , LED_PULSE # ( u -- ) LED: make arbitary delay for blinky u=[0..3]
+# .equ led_cycles , 96000000 / 40
 
-     andi s3,s3, 3  # only 0,1,2,3
-     beq s3,zero,11f
-     li t0,1
-     sll s3,s3,t0 
+#      andi s3,s3, 3  # only 0,1,2,3
+#      beq s3,zero,11f
+#      li t0,1
+#      sll s3,s3,t0 
      
-20:  
-     li t0 , R32_GPIOC_OUTDR
-     lw t1 , 0(t0)
-     andi t1, t1, 0b1
-     beq t1,zero, 1f   # if zero then pin not set so set
-     li t0 , R32_GPIOC_BSHR
-     li t1 , 1 << 16 # %....01 
-     sw t1 , 0(t0)
-     j 2f     
-1:   li t0 , R32_GPIOC_BSHR
-     li t1 , 1 # %....01 
-     sw t1 , 0(t0)
-2:
-     li  t0 , led_cycles
-10:
-     addi t0, t0, -1
-     bne t0, zero, 10b
+# 20:  
+#      li t0 , R32_GPIOC_OUTDR
+#      lw t1 , 0(t0)
+#      andi t1, t1, 0b1
+#      beq t1,zero, 1f   # if zero then pin not set so set
+#      li t0 , R32_GPIOC_BSHR
+#      li t1 , 1 << 16 # %....01 
+#      sw t1 , 0(t0)
+#      j 2f     
+# 1:   li t0 , R32_GPIOC_BSHR
+#      li t1 , 1 # %....01 
+#      sw t1 , 0(t0)
+# 2:
+#      li  t0 , led_cycles
+# 10:
+#      addi t0, t0, -1
+#      bne t0, zero, 10b
 
-     addi s3, s3, -1 
-     bne s3 , zero, 20b
+#      addi s3, s3, -1 
+#      bne s3 , zero, 20b
      
-11:  loadtos 
+# 11:  loadtos 
 
-NEXT
+# NEXT
 
 .endif
 
