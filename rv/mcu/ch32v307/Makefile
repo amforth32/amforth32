@@ -45,16 +45,6 @@ upload:
 boot:
 	$(WCHISP) flash build/amforth.bin
 
-
-## Connect via USB 
-uu:
-	$(UU) 
-
-## Connect via minicom 
-min:
-	$(RM) minicom.cap
-	$(MINICOM) -D $(MODEM) --color=on -C minicom.cap
-
 #? --- Debugging ---
 ## Start GDB 
 gdb:
@@ -67,5 +57,13 @@ gdb:
 ocd:
 	$(OPENOCD) -f $(OPENCFG)
 
+#? --- Other shells ---
+
+## Connect via USB 
 usb:
 	$(USBSHELL) 
+
+## Connect via minicom 
+min:
+	$(RM) minicom.cap
+	$(MINICOM) -D $(MODEM) --color=on -C minicom.cap

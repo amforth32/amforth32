@@ -15,10 +15,11 @@
 .equ USER_TOS        ,  12*cellsize
 .equ USER_STATUS     ,  13*cellsize
 .equ USER_XT         ,  14*cellsize
+.equ USER_EMIT       ,  15*cellsize
 
 .if WANT_DEBUGGER == YES
-.equ USER_DEBUG_BREAK,  15*cellsize
-.equ USER_DEBUG_NEXT ,  16*cellsize
+.equ USER_DEBUG_BREAK,  16*cellsize
+.equ USER_DEBUG_NEXT ,  17*cellsize
 .endif
 
 /* TODO: check that userarea_size is large enough */

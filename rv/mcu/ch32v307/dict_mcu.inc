@@ -4,7 +4,7 @@
 .include "words/gpio.s"
 
 .include "words/led.s"
-
+.include "words/starting.s"
 .include "words/applturnkey.s"
 
 .include "words/type0.s" 
@@ -24,9 +24,6 @@
 .if WANT_FLOAT
     .include "words/float.s"
 .endif
-
-#.include "words/pc.s"
-#.include "words/fast.s"
 
 .include "words/wordswap.s"
 
