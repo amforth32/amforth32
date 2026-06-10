@@ -1,6 +1,7 @@
-/*  ARMv7M System Memory Region 0xE0000000-0xFFFFFFFF
-    Ref: ARMv7-M Architecture Reference Manual */
-
+/*  
+    ARMv7M System Memory Region 0xE0000000-0xFFFFFFFF
+    Ref: ARMv7-M Architecture Reference Manual
+*/
 /* B3.2.2 System control and ID registers (System Control Space SCS) */
 .equ ARM_CPUID, 0xE000ED00 /* CPUID Base Register */
 .equ ARM_ICSR, 0xE000ED04 /* Interrupt Control Register */
@@ -12,7 +13,7 @@
 .equ ARM_SHPR2, 0xE000ED1C /* System Handler Priority Register */
 .equ ARM_SHPR3, 0xE000ED20 /* System Handler Priority Register */
 .equ ARM_SHCSR, 0xE000ED24 /* System Handler Control and State Register */
-.equ ARM_CFSR, 0xE000ED28 /* Configurable Fault Status Register */
+.equ ARM_CFSR, 0xE000ED28 /* Configurable Fault Status Register (UFSAR, BFSR, MMFSR) */
 .equ ARM_HFSR, 0xE000ED2C /* HardFault Status Register */
 .equ ARM_DFSR, 0xE000ED30 /* Debug Fault Status Register */
 .equ ARM_MMFAR, 0xE000ED34 /* MemManage Fault Address Register */
@@ -33,3 +34,18 @@
 .equ ARM_NVIC_IABR, 0xE000E300 /* Interrupt Active Bit Registers (0-15), bit per interrupt */
 .equ ARM_NVIC_IPR, 0xE000E400 /* Interrupt Priority Registers (0-123), byte per interrupt */
 
+CODEWORD "int+", INTPLUS /* ( -- ) enable interrupts */
+    cpsie i
+    NEXT
+END INTPLUS
+
+CODEWORD "int-", INTMINUS /* ( -- ) disable interrupts */
+    cpsid i
+    NEXT
+END INTMINUS
+
+CODEWORD "int?", INTQ /* ( -- f ) f == interrupts enabled */
+    savetos
+    mrs TOS, PRIMASK
+    NEXT
+END INTQ

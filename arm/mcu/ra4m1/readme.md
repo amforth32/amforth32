@@ -95,6 +95,7 @@ Note that the only tools needed for this process are AmForth running on the targ
 
 ## UNO R4 WIFI
 * https://docs.arduino.cc/hardware/uno-r4-wifi/
+* https://www.renesas.com/en/products/ra4m1
 * https://docs.freenove.com/projects/fnk0096/en/latest/
 * https://github.com/arduino/ArduinoCore-renesas
 * https://www.shumatech.com/web/products/bossa
