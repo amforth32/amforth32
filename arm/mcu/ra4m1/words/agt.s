@@ -72,14 +72,14 @@ END AGT0_INIT
 CODEWORD "agt0.start", AGT0_START /* ( -- ) start the interrupt timer */
     ldr r0, =RA4_AGT0_AGTCR
     mov r1, #1 @ TSTART = 1
-    str r1, [r0]
+    strb r1, [r0]
     NEXT
 END AGT0_START
 
 CODEWORD "agt0.stop", AGT0_STOP /* ( -- ) stop the interrupt timer */
     ldr r0, =RA4_AGT0_AGTCR
-    mov r1, #1 @ TSTART = 0
-    str r1, [r0]
+    mov r1, #0 @ TSTART = 0
+    strb r1, [r0]
     NEXT
 END AGT0_STOP
 
@@ -89,4 +89,8 @@ led_handler: /* flip the LED state, assume LED is initialized as per led.s */
     ldrb r1, [r0] @ read PODR bit
     eor r1, #1  @ flip PODR bit
     strb r1, [r0]
+    @ clear the IR flag
+    ldr r0, =RA4_ICU_IELSR
+    mov r1, #0 
+    strb r1, [r0, INT_AGT0<<2+2] @ IR is bit 16
     bx lr
