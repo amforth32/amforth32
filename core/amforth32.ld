@@ -268,6 +268,8 @@ SECTIONS
         . = . + 256 ;
         PROVIDE(RAM_upper_exceptionstack = . ) ;
 
+		*(amramlo);
+
     } >RAM :forth_ram
 
 	ASSERT(RAM_upper_res <= RAM_lower_forthvector ,"*ERROR* amramres and amramlo overlap")
@@ -303,7 +305,7 @@ SECTIONS
 			the kernel won't actually map it into the process' memory space
 			and amforth will segfault if that memory is accessed.
 		*/
-		. = ABSOLUTE(stack_start) - . ;
+		. = ABSOLUTE(stack_start) ;
 
     } >RAM :forth_ram
 
