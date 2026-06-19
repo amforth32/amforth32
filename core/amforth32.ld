@@ -263,6 +263,7 @@ SECTIONS
         PROVIDE(RAM_lower_fi = . ) ;
         . = . + 256 ;
         PROVIDE(RAM_upper_fi = . ) ;
+		*(amramlo);
 
     } >RAM :forth_ram
 
@@ -299,7 +300,7 @@ SECTIONS
 			the kernel won't actually map it into the process' memory space
 			and amforth will segfault if that memory is accessed.
 		*/
-		. = ABSOLUTE(stack_start) - . ;
+		. = ABSOLUTE(stack_start) ;
 
     } >RAM :forth_ram
 
