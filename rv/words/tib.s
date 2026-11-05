@@ -4,7 +4,7 @@
   CODEWORD "tib", TIB /* ( -- addr ) terminal input buffer address */
 # -----------------------------------------------------------------------------
   savetos
-  la s3, RAM_lower_refill_buf
+  addi s3, s6, USER_TIB
   NEXT
 END TIB
 

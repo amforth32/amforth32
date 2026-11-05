@@ -119,3 +119,29 @@ The comment must use the `/* .. */` format to be compatible with both ARM and RV
 The word definition must end with the `END` macro (it allows emitting proper function blocks for words). The `END` macro requires the same symbol argument that was used to start the word definition.
 
 `NONAME` and `HEADLESS` macro invocations must include a name argument. The name is not included in the word definition but it is used when transpiling Forth code to ITC. `NONAME` and `HEADLESS` words are excluded from the reference card, but should still have the standard comment line.
+
+## Cooperative multitasking
+
+The shared core reserves task user areas and stacks at build time. `TASKN` in
+`core/config.inc` controls the number of slots (currently four); the final slot
+is reserved for interrupt context, leaving the other slots for the operator and
+application tasks. Task switching is cooperative: a task must call `pause` (or
+a word that calls it) to yield. `multi` makes `pause` switch to the next active
+task; `single` disables switching.
+
+Use `task!` to assign an execution token to an application task slot, then
+`+task` to activate it. `-task` deactivates a slot, `task.warm` resets one
+application task, `task.warm-all` resets all application tasks, and
+`show.task` lists task state. The built-in operator task remains the console
+task. The default configuration enables this scheduler on targets that include
+the shared task words; it does not make a non-yielding Forth word preemptible.
+
+## Interrupt handlers
+
+Architecture layers provide interrupt entry and return paths, while MCU
+startup/vector files map hardware exception numbers to handler slots. Use
+`trap!` to associate an execution token with a slot and the target's interrupt
+enable words to enable the source. An interrupt handler ends with `;i`, which
+compiles the interrupt return word. Keep handlers short and avoid blocking
+words or `pause` from interrupt context. Exact slot numbers and initialization
+requirements are target specific; see the target README and vector table.
