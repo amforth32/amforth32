@@ -4,6 +4,6 @@ END NUMBERTIB
 
 CODEWORD "tib", TIB /* ( -- addr ) terminal input buffer address */
   savetos
-  ldr TOS, =RAM_lower_refill_buf
+  add TOS, UP, #USER_TIB
   NEXT
 END TIB

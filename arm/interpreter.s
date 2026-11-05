@@ -52,7 +52,7 @@ END BREAK
 
 CODEWORD "debug_buf", DEBUG_BUF /* ( -- addr ) debugger input buffer address */
   savetos
-  ldr TOS, =RAM_lower_debug_buf
+  add TOS, UP, #USER_DEBUG_TIB
   NEXT
 END DEBUG_BUF
 .endif
