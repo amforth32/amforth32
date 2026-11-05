@@ -37,7 +37,7 @@ jobs:
         uses: awalsh128/cache-apt-pkgs-action@v1
         with:
           packages: qemu-user-static
-          version: 1 # Change this to manually bust the cache
+          version: 2 # Change this to manually bust the cache
 
       - name: Validate QEMU present
         run: qemu-arm-static --version
