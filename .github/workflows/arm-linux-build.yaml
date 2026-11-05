@@ -40,7 +40,7 @@ jobs:
           version: 1 # Change this to manually bust the cache
 
       - name: Validate QEMU present
-        run: qemu-user-static --version
+        run: qemu-arm-static --version
 
       - name: QEMU Core Tests
         run: cd arm/mcu/linux && TIMEOUT=5s make tests
