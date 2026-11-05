@@ -54,7 +54,9 @@ jobs:
       #     tools: [ qemu-system-misc ]
 
       - name: Install QEMU RISC-V 32
-        run: sudo apt-get install qemu-system-riscv32
+        run: |
+          sudo apt-get install qemu-system-misc
+          qemu-system-riscv32 --version
 
       - name: Build QEMU virt
         run: cd rv/mcu/qemu && WANT_IGNORECASE=1 make all
