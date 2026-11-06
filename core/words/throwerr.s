@@ -73,6 +73,10 @@ THROWERR ENFANN,   -260 , "NFA is from NONAME or HEADLESS"
 THROWERR EALIALI,  -261 , "attempt to alias an alias"
 THROWERR ENTASK,   -262 , "invalid task number"
 
+.if WANT_TRANSPILER == YES
+THROWERR ETPSYM,   -1000 , "tpile: raw symbol"
+.endif
+
 .if WANT_THROWTXT == YES    
 
 CONSTANT "err-wordlist" , ERR_WORDLIST , 90b
