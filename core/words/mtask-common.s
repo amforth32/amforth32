@@ -1054,7 +1054,7 @@ COLON "show.ua", SHOWDOTUA /* ( n -- ) show user area task n */
         # i cells 3 u.r space up@ i cells + dup hex. @ hex.
         .word XT_I, XT_CELLS, XT_DOLITERAL, 0x3, XT_UDOTR, XT_SPACE, XT_UP_FETCH, XT_I, XT_CELLS, XT_PLUS, XT_DUP, XT_HEXDOT, XT_FETCH, XT_HEXDOT
         # i 4 * case
-        .word XT_I, XT_FOUR, XT_STAR, XT_BREAK
+        .word XT_I, XT_FOUR, XT_STAR
         # symbol USER_RP0         of s" RP0......... " type endof
         .word XT_DOLITERAL, USER_RP0, XT_OVER, XT_EQUAL, XT_DOCONDBRANCH, 2f, XT_DROP
         STRING "RP0......... " 
@@ -1076,7 +1076,7 @@ COLON "show.ua", SHOWDOTUA /* ( n -- ) show user area task n */
         .word XT_TYPE, XT_DOBRANCH, 9f
 8: 
         # symbol USER_LP0         of s" LP0......... " type endof
-        .word XT_DOLITERAL, USER_LP0, XT_OVER, XT_EQUAL, XT_BREAK, XT_DOCONDBRANCH, 10f, XT_DROP
+        .word XT_DOLITERAL, USER_LP0, XT_OVER, XT_EQUAL, XT_DOCONDBRANCH, 10f, XT_DROP
         STRING "LP0......... " 
         .word XT_TYPE, XT_DOBRANCH, 11f
 10: 
