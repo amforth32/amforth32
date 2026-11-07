@@ -26,8 +26,8 @@ IMMED "symbol", SYMBOL /* ( "name" -- ) emits assembler symbol token into transp
   To protect user from using the (invalid) compilation result that the transpiler produces, it is compiled as a throw.
 */
     .word XT_PARSENAME
+    .word XT_COMPILE, XT_DOLITERAL
     .word XT_TPILE, XT_FETCH, XT_DOCONDBRANCH, 1f
-        .word XT_COMPILE, XT_DOLITERAL
         .word XT_DOLITERAL, 94, XT_EMIT /* ^ */
         .word XT_2DUP, XT_BOUNDS
         .word XT_QDOCHECK,XT_DOCONDBRANCH, 1f

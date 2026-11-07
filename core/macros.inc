@@ -1,10 +1,11 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
-# Using macro unique suffixes \@ where possible to avoid label conflicts
-# with code invoking the macros.
+# Using macro unique suffixes (\@) where possible to avoid label conflicts
+# with code invoking the macros. Use the .L convention for the local labels
+# so that the assembler excludes them from the symbol table.
 # Using large numeric numbers for wordlist chaining to avoid conflicts
-# with numeric labels elsewhere in the code; make sure the numbers used here (9997-9999)
-# are not used anywhere else.
+# with numeric labels elsewhere in the code.
+# Make sure the numbers used here (9997-9999) are not used anywhere else.
 
 # start of flash dictionary. The 0 is the stop marker.
 .macro STARTDICTNOPFA
@@ -16,10 +17,10 @@ VE_NOP: .word 0
 9999: # forth-wordlist
 # Inject a NOP word as the first entry in the dictionary.
         .word 0
-        .byte .Lnop_name_end\@ - .Lnop_name_start\@
-.Lnop_name_start\@:
+        .byte .Lname_end\@ - .Lname_start\@
+.Lname_start\@:
         .ascii "nop"
-.Lnop_name_end\@:
+.Lname_end\@:
         .p2align 2,0xAA
 XT_NOP: .word PFA_NOP
 .endm
@@ -88,12 +89,12 @@ VE_\Label:
 9999: .word \Flags
     # NFA: Name field
     # Calculate length of name field
-    .byte .Lheader_name_end\@ - .Lheader_name_start\@
+    .byte .Lname_end\@ - .Lname_start\@
     # Insert name string
-.Lheader_name_start\@:
+.Lname_start\@:
     .ascii "\Name"
     # Realign
-.Lheader_name_end\@:
+.Lname_end\@:
     .p2align 2,0xaa
     .global _\Label
     .type _\Label, STT_FUNC
@@ -334,12 +335,12 @@ VE_ENV_\Label:
     .word \Flags
     # NFA: Name field
     # Calculate length of name field
-    .byte .Lenv_name_end\@ - .Lenv_name_start\@
+    .byte .Lname_end\@ - .Lname_start\@
     # Insert name string
-.Lenv_name_start\@:
+.Lname_start\@:
     .ascii "\Name"
     # Realign
-.Lenv_name_end\@:
+.Lname_end\@:
     .p2align 2,0xf0
     .global _\Label
     .type _\Label, STT_FUNC
@@ -371,12 +372,12 @@ VE_\Label:
     .word \Flags
     # NFA: Name field
     # Calculate length of name field
-    .byte .Larch_name_end\@ - .Larch_name_start\@
+    .byte .Lname_end\@ - .Lname_start\@
     # Insert name string
-.Larch_name_start\@:
+.Lname_start\@:
     .ascii "\Name"
     # Realign
-.Larch_name_end\@:
+.Lname_end\@:
     .p2align 2,0xf0
     .global _\Label
     .type _\Label, STT_FUNC

@@ -3,7 +3,9 @@
     s" OFF A....... [A]..... Desc........ OFF A....... [A]..... Desc........"
     type cr
     32 0 do
-        i cells 3 u.r space up@ i cells + dup hex. @ hex.
+        i cells 3 u.r space \ print cell offset
+        dup task-block * up@ + ( n -- addr ) \ addr is taskN UA
+        i cells + dup hex. @ hex. \ emit i-th UA field address and value
         i 4 * case
         symbol USER_RP0         of s" RP0......... " type endof
         symbol USER_RP          of s" RP.......... " type endof
@@ -25,4 +27,5 @@
         endcase
         i 1+ 2 mod 0= if cr then
     loop
+    drop
 ;

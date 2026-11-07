@@ -1051,8 +1051,12 @@ COLON "show.ua", SHOWDOTUA /* ( n -- ) show user area task n */
     # 32 0 do
     .word XT_DOLITERAL, 0x20, XT_ZERO, XT_DODO
 1: 
-        # i cells 3 u.r space up@ i cells + dup hex. @ hex.
-        .word XT_I, XT_CELLS, XT_DOLITERAL, 0x3, XT_UDOTR, XT_SPACE, XT_UP_FETCH, XT_I, XT_CELLS, XT_PLUS, XT_DUP, XT_HEXDOT, XT_FETCH, XT_HEXDOT
+        # i cells 3 u.r space \ print cell offset
+        .word XT_I, XT_CELLS, XT_DOLITERAL, 0x3, XT_UDOTR, XT_SPACE
+        # dup task-block * up@ + ( n -- addr ) \ addr is taskN UA
+        .word XT_DUP, XT_TASK_BLOCK, XT_STAR, XT_UP_FETCH, XT_PLUS
+        # i cells + dup hex. @ hex. \ emit i-th UA field address and value
+        .word XT_I, XT_CELLS, XT_PLUS, XT_DUP, XT_HEXDOT, XT_FETCH, XT_HEXDOT
         # i 4 * case
         .word XT_I, XT_FOUR, XT_STAR
         # symbol USER_RP0         of s" RP0......... " type endof
@@ -1161,6 +1165,8 @@ COLON "show.ua", SHOWDOTUA /* ( n -- ) show user area task n */
 34: 
     # loop
     .word XT_DOLOOP, 1b
+    # drop
+    .word XT_DROP
    # ;
    .word XT_EXIT
 END SHOWDOTUA
