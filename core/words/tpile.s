@@ -21,6 +21,31 @@ COLON "tpile-", TPILEMINUS /* ( -- ) disable transpiling during compilation */
     .word XT_FALSE, XT_TPILE, XT_STORE, XT_EXIT
 END TPILEMINUS
 
+IMMED "symbol", SYMBOL /* ( "name" -- ) emits assembler symbol token into transpiler output, compiles as a throw */
+/* Only useful for source code that is to be transpiled since amforth does not have access to assembler symbols.
+  To protect user from using the (invalid) compilation result that the transpiler produces, it is compiled as a throw.
+*/
+    .word XT_PARSENAME
+    .word XT_COMPILE, XT_DOLITERAL
+    .word XT_TPILE, XT_FETCH, XT_DOCONDBRANCH, 1f
+        .word XT_DOLITERAL, 94, XT_EMIT /* ^ */
+        .word XT_2DUP, XT_BOUNDS
+        .word XT_QDOCHECK,XT_DOCONDBRANCH, 1f
+            .word XT_DODO
+2:          .word XT_I, XT_CFETCH, XT_EMIT
+            .word XT_DOLOOP, 2b
+        .word XT_SPACE
+1:  .word XT_2DROP
+    # Compile as ETPSYM throw to prevent this version of the word being compiled from running,
+    # instead the transpiled version of the word must be used.
+    # Need to make sure transpiling is off while compiling the throw to not spoil transpiler output.
+    # We already compiled XT_DOLITERAL above so we just need to append the ETPSYM literal to it.
+    .word XT_TPILE, XT_FETCH, XT_TPILEMINUS
+    .word XT_DOLITERAL, ETPSYM, XT_COMMA, XT_COMPILE, XT_THROW
+    .word XT_DOCONDBRANCH, 3f, XT_TPILEPLUS
+3:    .word XT_EXIT
+END SYMBOL
+
 NONAME "tpile.word", TPILE_WORD /* ( -- ) emits word token prefix indicating the word type */
     .word XT_TPILE, XT_FETCH, XT_DOCONDBRANCH, 1f
         .word XT_FLAGDOTHEADER, XT_FLAGDOTCOLON, XT_EQUAL, XT_DOCONDBRANCH, 2f

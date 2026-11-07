@@ -1040,3 +1040,134 @@ END SHOWDOTUSER
 # ----------------------------------------------------------------------
 #=====================================================================
 #======================================================================
+
+# : show.ua ( n -- ) \ show user area task n
+COLON "show.ua", SHOWDOTUA /* ( n -- ) show user area task n */
+    # \ drop
+    # s" OFF A....... [A]..... Desc........ OFF A....... [A]..... Desc........"
+    STRING "OFF A....... [A]..... Desc........ OFF A....... [A]..... Desc........" 
+    # type cr
+    .word XT_TYPE, XT_CR
+    # 32 0 do
+    .word XT_DOLITERAL, 0x20, XT_ZERO, XT_DODO
+1: 
+        # i cells 3 u.r space \ print cell offset
+        .word XT_I, XT_CELLS, XT_DOLITERAL, 0x3, XT_UDOTR, XT_SPACE
+        # dup task-block * up@ + ( n -- addr ) \ addr is taskN UA
+        .word XT_DUP, XT_TASK_BLOCK, XT_STAR, XT_UP_FETCH, XT_PLUS
+        # i cells + dup hex. @ hex. \ emit i-th UA field address and value
+        .word XT_I, XT_CELLS, XT_PLUS, XT_DUP, XT_HEXDOT, XT_FETCH, XT_HEXDOT
+        # i 4 * case
+        .word XT_I, XT_FOUR, XT_STAR
+        # symbol USER_RP0         of s" RP0......... " type endof
+        .word XT_DOLITERAL, USER_RP0, XT_OVER, XT_EQUAL, XT_DOCONDBRANCH, 2f, XT_DROP
+        STRING "RP0......... " 
+        .word XT_TYPE, XT_DOBRANCH, 3f
+2: 
+        # symbol USER_RP          of s" RP.......... " type endof
+        .word XT_DOLITERAL, USER_RP, XT_OVER, XT_EQUAL, XT_DOCONDBRANCH, 4f, XT_DROP
+        STRING "RP.......... " 
+        .word XT_TYPE, XT_DOBRANCH, 5f
+4: 
+        # symbol USER_SP0         of s" SP0......... " type endof
+        .word XT_DOLITERAL, USER_SP0, XT_OVER, XT_EQUAL, XT_DOCONDBRANCH, 6f, XT_DROP
+        STRING "SP0......... " 
+        .word XT_TYPE, XT_DOBRANCH, 7f
+6: 
+        # symbol USER_SP          of s" SP.......... " type endof
+        .word XT_DOLITERAL, USER_SP, XT_OVER, XT_EQUAL, XT_DOCONDBRANCH, 8f, XT_DROP
+        STRING "SP.......... " 
+        .word XT_TYPE, XT_DOBRANCH, 9f
+8: 
+        # symbol USER_LP0         of s" LP0......... " type endof
+        .word XT_DOLITERAL, USER_LP0, XT_OVER, XT_EQUAL, XT_DOCONDBRANCH, 10f, XT_DROP
+        STRING "LP0......... " 
+        .word XT_TYPE, XT_DOBRANCH, 11f
+10: 
+        # symbol USER_LP          of s" LP.......... " type endof
+        .word XT_DOLITERAL, USER_LP, XT_OVER, XT_EQUAL, XT_DOCONDBRANCH, 12f, XT_DROP
+        STRING "LP.......... " 
+        .word XT_TYPE, XT_DOBRANCH, 13f
+12: 
+        # symbol USER_HANDLER     of s" HANDLER..... " type endof
+        .word XT_DOLITERAL, USER_HANDLER, XT_OVER, XT_EQUAL, XT_DOCONDBRANCH, 14f, XT_DROP
+        STRING "HANDLER..... " 
+        .word XT_TYPE, XT_DOBRANCH, 15f
+14: 
+        # symbol USER_BASE        of s" BASE........ " type endof
+        .word XT_DOLITERAL, USER_BASE, XT_OVER, XT_EQUAL, XT_DOCONDBRANCH, 16f, XT_DROP
+        STRING "BASE........ " 
+        .word XT_TYPE, XT_DOBRANCH, 17f
+16: 
+        # symbol USER_LOOP_INDEX  of s" LOOP_INDEX.. " type endof
+        .word XT_DOLITERAL, USER_LOOP_INDEX, XT_OVER, XT_EQUAL, XT_DOCONDBRANCH, 18f, XT_DROP
+        STRING "LOOP_INDEX.. " 
+        .word XT_TYPE, XT_DOBRANCH, 19f
+18: 
+        # symbol USER_LOOP_LIMIT  of s" LOOP_LIMIT.. " type endof
+        .word XT_DOLITERAL, USER_LOOP_LIMIT, XT_OVER, XT_EQUAL, XT_DOCONDBRANCH, 20f, XT_DROP
+        STRING "LOOP_LIMIT.. " 
+        .word XT_TYPE, XT_DOBRANCH, 21f
+20: 
+        # symbol USER_LINK        of s" LINK........ " type endof
+        .word XT_DOLITERAL, USER_LINK, XT_OVER, XT_EQUAL, XT_DOCONDBRANCH, 22f, XT_DROP
+        STRING "LINK........ " 
+        .word XT_TYPE, XT_DOBRANCH, 23f
+22: 
+        # symbol USER_IP          of s" IP.......... " type endof
+        .word XT_DOLITERAL, USER_IP, XT_OVER, XT_EQUAL, XT_DOCONDBRANCH, 24f, XT_DROP
+        STRING "IP.......... " 
+        .word XT_TYPE, XT_DOBRANCH, 25f
+24: 
+        # symbol USER_TOS         of s" TOS......... " type endof
+        .word XT_DOLITERAL, USER_TOS, XT_OVER, XT_EQUAL, XT_DOCONDBRANCH, 26f, XT_DROP
+        STRING "TOS......... " 
+        .word XT_TYPE, XT_DOBRANCH, 27f
+26: 
+        # symbol USER_STATUS      of s" STATUS...... " type endof
+        .word XT_DOLITERAL, USER_STATUS, XT_OVER, XT_EQUAL, XT_DOCONDBRANCH, 28f, XT_DROP
+        STRING "STATUS...... " 
+        .word XT_TYPE, XT_DOBRANCH, 29f
+28: 
+        # symbol USER_XT          of s" XT.......... " type endof
+        .word XT_DOLITERAL, USER_XT, XT_OVER, XT_EQUAL, XT_DOCONDBRANCH, 30f, XT_DROP
+        STRING "XT.......... " 
+        .word XT_TYPE, XT_DOBRANCH, 31f
+30: 
+        # symbol USER_EMIT        of s" EMIT........ " type endof
+        .word XT_DOLITERAL, USER_EMIT, XT_OVER, XT_EQUAL, XT_DOCONDBRANCH, 32f, XT_DROP
+        STRING "EMIT........ " 
+        .word XT_TYPE, XT_DOBRANCH, 33f
+32: 
+        # s" ............ " type
+        STRING "............ " 
+        .word XT_TYPE
+        # endcase
+        .word XT_DROP
+33: 
+31: 
+29: 
+27: 
+25: 
+23: 
+21: 
+19: 
+17: 
+15: 
+13: 
+11: 
+9: 
+7: 
+5: 
+3: 
+        # i 1+ 2 mod 0= if cr then
+        .word XT_I, XT_1PLUS, XT_TWO, XT_MOD, XT_ZEROEQUAL, XT_DOCONDBRANCH, 34f, XT_CR
+34: 
+    # loop
+    .word XT_DOLOOP, 1b
+    # drop
+    .word XT_DROP
+   # ;
+   .word XT_EXIT
+END SHOWDOTUA
+

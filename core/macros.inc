@@ -1,40 +1,51 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
+# Using macro unique suffixes (\@) where possible to avoid label conflicts
+# with code invoking the macros. Use the .L convention for the local labels
+# so that the assembler excludes them from the symbol table.
+# Using large numeric numbers for wordlist chaining to avoid conflicts
+# with numeric labels elsewhere in the code.
+# Make sure the numbers used here (9997-9999) are not used anywhere else.
+
 # start of flash dictionary. The 0 is the stop marker.
 .macro STARTDICTNOPFA
   # .text should aready be in section amforth
   .p2align 2,0x55
 VE_NOP: .word 0
-97: # arch-wordlist
-98: # environment
-99: # forth-wordlist
+9997: # arch-wordlist
+9998: # environment
+9999: # forth-wordlist
 # Inject a NOP word as the first entry in the dictionary.
         .word 0
-        .byte 8f-7f
-7:      .ascii "nop"
-8:      .p2align 2,0xAA
+        .byte .Lname_end\@ - .Lname_start\@
+.Lname_start\@:
+        .ascii "nop"
+.Lname_end\@:
+        .p2align 2,0xAA
 XT_NOP: .word PFA_NOP
 .endm
 
 # save the beginning of the wordlists
 .macro ENDDICT
-VALUE "arch-wordlist", ARCH_WORDLIST, 97b
+VALUE "arch-wordlist", ARCH_WORDLIST, 9997b
 END ARCH_WORDLIST
-VALUE "environment", ENVIRONMENT, 98b
+VALUE "environment", ENVIRONMENT, 9998b
 END ENVIRONMENT
 CONSTANT "core-wordlist", CORE_WORDLIST, core_wordlist
 END CORE_WORDLIST
 # forth-wordlist needs to be the last of the compiled words
-PVALUE "forth-wordlist", FORTH_WORDLIST, 99b
-.set core_wordlist , 99b
+PVALUE "forth-wordlist", FORTH_WORDLIST, 9999b
+.set core_wordlist , 9999b
 END FORTH_WORDLIST
 .endm
 
 .macro STRING string
     .word XT_DOSLITERAL
-    .byte 8f - 7f
-7:  .ascii "\string"
-8:  .p2align 2,0x0f
+    .byte .Lstring_end\@ - .Lstring_start\@
+.Lstring_start\@:
+    .ascii "\string"
+.Lstring_end\@:
+    .p2align 2,0x0f
 .endm
 
 .macro RAMALLOT Name, Length, Padding
@@ -73,16 +84,18 @@ END FORTH_WORDLIST
 .macro HEADERNOPFA Flags, Name, Label, PFA
     .p2align 2,0x55
 VE_\Label:
-    .word 99b /* LFA: Link to FFA of previous word */
+    .word 9999b /* LFA: Link to FFA of previous word */
     # FFA: Flag field 
-99: .word \Flags
+9999: .word \Flags
     # NFA: Name field
     # Calculate length of name field
-    .byte 8f - 7f
+    .byte .Lname_end\@ - .Lname_start\@
     # Insert name string
-7:  .ascii "\Name"
+.Lname_start\@:
+    .ascii "\Name"
     # Realign
-8:  .p2align 2,0xaa
+.Lname_end\@:
+    .p2align 2,0xaa
     .global _\Label
     .type _\Label, STT_FUNC
 _\Label:
@@ -317,16 +330,18 @@ PFA_\Label:
     .p2align 2,0xf0
 VE_ENV_\Label:
     # LFA: Insert Link
-    .word 98b          
-98: # FFA: Flag field
+    .word 9998b
+9998: # FFA: Flag field
     .word \Flags
     # NFA: Name field
     # Calculate length of name field
-    .byte 8f - 7f     
+    .byte .Lname_end\@ - .Lname_start\@
     # Insert name string
-7:  .ascii "\Name"
+.Lname_start\@:
+    .ascii "\Name"
     # Realign
-8:  .p2align 2,0xf0
+.Lname_end\@:
+    .p2align 2,0xf0
     .global _\Label
     .type _\Label, STT_FUNC
 _\Label:        
@@ -352,22 +367,21 @@ PFA_ENV_\Label:
     .p2align 2,0xf0
 VE_\Label:
     # LFA: Insert Link
-    .word 97b          
-97: # FFA: Flag field
+    .word 9997b
+9997: # FFA: Flag field
     .word \Flags
     # NFA: Name field
     # Calculate length of name field
-    .byte 8f - 7f     
+    .byte .Lname_end\@ - .Lname_start\@
     # Insert name string
-7:  .ascii "\Name"
+.Lname_start\@:
+    .ascii "\Name"
     # Realign
-8:  .p2align 2,0xf0        
+.Lname_end\@:
+    .p2align 2,0xf0
     .global _\Label
     .type _\Label, STT_FUNC
 _\Label:        
 XT_\Label: .word \PFA
 PFA_\Label: 
 .endm
-
-
-  
