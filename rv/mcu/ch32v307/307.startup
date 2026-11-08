@@ -474,7 +474,7 @@ _master_int:   # interrupt entry
         pop in exiti
      */  
      
-     la s6, ISR_UP
+     la s6, RAM_ISR_UP
 
      /*
         run Forth ISR on its own DSP RSP

@@ -19,7 +19,7 @@ isrstub:
     str     DSP, [UP, #USER_SP]           @ UP currently = foreground userarea
     str     sp,  [UP, #USER_RP]
     
-    ldr     r0 , =ISR_UP
+    ldr     r0 , =RAM_ISR_UP
     str     up , [r0, #USER_LINK]
 
     mov     up , r0 

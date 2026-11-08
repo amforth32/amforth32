@@ -37,7 +37,7 @@ RAMALLOT ram_vector, 256*cellsize, 4
 # DEBUG TIB offset from UP
 .equ USER_DEBUG_TIB, USER_TIB + refill_buf_size
 # UP block of ISR task (TASKN)
-.equ ISR_UP, RAM_TASK0_UP + TASK_BLOCK_SIZE * (TASKN-1)
+.equ RAM_ISR_UP, RAM_TASK0_UP + TASK_BLOCK_SIZE * (TASKN-1)
 
 
 # EXCEPTION CODES
