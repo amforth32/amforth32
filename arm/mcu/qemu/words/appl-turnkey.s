@@ -1,7 +1,12 @@
 
 COLON "appl-turnkey", APPLTURNKEY
+.if TARGET_MPS2==1
+  .word XT_DOLITERAL, UART0, XT_APB_INIT
+.endif
+
   .word XT_DECIMAL
   .word XT_DOT_VER
   .word XT_SPACE, XT_ENV_BOARD, XT_TYPE, XT_CR
   .word XT_ENV_DOT_BUILD
+
 .word XT_EXIT

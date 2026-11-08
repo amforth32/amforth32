@@ -30,19 +30,19 @@ CODEWORD "systick-", SYSTICKMINUS /* ( -- ) clear systick interrupt flag */
 NEXT
 END SYSTICKMINUS
 
-CODEWORD "systick@", SYSTICKFETCH /* ( -- n ) read systick counter value */
+CODEWORD "systick@", SYSTICK_FETCH /* ( -- n ) read systick counter value */
     savetos
     ldr     r0, =SYST_CVR
     ldr     TOS, [r0]              @ read current counter value
 NEXT
-END SYSTICKFETCH
+END SYSTICK_FETCH
 
-CODEWORD "syscsr@", SYSCSRFETCH
+CODEWORD "syscsr@", SYSCSR_FETCH
     savetos
     ldr     r0, =SYST_CSR
     ldr     TOS, [r0]
 NEXT
-END SYSCSRFETCH
+END SYSCSR_FETCH
 
 CODEWORD "+systick", PLUSSYSTICK /* ( -- ) start systick */
     ldr     r0, =SYST_CSR
