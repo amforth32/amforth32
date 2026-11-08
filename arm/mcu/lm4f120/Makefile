@@ -1,3 +1,4 @@
+-include .env
 # Default to the QEMU target since the real boards were discontinued
 TARGET ?= LM3QEM
 TARGETS = LM4, LM3QEM

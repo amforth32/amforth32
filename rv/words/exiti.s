@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
-CODEWORD "(exiti)", EXITI /* return from interrupt handler; compiled by ;i. */
+HEADLESS "(exiti)", EXITI /* return from interrupt handler; compiled by ;i. */
 
      # context restore for regs not included in HPE 
 
@@ -16,6 +16,11 @@ CODEWORD "(exiti)", EXITI /* return from interrupt handler; compiled by ;i. */
      lw s8,  28(s11)
      lw s9,  32(s11)
      lw s10, 36(s11)
+
+     /* clear in isr software flag */
+     
+     la      t0, IN_ISRQ_ram
+     sw      zero, 0(t0)
 
      mret 
 END EXITI

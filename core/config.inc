@@ -61,17 +61,32 @@
     See core/words/g-mark.s and core/words/qnop.s.
 */
 
+
+# Multitasking
+# TASKN 2..
+
+.set TASKN , 4
+.global TASKN
+
 # Feature flags
 
 .equ YES , 1
 .equ NO  , 0
 
+# Record recognizer type 
+
+.equ WANT_RECORD , YES
+
+# Cortex M default should be yes
+
+.equ CORTEXM , YES
+
 # Optional Forth word groups
 
 .equ WANT_FLOAT , NO
 
-.equ WANT_DEBUGGER, YES
-.equ WANT_TRANSPILER, YES
+.equ WANT_DEBUGGER, NO
+.equ WANT_TRANSPILER, NO
 
 .equ WANT_CASE         , YES
 .equ WANT_MATCH        , YES
@@ -85,4 +100,4 @@
 # Other configuration parameters
 
 # This can also be enabled with an environment variable with the same name
-# .equ WANT_IGNORECASE, YES
+.equ WANT_IGNORECASE, YES

@@ -1407,6 +1407,9 @@ additional definitions (e.g. register names)
                     case '$':
                         print(f"0x{token[1:]}", end="")
                         separator = ", "
+                    case '^':
+                        print(f"{token[1:]}", end="")
+                        separator = ", "
                     case 'S':
                         s = bytes.fromhex(token[1:]).decode(self._encoding)
                         if i > 1:

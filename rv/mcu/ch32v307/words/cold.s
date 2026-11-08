@@ -154,8 +154,8 @@ CODEWORD "cold", COLD /* ( i*x -- )(R: j*y -- ) assembler part of the boot seque
 
   # This is the same as in quit, in order to prepare for whatever the user might want to do within "init".
 
-  la s5, RAM_upper_returnstack
-  la s4, RAM_upper_datastack # TW hack
+  la s5, RAM_upper_TASK0_returnstack
+  la s4, RAM_upper_TASK0_datastack
 .if WANT_DEBUGGER == YES
   mv s7, zero # zero out the DEBUG register
 .endif
@@ -165,6 +165,10 @@ CODEWORD "cold", COLD /* ( i*x -- )(R: j*y -- ) assembler part of the boot seque
   call initflash
   .endif
 # END COM TW FIXME 
+
+  la t0, IN_ISRQ_ram # clear in-isr? software flag
+  mv t1, zero        # 0 is NOT 
+  sw t1, 0(t0)       # ... in any isr 
 
   lui  s1,      %hi(XT_WARM)
   addi s1, s1,  %lo(XT_WARM)

@@ -42,11 +42,10 @@ jobs:
       - name: Build LM4120 (WANT_IGNORECASE)
         run: cd arm/mcu/lm4f120 && WANT_IGNORECASE=1 make all
 
-      - name: Cache and Install QEMU ARM
-        uses: awalsh128/cache-apt-pkgs-action@latest
-        with:
-          packages: qemu-system-arm
-          version: 1 # Change this to manually bust the cache
+      - name: Install QEMU ARM
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends qemu-system
 
       - name: LM4F120 Core Tests (WANT_ITC)
         run: cd arm/mcu/lm4f120 && TIMEOUT=5s make tests

@@ -1,0 +1,1173 @@
+/*
+Found 3 name(s) that resolve to multiple XT symbols:
+  name='1ms':
+    xtname='XT_N1MS'  file='./rv/words/ms.s'
+    xtname='XT_1MS'  file='./rv/mcu/ch32v307/words/ms.s'
+  name='led.init':
+    xtname='XT_LEDDOTINIT'  file='./rv/mcu/ch32v307/words/led.s'
+    xtname='XT_LED_INIT'  file='./rv/mcu/ch32v307/words/led.s'
+  name='^led':
+    xtname='XT_CARETLED'  file='./rv/mcu/ch32v307/words/led.s'
+    xtname='XT_TOGLED'  file='./rv/mcu/ch32v307/words/led.s'
+*/
+#======================================================================
+#======================================================================
+# transpiling ../../../../forth/mtask-common.f on 2026/05/08 17:04:31
+# \# # SPDX-License-Identifier: GPL-3.0-only
+# 
+# {
+# CONSTANT "taskn" , TASKN , TASKN
+# END TASKN
+# 
+# CONSTANT "task-block" , TASK_BLOCK, TASK_BLOCK_SIZE
+# END TASK_BLOCK
+# }
+# 
+# : vacant \# ( -- ) a task that does nothing
+#     begin pause again
+# ;
+# 
+# : reserve \# ( a -- ) wait for resource to be available and claim
+#     begin pause dup @ until false swap !
+# ;
+# 
+# : release \# ( a -- ) mark resource as not available
+#     true swap !
+# ;
+# 
+# :~ init-user \# ( -- )
+# 
+#     \ for TASK0 operator when this is executed sp and rp not
+#     \ correct but that is not important as they will written
+#     \ on first task switch. However, for task1...taskn-1 they
+#     \ ARE the initial values
+# 
+#     symbol RAM_lower_TASK0_userarea    up!
+#     symbol RAM_upper_TASK0_returnstack up@ symbol USER_RP0 + !
+#     symbol RAM_upper_TASK0_returnstack up@ symbol USER_RP  + !
+#     symbol RAM_upper_TASK0_datastack   up@ symbol USER_SP0 + !
+#     symbol RAM_upper_TASK0_datastack   up@ symbol USER_SP +  !
+#     symbol RAM_upper_TASK0_leavestack  up@ symbol USER_LP0 + !
+#     symbol RAM_upper_TASK0_leavestack  up@ symbol USER_LP  + !
+# 
+#     taskn 1 ?do
+#         task-block 0 do
+#             i symbol USER_HANDLER cells < if
+#                 up@ i + @ task-block j * + up@ i + task-block j * + !
+#             then
+#         cell +loop
+#     loop
+# 
+#     taskn 1- 0 ?do
+#         \   task0 + (i+1 mod (taskn-1)) * task-block
+#         up@ task-block i 1+ taskn 1- mod * +
+#         up@ task-block i taskn 1- mod * + symbol USER_LINK + !
+# 
+#         ['] vacant >body
+#         up@ task-block i taskn 1- mod * + symbol USER_IP + !
+# 
+#         i 0= if ['] quit else ['] vacant then
+#         up@ task-block i taskn 1- mod * + symbol USER_XT + !
+# 
+#         i 0= if true else false then
+#         up@ task-block i * + symbol USER_STATUS + !
+#     loop
+# ;
+# 
+# : task! \# ( xt n -- ) write task to slot n
+#     dup 1 taskn 1- within not if symbol ENTASK throw then
+#     task-block * symbol RAM_lower_TASK0_userarea + >r
+#     dup   r@ symbol USER_XT + !
+#     >body r> symbol USER_IP + !
+# ;
+# 
+# : task.warm \# ( n -- ) reset task n
+#     dup 1 taskn 1- within not if symbol ENTASK throw then
+#     task-block * symbol RAM_lower_TASK0_userarea + >r
+# 
+#     r@ symbol USER_XT  + @ >body r@ symbol USER_IP + !
+#     r@ symbol USER_SP0 + @       r@ symbol USER_SP + !
+#     r@ symbol USER_RP0 + @       r@ symbol USER_RP + !
+#     r@ symbol USER_LP0 + @       r@ symbol USER_LP + !
+# 
+#     0 r@ symbol USER_LOOP_INDEX + !
+#     0 r@ symbol USER_LOOP_LIMIT + !
+#     0 r@ symbol USER_STATUS     + !
+# 
+#     rdrop
+# ;
+# 
+# : task.warm-all \# ( -- ) reset all tasks execept operator
+#     taskn 1- 1 ?do i task.warm loop
+# ;
+# 
+# : +task \# ( n -- ) make task n active
+#     dup 1 taskn 1- within not if symbol ENTASK throw then
+#     task-block * symbol RAM_lower_TASK0_userarea +
+#     symbol USER_STATUS + true swap !
+# ;
+# 
+# : -task \# ( n -- ) make task n inactive (sleep)
+#     dup 1 taskn 1- within not if symbol ENTASK throw then
+#     task-block * symbol RAM_lower_TASK0_userarea +
+#     symbol USER_STATUS + false swap !
+# ;
+# 
+# : single \# ( -- ) disable task switching
+#     symbol XT_NOP is pause
+# ;
+# 
+# : multi \# ( -- ) enable task switching
+#     ['] mtpause is pause
+# ;
+# 
+# : show.task \# ( -- ) show tasks
+#     \ need single or multi
+#     symbol XT_PAUSE defer@ symbol XT_NOP = if
+#         s" single"
+#     else
+#         s" multi"
+#     then type cr
+#     s" # UP...... ? LINK.... NAME...." type cr
+#     taskn 1- 0 ?do
+#         up@ task-block i * +
+#         i .
+#         dup hex.
+#         dup symbol USER_STATUS + @ if
+#             [char] A emit else [char] S emit then space
+#         dup symbol USER_LINK   + @ hex.
+#             symbol USER_XT + @ xt>string type
+#         cr
+#     loop
+# ;
+# 
+# : show.user \# ( n -- ) show user area task n
+#     \ drop
+#     s" OFF A....... [A]..... Desc........ OFF A....... [A]..... Desc........"
+#     type cr
+#     32 0 do
+#         i cells 3 u.r space up@ i cells + dup hex. @ hex.
+#         i case
+#             0 of s" one......... " type endof
+#             1 of s" one......... " type endof
+#             2 of s" one......... " type endof
+#             3 of s" one......... " type endof
+#             4 of s" one......... " type endof
+#             5 of s" one......... " type endof
+#             6 of s" one......... " type endof
+#             7 of s" one......... " type endof
+#             8 of s" one......... " type endof
+#             9 of s" one......... " type endof
+#            10 of s" one......... " type endof
+#            11 of s" one......... " type endof
+#            12 of s" one......... " type endof
+#            13 of s" one......... " type endof
+#            14 of s" one......... " type endof
+#            15 of s" one......... " type endof
+#            16 of s" one......... " type endof
+#            17 of s" one......... " type endof
+#            18 of s" one......... " type endof
+#            19 of s" one......... " type endof
+#            20 of s" one......... " type endof
+#            21 of s" one......... " type endof
+#            22 of s" one......... " type endof
+#            23 of s" one......... " type endof
+#            24 of s" one......... " type endof
+#            25 of s" one......... " type endof
+#            26 of s" one......... " type endof
+#            27 of s" one......... " type endof
+#            28 of s" one......... " type endof
+#            29 of s" one......... " type endof
+#            30 of s" one......... " type endof
+#            31 of s" one......... " type endof
+#         endcase
+#         i 1+ 2 mod 0= if cr then
+#     loop
+# ;
+
+/* # SPDX-License-Identifier: GPL-3.0-only */
+CONSTANT "taskn" , TASKN , TASKN
+END TASKN
+CONSTANT "task-block" , TASK_BLOCK, TASK_BLOCK_SIZE
+END TASK_BLOCK
+# ----------------------------------------------------------------------
+COLON "vacant", VACANT /* ( -- ) a task that does nothing */
+VACANT_0001: /* begin */
+	.word XT_PAUSE
+	.word XT_DOBRANCH,VACANT_0001 /* again */
+	.word XT_EXIT
+END VACANT
+# ----------------------------------------------------------------------
+COLON "reserve", RESERVE /* ( a -- ) wait for resource to be available and claim */
+RESERVE_0001: /* begin */
+	.word XT_PAUSE
+	.word XT_DUP
+	.word XT_FETCH
+	.word XT_DOCONDBRANCH,RESERVE_0001 /* until */
+	.word XT_FALSE
+	.word XT_SWAP
+	.word XT_STORE
+	.word XT_EXIT
+END RESERVE
+# ----------------------------------------------------------------------
+COLON "release", RELEASE /* ( a -- ) mark resource as not available  */
+	.word XT_TRUE
+	.word XT_SWAP
+	.word XT_STORE
+	.word XT_EXIT
+END RELEASE
+# ----------------------------------------------------------------------
+# ----------------------------------------------------------------------
+NONAME "init-user", INITMINUSUSER /* ( -- )  */
+	.word XT_DOLITERAL
+	.word RAM_lower_TASK0_userarea
+	.word XT_UP_STORE
+	.word XT_DOLITERAL
+	.word RAM_upper_TASK0_returnstack
+	.word XT_UP_FETCH
+	.word XT_DOLITERAL
+	.word USER_RP0
+	.word XT_PLUS
+	.word XT_STORE
+	.word XT_DOLITERAL
+	.word RAM_upper_TASK0_returnstack
+	.word XT_UP_FETCH
+	.word XT_DOLITERAL
+	.word USER_RP
+	.word XT_PLUS
+	.word XT_STORE
+	.word XT_DOLITERAL
+	.word RAM_upper_TASK0_datastack
+	.word XT_UP_FETCH
+	.word XT_DOLITERAL
+	.word USER_SP0
+	.word XT_PLUS
+	.word XT_STORE
+	.word XT_DOLITERAL
+	.word RAM_upper_TASK0_datastack
+	.word XT_UP_FETCH
+	.word XT_DOLITERAL
+	.word USER_SP
+	.word XT_PLUS
+	.word XT_STORE
+	.word XT_DOLITERAL
+	.word RAM_upper_TASK0_leavestack
+	.word XT_UP_FETCH
+	.word XT_DOLITERAL
+	.word USER_LP0
+	.word XT_PLUS
+	.word XT_STORE
+	.word XT_DOLITERAL
+	.word RAM_upper_TASK0_leavestack
+	.word XT_UP_FETCH
+	.word XT_DOLITERAL
+	.word USER_LP
+	.word XT_PLUS
+	.word XT_STORE
+	.word XT_TASKN
+	.word XT_ONE
+	.word XT_QDOCHECK, XT_DOCONDBRANCH,INITMINUSUSER_0001 /* ?do */
+	.word XT_DODO
+INITMINUSUSER_0002: /* do */
+	.word XT_TASK_BLOCK
+	.word XT_ZERO
+	.word XT_DODO
+INITMINUSUSER_0004: /* do */
+	.word XT_I
+	.word XT_DOLITERAL
+	.word USER_HANDLER
+	.word XT_CELLS
+	.word XT_LESS
+	.word XT_DOCONDBRANCH,INITMINUSUSER_0005 /* if */
+	.word XT_UP_FETCH
+	.word XT_I
+	.word XT_PLUS
+	.word XT_FETCH
+	.word XT_TASK_BLOCK
+	.word XT_J
+	.word XT_STAR
+	.word XT_PLUS
+	.word XT_UP_FETCH
+	.word XT_I
+	.word XT_PLUS
+	.word XT_TASK_BLOCK
+	.word XT_J
+	.word XT_STAR
+	.word XT_PLUS
+	.word XT_STORE
+INITMINUSUSER_0005: /* then */
+	.word XT_CELL
+	.word XT_DOPLUSLOOP,INITMINUSUSER_0004 /* +loop */
+INITMINUSUSER_0003: /* (for ?do IF required) */
+	.word XT_DOLOOP,INITMINUSUSER_0002 /* loop */
+INITMINUSUSER_0001: /* (for ?do IF required) */
+	.word XT_TASKN
+	.word XT_1MINUS
+	.word XT_ZERO
+	.word XT_QDOCHECK, XT_DOCONDBRANCH,INITMINUSUSER_0006 /* ?do */
+	.word XT_DODO
+INITMINUSUSER_0007: /* do */
+	.word XT_UP_FETCH
+	.word XT_TASK_BLOCK
+	.word XT_I
+	.word XT_1PLUS
+	.word XT_TASKN
+	.word XT_1MINUS
+	.word XT_MOD
+	.word XT_STAR
+	.word XT_PLUS
+	.word XT_UP_FETCH
+	.word XT_TASK_BLOCK
+	.word XT_I
+	.word XT_TASKN
+	.word XT_1MINUS
+	.word XT_MOD
+	.word XT_STAR
+	.word XT_PLUS
+	.word XT_DOLITERAL
+	.word USER_LINK
+	.word XT_PLUS
+	.word XT_STORE
+	.word XT_DOXLITERAL
+	.word XT_VACANT
+	.word XT_TO_BODY
+	.word XT_UP_FETCH
+	.word XT_TASK_BLOCK
+	.word XT_I
+	.word XT_TASKN
+	.word XT_1MINUS
+	.word XT_MOD
+	.word XT_STAR
+	.word XT_PLUS
+	.word XT_DOLITERAL
+	.word USER_IP
+	.word XT_PLUS
+	.word XT_STORE
+	.word XT_I
+	.word XT_ZEROEQUAL
+	.word XT_DOCONDBRANCH,INITMINUSUSER_0008 /* if */
+	.word XT_DOXLITERAL
+	.word XT_QUIT
+	.word XT_DOBRANCH,INITMINUSUSER_0009
+INITMINUSUSER_0008: /* else */
+	.word XT_DOXLITERAL
+	.word XT_VACANT
+INITMINUSUSER_0009: /* then */
+	.word XT_UP_FETCH
+	.word XT_TASK_BLOCK
+	.word XT_I
+	.word XT_TASKN
+	.word XT_1MINUS
+	.word XT_MOD
+	.word XT_STAR
+	.word XT_PLUS
+	.word XT_DOLITERAL
+	.word USER_XT
+	.word XT_PLUS
+	.word XT_STORE
+	.word XT_I
+	.word XT_ZEROEQUAL
+	.word XT_DOCONDBRANCH,INITMINUSUSER_000A /* if */
+	.word XT_TRUE
+	.word XT_DOBRANCH,INITMINUSUSER_000B
+INITMINUSUSER_000A: /* else */
+	.word XT_FALSE
+INITMINUSUSER_000B: /* then */
+	.word XT_UP_FETCH
+	.word XT_TASK_BLOCK
+	.word XT_I
+	.word XT_STAR
+	.word XT_PLUS
+	.word XT_DOLITERAL
+	.word USER_STATUS
+	.word XT_PLUS
+	.word XT_STORE
+	.word XT_DOLOOP,INITMINUSUSER_0007 /* loop */
+INITMINUSUSER_0006: /* (for ?do IF required) */
+	.word XT_EXIT
+END INITMINUSUSER
+# ----------------------------------------------------------------------
+COLON "task!", TASKBANG /* ( xt n -- ) write task to slot n  */
+	.word XT_DUP
+	.word XT_ONE
+	.word XT_TASKN
+	.word XT_1MINUS
+	.word XT_WITHIN
+	.word XT_NOT
+	.word XT_DOCONDBRANCH,TASKBANG_0001 /* if */
+	.word XT_DOLITERAL
+	.word ENTASK
+	.word XT_THROW
+TASKBANG_0001: /* then */
+	.word XT_TASK_BLOCK
+	.word XT_STAR
+	.word XT_DOLITERAL
+	.word RAM_lower_TASK0_userarea
+	.word XT_PLUS
+	.word XT_TO_R
+	.word XT_DUP
+	.word XT_R_FETCH
+	.word XT_DOLITERAL
+	.word USER_XT
+	.word XT_PLUS
+	.word XT_STORE
+	.word XT_TO_BODY
+	.word XT_R_FROM
+	.word XT_DOLITERAL
+	.word USER_IP
+	.word XT_PLUS
+	.word XT_STORE
+	.word XT_EXIT
+END TASKBANG
+# ----------------------------------------------------------------------
+COLON "task.warm", TASKDOTWARM /* ( n -- ) reset task n  */
+	.word XT_DUP
+	.word XT_ONE
+	.word XT_TASKN
+	.word XT_1MINUS
+	.word XT_WITHIN
+	.word XT_NOT
+	.word XT_DOCONDBRANCH,TASKDOTWARM_0001 /* if */
+	.word XT_DOLITERAL
+	.word ENTASK
+	.word XT_THROW
+TASKDOTWARM_0001: /* then */
+	.word XT_TASK_BLOCK
+	.word XT_STAR
+	.word XT_DOLITERAL
+	.word RAM_lower_TASK0_userarea
+	.word XT_PLUS
+	.word XT_TO_R
+	.word XT_R_FETCH
+	.word XT_DOLITERAL
+	.word USER_XT
+	.word XT_PLUS
+	.word XT_FETCH
+	.word XT_TO_BODY
+	.word XT_R_FETCH
+	.word XT_DOLITERAL
+	.word USER_IP
+	.word XT_PLUS
+	.word XT_STORE
+	.word XT_R_FETCH
+	.word XT_DOLITERAL
+	.word USER_SP0
+	.word XT_PLUS
+	.word XT_FETCH
+	.word XT_R_FETCH
+	.word XT_DOLITERAL
+	.word USER_SP
+	.word XT_PLUS
+	.word XT_STORE
+	.word XT_R_FETCH
+	.word XT_DOLITERAL
+	.word USER_RP0
+	.word XT_PLUS
+	.word XT_FETCH
+	.word XT_R_FETCH
+	.word XT_DOLITERAL
+	.word USER_RP
+	.word XT_PLUS
+	.word XT_STORE
+	.word XT_R_FETCH
+	.word XT_DOLITERAL
+	.word USER_LP0
+	.word XT_PLUS
+	.word XT_FETCH
+	.word XT_R_FETCH
+	.word XT_DOLITERAL
+	.word USER_LP
+	.word XT_PLUS
+	.word XT_STORE
+	.word XT_ZERO
+	.word XT_R_FETCH
+	.word XT_DOLITERAL
+	.word USER_LOOP_INDEX
+	.word XT_PLUS
+	.word XT_STORE
+	.word XT_ZERO
+	.word XT_R_FETCH
+	.word XT_DOLITERAL
+	.word USER_LOOP_LIMIT
+	.word XT_PLUS
+	.word XT_STORE
+	.word XT_ZERO
+	.word XT_R_FETCH
+	.word XT_DOLITERAL
+	.word USER_STATUS
+	.word XT_PLUS
+	.word XT_STORE
+	.word XT_RDROP
+	.word XT_EXIT
+END TASKDOTWARM
+# ----------------------------------------------------------------------
+COLON "task.warm-all", TASKDOTWARMMINUSALL /* ( -- ) reset all tasks execept operator */
+	.word XT_TASKN
+	.word XT_1MINUS
+	.word XT_ONE
+	.word XT_QDOCHECK, XT_DOCONDBRANCH,TASKDOTWARMMINUSALL_0001 /* ?do */
+	.word XT_DODO
+TASKDOTWARMMINUSALL_0002: /* do */
+	.word XT_I
+	.word XT_TASKDOTWARM
+	.word XT_DOLOOP,TASKDOTWARMMINUSALL_0002 /* loop */
+TASKDOTWARMMINUSALL_0001: /* (for ?do IF required) */
+	.word XT_EXIT
+END TASKDOTWARMMINUSALL
+# ----------------------------------------------------------------------
+COLON "+task", PLUSTASK /* ( n -- ) make task n active */
+	.word XT_DUP
+	.word XT_ONE
+	.word XT_TASKN
+	.word XT_1MINUS
+	.word XT_WITHIN
+	.word XT_NOT
+	.word XT_DOCONDBRANCH,PLUSTASK_0001 /* if */
+	.word XT_DOLITERAL
+	.word ENTASK
+	.word XT_THROW
+PLUSTASK_0001: /* then */
+	.word XT_TASK_BLOCK
+	.word XT_STAR
+	.word XT_DOLITERAL
+	.word RAM_lower_TASK0_userarea
+	.word XT_PLUS
+	.word XT_DOLITERAL
+	.word USER_STATUS
+	.word XT_PLUS
+	.word XT_TRUE
+	.word XT_SWAP
+	.word XT_STORE
+	.word XT_EXIT
+END PLUSTASK
+# ----------------------------------------------------------------------
+COLON "-task", MINUSTASK /* ( n -- ) make task n inactive (sleep) */
+	.word XT_DUP
+	.word XT_ONE
+	.word XT_TASKN
+	.word XT_1MINUS
+	.word XT_WITHIN
+	.word XT_NOT
+	.word XT_DOCONDBRANCH,MINUSTASK_0001 /* if */
+	.word XT_DOLITERAL
+	.word ENTASK
+	.word XT_THROW
+MINUSTASK_0001: /* then */
+	.word XT_TASK_BLOCK
+	.word XT_STAR
+	.word XT_DOLITERAL
+	.word RAM_lower_TASK0_userarea
+	.word XT_PLUS
+	.word XT_DOLITERAL
+	.word USER_STATUS
+	.word XT_PLUS
+	.word XT_FALSE
+	.word XT_SWAP
+	.word XT_STORE
+	.word XT_EXIT
+END MINUSTASK
+# ----------------------------------------------------------------------
+COLON "single", SINGLE /* ( -- ) disable task switching  */
+	.word XT_DOLITERAL
+	.word XT_NOP
+	.word XT_DOXLITERAL
+	.word XT_PAUSE
+	.word XT_DEFER_STORE
+	.word XT_EXIT
+END SINGLE
+# ----------------------------------------------------------------------
+COLON "multi", MULTI /* ( -- ) enable task switching  */
+	.word XT_DOXLITERAL
+	.word XT_MTPAUSE
+	.word XT_DOXLITERAL
+	.word XT_PAUSE
+	.word XT_DEFER_STORE
+	.word XT_EXIT
+END MULTI
+# ----------------------------------------------------------------------
+COLON "show.task", SHOWDOTTASK /* ( -- ) show tasks  */
+	.word XT_DOLITERAL
+	.word XT_PAUSE
+	.word XT_DEFER_FETCH
+	.word XT_DOLITERAL
+	.word XT_NOP
+	.word XT_EQUAL
+	.word XT_DOCONDBRANCH,SHOWDOTTASK_0001 /* if */
+	STRING "single"
+	.word XT_DOBRANCH,SHOWDOTTASK_0002
+SHOWDOTTASK_0001: /* else */
+	STRING "multi"
+SHOWDOTTASK_0002: /* then */
+	.word XT_TYPE
+	.word XT_CR
+	STRING "# UP...... ? LINK.... NAME...."
+	.word XT_TYPE
+	.word XT_CR
+	.word XT_TASKN
+	.word XT_1MINUS
+	.word XT_ZERO
+	.word XT_QDOCHECK, XT_DOCONDBRANCH,SHOWDOTTASK_0003 /* ?do */
+	.word XT_DODO
+SHOWDOTTASK_0004: /* do */
+	.word XT_UP_FETCH
+	.word XT_TASK_BLOCK
+	.word XT_I
+	.word XT_STAR
+	.word XT_PLUS
+	.word XT_I
+	.word XT_DOT
+	.word XT_DUP
+	.word XT_HEXDOT
+	.word XT_DUP
+	.word XT_DOLITERAL
+	.word USER_STATUS
+	.word XT_PLUS
+	.word XT_FETCH
+	.word XT_DOCONDBRANCH,SHOWDOTTASK_0005 /* if */
+	.word XT_DOLITERAL 
+	.word 65 /* A */
+	.word XT_EMIT
+	.word XT_DOBRANCH,SHOWDOTTASK_0006
+SHOWDOTTASK_0005: /* else */
+	.word XT_DOLITERAL 
+	.word 83 /* S */
+	.word XT_EMIT
+SHOWDOTTASK_0006: /* then */
+	.word XT_SPACE
+	.word XT_DUP
+	.word XT_DOLITERAL
+	.word USER_LINK
+	.word XT_PLUS
+	.word XT_FETCH
+	.word XT_HEXDOT
+	.word XT_DOLITERAL
+	.word USER_XT
+	.word XT_PLUS
+	.word XT_FETCH
+	.word XT_XT2STRING
+	.word XT_TYPE
+	.word XT_CR
+	.word XT_DOLOOP,SHOWDOTTASK_0004 /* loop */
+SHOWDOTTASK_0003: /* (for ?do IF required) */
+	.word XT_EXIT
+END SHOWDOTTASK
+# ----------------------------------------------------------------------
+COLON "show.user", SHOWDOTUSER /* ( n -- ) show user area task n  */
+	STRING "OFF A....... [A]..... Desc........ OFF A....... [A]..... Desc........"
+	.word XT_TYPE
+	.word XT_CR
+	.word XT_DOLITERAL
+	.word 32
+	.word XT_ZERO
+	.word XT_DODO
+SHOWDOTUSER_0002: /* do */
+	.word XT_I
+	.word XT_CELLS
+	.word XT_DOLITERAL
+	.word 3
+	.word XT_UDOTR
+	.word XT_SPACE
+	.word XT_UP_FETCH
+	.word XT_I
+	.word XT_CELLS
+	.word XT_PLUS
+	.word XT_DUP
+	.word XT_HEXDOT
+	.word XT_FETCH
+	.word XT_HEXDOT
+	.word XT_I
+	.word XT_ZERO
+	.word XT_OVER
+	.word XT_EQUAL
+	.word XT_DOCONDBRANCH,SHOWDOTUSER_0003 /* if */
+	.word XT_DROP
+	STRING "one......... "
+	.word XT_TYPE
+	.word XT_DOBRANCH,SHOWDOTUSER_0004
+SHOWDOTUSER_0003: /* else */
+	.word XT_ONE
+	.word XT_OVER
+	.word XT_EQUAL
+	.word XT_DOCONDBRANCH,SHOWDOTUSER_0005 /* if */
+	.word XT_DROP
+	STRING "one......... "
+	.word XT_TYPE
+	.word XT_DOBRANCH,SHOWDOTUSER_0006
+SHOWDOTUSER_0005: /* else */
+	.word XT_TWO
+	.word XT_OVER
+	.word XT_EQUAL
+	.word XT_DOCONDBRANCH,SHOWDOTUSER_0007 /* if */
+	.word XT_DROP
+	STRING "one......... "
+	.word XT_TYPE
+	.word XT_DOBRANCH,SHOWDOTUSER_0008
+SHOWDOTUSER_0007: /* else */
+	.word XT_DOLITERAL
+	.word 3
+	.word XT_OVER
+	.word XT_EQUAL
+	.word XT_DOCONDBRANCH,SHOWDOTUSER_0009 /* if */
+	.word XT_DROP
+	STRING "one......... "
+	.word XT_TYPE
+	.word XT_DOBRANCH,SHOWDOTUSER_000A
+SHOWDOTUSER_0009: /* else */
+	.word XT_FOUR
+	.word XT_OVER
+	.word XT_EQUAL
+	.word XT_DOCONDBRANCH,SHOWDOTUSER_000B /* if */
+	.word XT_DROP
+	STRING "one......... "
+	.word XT_TYPE
+	.word XT_DOBRANCH,SHOWDOTUSER_000C
+SHOWDOTUSER_000B: /* else */
+	.word XT_DOLITERAL
+	.word 5
+	.word XT_OVER
+	.word XT_EQUAL
+	.word XT_DOCONDBRANCH,SHOWDOTUSER_000D /* if */
+	.word XT_DROP
+	STRING "one......... "
+	.word XT_TYPE
+	.word XT_DOBRANCH,SHOWDOTUSER_000E
+SHOWDOTUSER_000D: /* else */
+	.word XT_DOLITERAL
+	.word 6
+	.word XT_OVER
+	.word XT_EQUAL
+	.word XT_DOCONDBRANCH,SHOWDOTUSER_000F /* if */
+	.word XT_DROP
+	STRING "one......... "
+	.word XT_TYPE
+	.word XT_DOBRANCH,SHOWDOTUSER_0010
+SHOWDOTUSER_000F: /* else */
+	.word XT_DOLITERAL
+	.word 7
+	.word XT_OVER
+	.word XT_EQUAL
+	.word XT_DOCONDBRANCH,SHOWDOTUSER_0011 /* if */
+	.word XT_DROP
+	STRING "one......... "
+	.word XT_TYPE
+	.word XT_DOBRANCH,SHOWDOTUSER_0012
+SHOWDOTUSER_0011: /* else */
+	.word XT_DOLITERAL
+	.word 8
+	.word XT_OVER
+	.word XT_EQUAL
+	.word XT_DOCONDBRANCH,SHOWDOTUSER_0013 /* if */
+	.word XT_DROP
+	STRING "one......... "
+	.word XT_TYPE
+	.word XT_DOBRANCH,SHOWDOTUSER_0014
+SHOWDOTUSER_0013: /* else */
+	.word XT_DOLITERAL
+	.word 9
+	.word XT_OVER
+	.word XT_EQUAL
+	.word XT_DOCONDBRANCH,SHOWDOTUSER_0015 /* if */
+	.word XT_DROP
+	STRING "one......... "
+	.word XT_TYPE
+	.word XT_DOBRANCH,SHOWDOTUSER_0016
+SHOWDOTUSER_0015: /* else */
+	.word XT_DOLITERAL
+	.word 10
+	.word XT_OVER
+	.word XT_EQUAL
+	.word XT_DOCONDBRANCH,SHOWDOTUSER_0017 /* if */
+	.word XT_DROP
+	STRING "one......... "
+	.word XT_TYPE
+	.word XT_DOBRANCH,SHOWDOTUSER_0018
+SHOWDOTUSER_0017: /* else */
+	.word XT_DOLITERAL
+	.word 11
+	.word XT_OVER
+	.word XT_EQUAL
+	.word XT_DOCONDBRANCH,SHOWDOTUSER_0019 /* if */
+	.word XT_DROP
+	STRING "one......... "
+	.word XT_TYPE
+	.word XT_DOBRANCH,SHOWDOTUSER_001A
+SHOWDOTUSER_0019: /* else */
+	.word XT_DOLITERAL
+	.word 12
+	.word XT_OVER
+	.word XT_EQUAL
+	.word XT_DOCONDBRANCH,SHOWDOTUSER_001B /* if */
+	.word XT_DROP
+	STRING "one......... "
+	.word XT_TYPE
+	.word XT_DOBRANCH,SHOWDOTUSER_001C
+SHOWDOTUSER_001B: /* else */
+	.word XT_DOLITERAL
+	.word 13
+	.word XT_OVER
+	.word XT_EQUAL
+	.word XT_DOCONDBRANCH,SHOWDOTUSER_001D /* if */
+	.word XT_DROP
+	STRING "one......... "
+	.word XT_TYPE
+	.word XT_DOBRANCH,SHOWDOTUSER_001E
+SHOWDOTUSER_001D: /* else */
+	.word XT_DOLITERAL
+	.word 14
+	.word XT_OVER
+	.word XT_EQUAL
+	.word XT_DOCONDBRANCH,SHOWDOTUSER_001F /* if */
+	.word XT_DROP
+	STRING "one......... "
+	.word XT_TYPE
+	.word XT_DOBRANCH,SHOWDOTUSER_0020
+SHOWDOTUSER_001F: /* else */
+	.word XT_DOLITERAL
+	.word 15
+	.word XT_OVER
+	.word XT_EQUAL
+	.word XT_DOCONDBRANCH,SHOWDOTUSER_0021 /* if */
+	.word XT_DROP
+	STRING "one......... "
+	.word XT_TYPE
+	.word XT_DOBRANCH,SHOWDOTUSER_0022
+SHOWDOTUSER_0021: /* else */
+	.word XT_DOLITERAL
+	.word 16
+	.word XT_OVER
+	.word XT_EQUAL
+	.word XT_DOCONDBRANCH,SHOWDOTUSER_0023 /* if */
+	.word XT_DROP
+	STRING "one......... "
+	.word XT_TYPE
+	.word XT_DOBRANCH,SHOWDOTUSER_0024
+SHOWDOTUSER_0023: /* else */
+	.word XT_DOLITERAL
+	.word 17
+	.word XT_OVER
+	.word XT_EQUAL
+	.word XT_DOCONDBRANCH,SHOWDOTUSER_0025 /* if */
+	.word XT_DROP
+	STRING "one......... "
+	.word XT_TYPE
+	.word XT_DOBRANCH,SHOWDOTUSER_0026
+SHOWDOTUSER_0025: /* else */
+	.word XT_DOLITERAL
+	.word 18
+	.word XT_OVER
+	.word XT_EQUAL
+	.word XT_DOCONDBRANCH,SHOWDOTUSER_0027 /* if */
+	.word XT_DROP
+	STRING "one......... "
+	.word XT_TYPE
+	.word XT_DOBRANCH,SHOWDOTUSER_0028
+SHOWDOTUSER_0027: /* else */
+	.word XT_DOLITERAL
+	.word 19
+	.word XT_OVER
+	.word XT_EQUAL
+	.word XT_DOCONDBRANCH,SHOWDOTUSER_0029 /* if */
+	.word XT_DROP
+	STRING "one......... "
+	.word XT_TYPE
+	.word XT_DOBRANCH,SHOWDOTUSER_002A
+SHOWDOTUSER_0029: /* else */
+	.word XT_DOLITERAL
+	.word 20
+	.word XT_OVER
+	.word XT_EQUAL
+	.word XT_DOCONDBRANCH,SHOWDOTUSER_002B /* if */
+	.word XT_DROP
+	STRING "one......... "
+	.word XT_TYPE
+	.word XT_DOBRANCH,SHOWDOTUSER_002C
+SHOWDOTUSER_002B: /* else */
+	.word XT_DOLITERAL
+	.word 21
+	.word XT_OVER
+	.word XT_EQUAL
+	.word XT_DOCONDBRANCH,SHOWDOTUSER_002D /* if */
+	.word XT_DROP
+	STRING "one......... "
+	.word XT_TYPE
+	.word XT_DOBRANCH,SHOWDOTUSER_002E
+SHOWDOTUSER_002D: /* else */
+	.word XT_DOLITERAL
+	.word 22
+	.word XT_OVER
+	.word XT_EQUAL
+	.word XT_DOCONDBRANCH,SHOWDOTUSER_002F /* if */
+	.word XT_DROP
+	STRING "one......... "
+	.word XT_TYPE
+	.word XT_DOBRANCH,SHOWDOTUSER_0030
+SHOWDOTUSER_002F: /* else */
+	.word XT_DOLITERAL
+	.word 23
+	.word XT_OVER
+	.word XT_EQUAL
+	.word XT_DOCONDBRANCH,SHOWDOTUSER_0031 /* if */
+	.word XT_DROP
+	STRING "one......... "
+	.word XT_TYPE
+	.word XT_DOBRANCH,SHOWDOTUSER_0032
+SHOWDOTUSER_0031: /* else */
+	.word XT_DOLITERAL
+	.word 24
+	.word XT_OVER
+	.word XT_EQUAL
+	.word XT_DOCONDBRANCH,SHOWDOTUSER_0033 /* if */
+	.word XT_DROP
+	STRING "one......... "
+	.word XT_TYPE
+	.word XT_DOBRANCH,SHOWDOTUSER_0034
+SHOWDOTUSER_0033: /* else */
+	.word XT_DOLITERAL
+	.word 25
+	.word XT_OVER
+	.word XT_EQUAL
+	.word XT_DOCONDBRANCH,SHOWDOTUSER_0035 /* if */
+	.word XT_DROP
+	STRING "one......... "
+	.word XT_TYPE
+	.word XT_DOBRANCH,SHOWDOTUSER_0036
+SHOWDOTUSER_0035: /* else */
+	.word XT_DOLITERAL
+	.word 26
+	.word XT_OVER
+	.word XT_EQUAL
+	.word XT_DOCONDBRANCH,SHOWDOTUSER_0037 /* if */
+	.word XT_DROP
+	STRING "one......... "
+	.word XT_TYPE
+	.word XT_DOBRANCH,SHOWDOTUSER_0038
+SHOWDOTUSER_0037: /* else */
+	.word XT_DOLITERAL
+	.word 27
+	.word XT_OVER
+	.word XT_EQUAL
+	.word XT_DOCONDBRANCH,SHOWDOTUSER_0039 /* if */
+	.word XT_DROP
+	STRING "one......... "
+	.word XT_TYPE
+	.word XT_DOBRANCH,SHOWDOTUSER_003A
+SHOWDOTUSER_0039: /* else */
+	.word XT_DOLITERAL
+	.word 28
+	.word XT_OVER
+	.word XT_EQUAL
+	.word XT_DOCONDBRANCH,SHOWDOTUSER_003B /* if */
+	.word XT_DROP
+	STRING "one......... "
+	.word XT_TYPE
+	.word XT_DOBRANCH,SHOWDOTUSER_003C
+SHOWDOTUSER_003B: /* else */
+	.word XT_DOLITERAL
+	.word 29
+	.word XT_OVER
+	.word XT_EQUAL
+	.word XT_DOCONDBRANCH,SHOWDOTUSER_003D /* if */
+	.word XT_DROP
+	STRING "one......... "
+	.word XT_TYPE
+	.word XT_DOBRANCH,SHOWDOTUSER_003E
+SHOWDOTUSER_003D: /* else */
+	.word XT_DOLITERAL
+	.word 30
+	.word XT_OVER
+	.word XT_EQUAL
+	.word XT_DOCONDBRANCH,SHOWDOTUSER_003F /* if */
+	.word XT_DROP
+	STRING "one......... "
+	.word XT_TYPE
+	.word XT_DOBRANCH,SHOWDOTUSER_0040
+SHOWDOTUSER_003F: /* else */
+	.word XT_DOLITERAL
+	.word 31
+	.word XT_OVER
+	.word XT_EQUAL
+	.word XT_DOCONDBRANCH,SHOWDOTUSER_0041 /* if */
+	.word XT_DROP
+	STRING "one......... "
+	.word XT_TYPE
+	.word XT_DOBRANCH,SHOWDOTUSER_0042
+SHOWDOTUSER_0041: /* else */
+	.word XT_DROP
+SHOWDOTUSER_0042: /* then */
+SHOWDOTUSER_0040: /* then */
+SHOWDOTUSER_003E: /* then */
+SHOWDOTUSER_003C: /* then */
+SHOWDOTUSER_003A: /* then */
+SHOWDOTUSER_0038: /* then */
+SHOWDOTUSER_0036: /* then */
+SHOWDOTUSER_0034: /* then */
+SHOWDOTUSER_0032: /* then */
+SHOWDOTUSER_0030: /* then */
+SHOWDOTUSER_002E: /* then */
+SHOWDOTUSER_002C: /* then */
+SHOWDOTUSER_002A: /* then */
+SHOWDOTUSER_0028: /* then */
+SHOWDOTUSER_0026: /* then */
+SHOWDOTUSER_0024: /* then */
+SHOWDOTUSER_0022: /* then */
+SHOWDOTUSER_0020: /* then */
+SHOWDOTUSER_001E: /* then */
+SHOWDOTUSER_001C: /* then */
+SHOWDOTUSER_001A: /* then */
+SHOWDOTUSER_0018: /* then */
+SHOWDOTUSER_0016: /* then */
+SHOWDOTUSER_0014: /* then */
+SHOWDOTUSER_0012: /* then */
+SHOWDOTUSER_0010: /* then */
+SHOWDOTUSER_000E: /* then */
+SHOWDOTUSER_000C: /* then */
+SHOWDOTUSER_000A: /* then */
+SHOWDOTUSER_0008: /* then */
+SHOWDOTUSER_0006: /* then */
+SHOWDOTUSER_0004: /* then */
+	.word XT_I
+	.word XT_1PLUS
+	.word XT_TWO
+	.word XT_MOD
+	.word XT_ZEROEQUAL
+	.word XT_DOCONDBRANCH,SHOWDOTUSER_0043 /* if */
+	.word XT_CR
+SHOWDOTUSER_0043: /* then */
+	.word XT_DOLOOP,SHOWDOTUSER_0002 /* loop */
+SHOWDOTUSER_0001: /* (for ?do IF required) */
+	.word XT_EXIT
+END SHOWDOTUSER
+# ----------------------------------------------------------------------
+#=====================================================================
+#======================================================================
+
+# : show.ua ( n -- ) \ show user area task n
+COLON "show.ua", SHOWDOTUA /* ( n -- ) show user area task n */
+    # \ drop
+    # s" OFF A....... [A]..... Desc........ OFF A....... [A]..... Desc........"
+    STRING "OFF A....... [A]..... Desc........ OFF A....... [A]..... Desc........" 
+    # type cr
+    .word XT_TYPE, XT_CR
+    # 32 0 do
+    .word XT_DOLITERAL, 0x20, XT_ZERO, XT_DODO
+1: 
+        # i cells 3 u.r space \ print cell offset
+        .word XT_I, XT_CELLS, XT_DOLITERAL, 0x3, XT_UDOTR, XT_SPACE
+        # dup task-block * up@ + ( n -- addr ) \ addr is taskN UA
+        .word XT_DUP, XT_TASK_BLOCK, XT_STAR, XT_UP_FETCH, XT_PLUS
+        # i cells + dup hex. @ hex. \ emit i-th UA field address and value
+        .word XT_I, XT_CELLS, XT_PLUS, XT_DUP, XT_HEXDOT, XT_FETCH, XT_HEXDOT
+        # i 4 * case
+        .word XT_I, XT_FOUR, XT_STAR
+        # symbol USER_RP0         of s" RP0......... " type endof
+        .word XT_DOLITERAL, USER_RP0, XT_OVER, XT_EQUAL, XT_DOCONDBRANCH, 2f, XT_DROP
+        STRING "RP0......... " 
+        .word XT_TYPE, XT_DOBRANCH, 3f
+2: 
+        # symbol USER_RP          of s" RP.......... " type endof
+        .word XT_DOLITERAL, USER_RP, XT_OVER, XT_EQUAL, XT_DOCONDBRANCH, 4f, XT_DROP
+        STRING "RP.......... " 
+        .word XT_TYPE, XT_DOBRANCH, 5f
+4: 
+        # symbol USER_SP0         of s" SP0......... " type endof
+        .word XT_DOLITERAL, USER_SP0, XT_OVER, XT_EQUAL, XT_DOCONDBRANCH, 6f, XT_DROP
+        STRING "SP0......... " 
+        .word XT_TYPE, XT_DOBRANCH, 7f
+6: 
+        # symbol USER_SP          of s" SP.......... " type endof
+        .word XT_DOLITERAL, USER_SP, XT_OVER, XT_EQUAL, XT_DOCONDBRANCH, 8f, XT_DROP
+        STRING "SP.......... " 
+        .word XT_TYPE, XT_DOBRANCH, 9f
+8: 
+        # symbol USER_LP0         of s" LP0......... " type endof
+        .word XT_DOLITERAL, USER_LP0, XT_OVER, XT_EQUAL, XT_DOCONDBRANCH, 10f, XT_DROP
+        STRING "LP0......... " 
+        .word XT_TYPE, XT_DOBRANCH, 11f
+10: 
+        # symbol USER_LP          of s" LP.......... " type endof
+        .word XT_DOLITERAL, USER_LP, XT_OVER, XT_EQUAL, XT_DOCONDBRANCH, 12f, XT_DROP
+        STRING "LP.......... " 
+        .word XT_TYPE, XT_DOBRANCH, 13f
+12: 
+        # symbol USER_HANDLER     of s" HANDLER..... " type endof
+        .word XT_DOLITERAL, USER_HANDLER, XT_OVER, XT_EQUAL, XT_DOCONDBRANCH, 14f, XT_DROP
+        STRING "HANDLER..... " 
+        .word XT_TYPE, XT_DOBRANCH, 15f
+14: 
+        # symbol USER_BASE        of s" BASE........ " type endof
+        .word XT_DOLITERAL, USER_BASE, XT_OVER, XT_EQUAL, XT_DOCONDBRANCH, 16f, XT_DROP
+        STRING "BASE........ " 
+        .word XT_TYPE, XT_DOBRANCH, 17f
+16: 
+        # symbol USER_LOOP_INDEX  of s" LOOP_INDEX.. " type endof
+        .word XT_DOLITERAL, USER_LOOP_INDEX, XT_OVER, XT_EQUAL, XT_DOCONDBRANCH, 18f, XT_DROP
+        STRING "LOOP_INDEX.. " 
+        .word XT_TYPE, XT_DOBRANCH, 19f
+18: 
+        # symbol USER_LOOP_LIMIT  of s" LOOP_LIMIT.. " type endof
+        .word XT_DOLITERAL, USER_LOOP_LIMIT, XT_OVER, XT_EQUAL, XT_DOCONDBRANCH, 20f, XT_DROP
+        STRING "LOOP_LIMIT.. " 
+        .word XT_TYPE, XT_DOBRANCH, 21f
+20: 
+        # symbol USER_LINK        of s" LINK........ " type endof
+        .word XT_DOLITERAL, USER_LINK, XT_OVER, XT_EQUAL, XT_DOCONDBRANCH, 22f, XT_DROP
+        STRING "LINK........ " 
+        .word XT_TYPE, XT_DOBRANCH, 23f
+22: 
+        # symbol USER_IP          of s" IP.......... " type endof
+        .word XT_DOLITERAL, USER_IP, XT_OVER, XT_EQUAL, XT_DOCONDBRANCH, 24f, XT_DROP
+        STRING "IP.......... " 
+        .word XT_TYPE, XT_DOBRANCH, 25f
+24: 
+        # symbol USER_TOS         of s" TOS......... " type endof
+        .word XT_DOLITERAL, USER_TOS, XT_OVER, XT_EQUAL, XT_DOCONDBRANCH, 26f, XT_DROP
+        STRING "TOS......... " 
+        .word XT_TYPE, XT_DOBRANCH, 27f
+26: 
+        # symbol USER_STATUS      of s" STATUS...... " type endof
+        .word XT_DOLITERAL, USER_STATUS, XT_OVER, XT_EQUAL, XT_DOCONDBRANCH, 28f, XT_DROP
+        STRING "STATUS...... " 
+        .word XT_TYPE, XT_DOBRANCH, 29f
+28: 
+        # symbol USER_XT          of s" XT.......... " type endof
+        .word XT_DOLITERAL, USER_XT, XT_OVER, XT_EQUAL, XT_DOCONDBRANCH, 30f, XT_DROP
+        STRING "XT.......... " 
+        .word XT_TYPE, XT_DOBRANCH, 31f
+30: 
+        # symbol USER_EMIT        of s" EMIT........ " type endof
+        .word XT_DOLITERAL, USER_EMIT, XT_OVER, XT_EQUAL, XT_DOCONDBRANCH, 32f, XT_DROP
+        STRING "EMIT........ " 
+        .word XT_TYPE, XT_DOBRANCH, 33f
+32: 
+        # s" ............ " type
+        STRING "............ " 
+        .word XT_TYPE
+        # endcase
+        .word XT_DROP
+33: 
+31: 
+29: 
+27: 
+25: 
+23: 
+21: 
+19: 
+17: 
+15: 
+13: 
+11: 
+9: 
+7: 
+5: 
+3: 
+        # i 1+ 2 mod 0= if cr then
+        .word XT_I, XT_1PLUS, XT_TWO, XT_MOD, XT_ZEROEQUAL, XT_DOCONDBRANCH, 34f, XT_CR
+34: 
+    # loop
+    .word XT_DOLOOP, 1b
+    # drop
+    .word XT_DROP
+   # ;
+   .word XT_EXIT
+END SHOWDOTUA
+

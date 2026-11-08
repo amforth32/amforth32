@@ -54,9 +54,9 @@ COLON "warm", WARM /* ( -- ) high level part of the boot sequence, VM is running
   /* unlock flash system */
   .word XT_FLASHDOTUNLOCK                                                            
 
-.if WANT_USB_OPERATOR
-  .word XT_INIT_USB_OPERATOR
-.endif
+#.if WANT_USB_OPERATOR
+#  .word XT_INIT_USB_OPERATOR
+#.endif
 
 
   /* initialize pvalue system */
@@ -80,16 +80,16 @@ COLON "warm", WARM /* ( -- ) high level part of the boot sequence, VM is running
   .word XT_EXIT       
 END WARM
 
-.if WANT_USB_OPERATOR
-NONAME "init.usb.operator", INIT_USB_OPERATOR
-  /* DEFER "emit", EMIT, XT_USB_EMIT_PAUSE */
-  .word XT_DOLITERAL, XT_USB_EMIT_PAUSE, XT_DOLITERAL, XT_EMIT, XT_CELLPLUS, XT_FETCH, XT_STORE
-  /* DEFER "emit?",EMITQ, XT_USB_EMITQ */
-  .word XT_DOLITERAL, XT_USB_EMITQ, XT_DOLITERAL, XT_EMITQ, XT_CELLPLUS, XT_FETCH, XT_STORE
-  /* DEFER "key", KEY, XT_USB_KEY_PAUSE */
-  .word XT_DOLITERAL, XT_USB_KEY_PAUSE, XT_DOLITERAL, XT_KEY, XT_CELLPLUS, XT_FETCH, XT_STORE
-  /* DEFER "key?",KEYQ, XT_USB_KEYQ */
-  .word XT_DOLITERAL, XT_USB_KEYQ, XT_DOLITERAL, XT_KEYQ, XT_CELLPLUS, XT_FETCH, XT_STORE
-  .word XT_EXIT
-END INIT_USB_OPERATOR
-.endif
+# .if WANT_USB_OPERATOR
+# NONAME "init.usb.operator", INIT_USB_OPERATOR
+#   /* DEFER "emit", EMIT, XT_USB_EMIT_PAUSE */
+#   .word XT_DOLITERAL, XT_USB_EMIT_PAUSE, XT_DOLITERAL, XT_EMIT, XT_CELLPLUS, XT_FETCH, XT_STORE
+#   /* DEFER "emit?",EMITQ, XT_USB_EMITQ */
+#   .word XT_DOLITERAL, XT_USB_EMITQ, XT_DOLITERAL, XT_EMITQ, XT_CELLPLUS, XT_FETCH, XT_STORE
+#   /* DEFER "key", KEY, XT_USB_KEY_PAUSE */
+#   .word XT_DOLITERAL, XT_USB_KEY_PAUSE, XT_DOLITERAL, XT_KEY, XT_CELLPLUS, XT_FETCH, XT_STORE
+#   /* DEFER "key?",KEYQ, XT_USB_KEYQ */
+#   .word XT_DOLITERAL, XT_USB_KEYQ, XT_DOLITERAL, XT_KEYQ, XT_CELLPLUS, XT_FETCH, XT_STORE
+#   .word XT_EXIT
+# END INIT_USB_OPERATOR
+# .endif

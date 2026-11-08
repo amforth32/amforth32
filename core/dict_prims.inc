@@ -122,5 +122,8 @@
 .include "words/does.s"
 .include "words/naligned.s"
 
+.include "words/mtpause.s"
+.include "words/interrupts.s"
+
 # Include architecture specific primitives
 .include "arch_prims.inc"

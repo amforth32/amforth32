@@ -14,6 +14,8 @@ AMFORTH ?= $(shell git rev-parse --show-toplevel)
 include $(AMFORTH)/arm/dev/Makefile
 
 QEMU := qemu-system-arm -M virt -cpu cortex-a15 -m 1M -kernel build/amforth.elf
+#QEMU := qemu-system-arm -M mps2-an386 -cpu cortex-m4 -m 16M -kernel build/amforth.elf
+
 # -nographic is incompatible with -serial stdio as the monitor takes over the serial device
 ## Start AmForth under QEMU with operator uart connected to stdio
 stdio:

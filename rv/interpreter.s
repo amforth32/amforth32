@@ -56,7 +56,7 @@ END BREAK
 
 CODEWORD "debug_buf", DEBUG_BUF /* ( -- addr ) debugger input buffer address */
   savetos
-  la s3, RAM_lower_debug_buf
+  addi s3, s6, USER_DEBUG_TIB
   NEXT
 END DEBUG_BUF
 .endif

@@ -58,7 +58,7 @@ dtests: image
 # On Linux hosts a convenient way to run the Linux target is using qemu-user-static.
 # The distribution should have the package available for installation.
 QEMU ?= qemu-arm-static
-QEMU_TESTS = $(QEMU) build/amforth.elf
+QEMU_TESTS ?= $(QEMU) build/amforth.elf
 
 ## Starts amforth under qemu-user-static (Linux only)
 run:

@@ -97,19 +97,19 @@
 # \ mandelbrot
 
 
-CONSTANT "maxiter",MAXITER,20
-CONSTANT "minval",MINVAL,-19
-CONSTANT "maxval",MAXVAL,20
-CONSTANT "rescale",RESCALE,640
-CONSTANT "s_escape",SUNDERESCAPE,2560
-VARIABLE "creal",CREAL
-VARIABLE "cimag",CIMAG
-VARIABLE "zreal",ZREAL
-VARIABLE "zimag",ZIMAG
-VARIABLE "ccount",CCOUNT
+NOCON "maxiter",MAXITER,20
+NOCON "minval",MINVAL,-19
+NOCON "maxval",MAXVAL,20
+NOCON "rescale",RESCALE,640
+NOCON "s_escape",SUNDERESCAPE,2560
+NOVAR "creal",CREAL
+NOVAR "cimag",CIMAG
+NOVAR "zreal",ZREAL
+NOVAR "zimag",ZIMAG
+NOVAR "ccount",CCOUNT
 
 # ----------------------------------------------------------------------
-COLON "zr_sq", ZRUNDERSQ 
+NONAME "zr_sq", ZRUNDERSQ 
 	.word XT_ZREAL
 	.word XT_FETCH
 	.word XT_DUP
@@ -117,7 +117,7 @@ COLON "zr_sq", ZRUNDERSQ
 	.word XT_STARSLASH
 	.word XT_EXIT
 # ----------------------------------------------------------------------
-COLON "zi_sq", ZIUNDERSQ 
+NONAME "zi_sq", ZIUNDERSQ 
 	.word XT_ZIMAG
 	.word XT_FETCH
 	.word XT_DUP
@@ -125,7 +125,7 @@ COLON "zi_sq", ZIUNDERSQ
 	.word XT_STARSLASH
 	.word XT_EXIT
 # ----------------------------------------------------------------------
-COLON ".char", DOTCHAR 
+NONAME ".char", DOTCHAR 
 	STRING "..,'~!^:;[/<&?oxox#   "
 	.word XT_DROP
 	.word XT_PLUS
@@ -136,12 +136,12 @@ COLON ".char", DOTCHAR
 	.word XT_TYPE
 	.word XT_EXIT
 # ----------------------------------------------------------------------
-COLON "escapes?", ESCAPESQ 
+NONAME "escapes?", ESCAPESQ 
 	.word XT_SUNDERESCAPE
 	.word XT_GREATER
 	.word XT_EXIT
 # ----------------------------------------------------------------------
-COLON "count_and_test?", COUNTUNDERANDUNDERTESTQ 
+NONAME "count_and_test?", COUNTUNDERANDUNDERTESTQ 
 	.word XT_CCOUNT
 	.word XT_FETCH
 	.word XT_1PLUS
@@ -152,7 +152,7 @@ COLON "count_and_test?", COUNTUNDERANDUNDERTESTQ
 	.word XT_GREATER
 	.word XT_EXIT
 # ----------------------------------------------------------------------
-COLON "init_vars", INITUNDERVARS 
+NONAME "init_vars", INITUNDERVARS 
 	.word XT_DOLITERAL
 	.word 5
 	.word XT_LSHIFT
@@ -174,7 +174,7 @@ COLON "init_vars", INITUNDERVARS
 	.word XT_STORE
 	.word XT_EXIT
 # ----------------------------------------------------------------------
-COLON "doescape", DOESCAPE 
+NONAME "doescape", DOESCAPE 
 	.word XT_ZRUNDERSQ
 	.word XT_ZIUNDERSQ
 	.word XT_2DUP
@@ -208,7 +208,7 @@ DOESCAPE_0001: # else
 DOESCAPE_0002: # then
 	.word XT_EXIT
 # ----------------------------------------------------------------------
-COLON "docell", DOCELL 
+NONAME "docell", DOCELL 
 	.word XT_INITUNDERVARS
 DOCELL_0001: # begin
 	.word XT_DOESCAPE
@@ -218,7 +218,7 @@ DOCELL_0001: # begin
 	.word XT_DOTCHAR
 	.word XT_EXIT
 # ----------------------------------------------------------------------
-COLON "dorow", DOROW 
+NONAME "dorow", DOROW 
 	.word XT_SPACE
 	.word XT_SPACE
 	.word XT_SPACE

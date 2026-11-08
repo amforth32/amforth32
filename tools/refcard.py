@@ -23,7 +23,7 @@ import html
 import argparse
 
 def read_build_info():
-    pattern = re.compile(r'.*> 7:\.ascii "(.*)"\n')
+    pattern = re.compile(r'.*>\s*\.ascii "(.*)"\s*$')
     bits = {}
     #for fn in ['words/env-cpu.s', 'words/env-board.s', 'words/build-info.s']:
     with open('build/amforth.lst-as', 'r') as f:

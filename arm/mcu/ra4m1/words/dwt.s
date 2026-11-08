@@ -21,27 +21,41 @@ CODEWORD "dwt.init" , DWTDOTINIT /* ( -- ) initialise the DWT CYCCNT 32b counter
     mov   r1, #0
     str   r1, [r0]
 
-    NEXT
-END DWTDOTINIT
-
-CODEWORD "-dwt" , MINUSDWT /* ( -- ) reset the DWT CYCCNT 32b counter to zero */
-
-    ldr   r0, =DWT_CYCCNT    /* DWT_CYCCNT */
-    mov   r1, #0
-    str   r1, [r0]
-
-    NEXT
-END MINUSDWT
-
-CODEWORD "+dwt" , PLUSDWT /* ( -- ) start the DWT CYCCNT 32b counter */
-
-    ldr   r0, =DWT_CTRL      /* DWT_CTRL */
+    /* Start cycle counter */
+    ldr   r0, =DWT_CTRL
     ldr   r1, [r0]
     orr   r1, r1, #1         /* Set CYCCNTENA bit (bit 0) */
     str   r1, [r0]
 
     NEXT
+END DWTDOTINIT
+
+CODEWORD "-dwt" , MINUSDWT /* ( -- ) stop the DWT CYCCNT 32b counter */
+    ldr   r0, =DWT_CTRL
+    ldr   r1, [r0]
+    bic   r1, r1, #1         /* Clear CYCCNTENA bit (bit 0) */
+    str   r1, [r0]
+    NEXT
+END MINUSDWT
+
+CODEWORD "+dwt" , PLUSDWT /* ( -- ) start the DWT CYCCNT 32b counter */
+    ldr   r0, =DWT_CTRL
+    ldr   r1, [r0]
+    orr   r1, r1, #1         /* Set CYCCNTENA bit (bit 0) */
+    str   r1, [r0]
+    NEXT
 END PLUSDWT
+
+CODEWORD "dwt-" , DWTDASH /* ( -- ) stop and reset the DWT CYCCNT 32b counter to zero */
+    ldr   r0, =DWT_CTRL
+    ldr   r1, [r0]
+    bic   r1, r1, #1         /* Clear CYCCNTENA bit (bit 0) */
+    str   r1, [r0]
+    ldr   r0, =DWT_CYCCNT
+    mov   r1, #0
+    str   r1, [r0]
+    NEXT
+END DWTDASH
 
 CODEWORD "dwt@" , DWT_FETCH /* ( -- n ) read the DWT CYCCNT 32b counter */
 
@@ -83,7 +97,32 @@ CODEWORD "dwt-us" , DWT_US /* ( n -- ) delay (busy) n microseconds (max int dela
     loadtos 
     NEXT
 END DWT_US
-        
+
+#======================================================================
+# transpiling dwt-add.f on 2026/04/26 07:25:34
+# : dwt.dt \# ( xt -- n ) ticks taken to execute XT at system clock
+#     >r dwt@ >r rp@ cell+ @ execute dwt@ r> - rdrop
+# ;
+# 
+
+# ----------------------------------------------------------------------
+COLON "dwt.dt", DWTDOTDT /* ( xt -- n ) ticks taken to execute XT at system clock  */
+	.word XT_TO_R
+	.word XT_DWT_FETCH
+	.word XT_TO_R
+	.word XT_RP_FETCH
+	.word XT_CELLPLUS
+	.word XT_FETCH
+	.word XT_EXECUTE
+	.word XT_DWT_FETCH
+	.word XT_R_FROM
+	.word XT_MINUS
+	.word XT_RDROP
+	.word XT_EXIT
+END DWTDOTDT
+# ----------------------------------------------------------------------
+#=====================================================================
+
 /*
 > show dwt
 LFA..... (LFA)... FFA..... (FFA)... NFA..... XT...... (XT).... 

@@ -6,13 +6,13 @@ HEADLESS "(defer)", DODEFER
   NEXT 
 END DODEFER
 
-CODEWORD "odd" , ODD
+# CODEWORD "odd" , ODD
 
-  lw s1,0(s1)
-  j DO_EXECUTE
+#   lw s1,0(s1)
+#   j DO_EXECUTE
 
-  NEXT
-END ODD
+#   NEXT
+# END ODD
 
-CONSTANT "pfa.odd", PFADOTODD , PFA_ODD 
-END PFADOTODD
+# CONSTANT "pfa.odd", PFADOTODD , PFA_ODD 
+# END PFADOTODD

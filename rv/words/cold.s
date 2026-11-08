@@ -7,15 +7,15 @@ CODEWORD "cold", COLD /* ( i*x -- )(R: j*y -- ) assembler part of the boot seque
    MCUs may override this to inject additional initialization at specific points.
 */
 
-  la s5, RAM_upper_returnstack
-  la s4, RAM_upper_datastack # TW hack
+  la s5, RAM_upper_TASK0_returnstack
+  la s4, RAM_upper_TASK0_datastack 
 .if WANT_DEBUGGER == YES
   mv s7, zero # zero out the DEBUG register
 .endif
 
-  lui  s1,      %hi(XT_WARM)
-  addi s1, s1,  %lo(XT_WARM)
-  # la s1, XT_WARM
+  #lui  s1,      %hi(XT_WARM)
+  #addi s1, s1,  %lo(XT_WARM)
+  la s1, XT_WARM
 
   j DO_EXECUTE
 END COLD

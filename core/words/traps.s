@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
-.equ ram_vector_base, RAM_lower_ram_vector
+/* .equ ram_vector_base, RAM_lower_ram_vector */
+.equ ram_vector_base, RAM_lower_forthvector
 
 CONSTANT "trap.base" , TRAP_BASE , ram_vector_base /* beginning of Forth interrupt table */
 END TRAP_BASE
