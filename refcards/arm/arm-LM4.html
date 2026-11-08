@@ -22,9 +22,9 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 </head>
 <body>
 <h1>AmForth32 Reference Card</h1>
-<h2>CORTEX-M4 / LM4F120XL main@665d774 2026-04-22T19:05:29+00:00</h2>
+<h2>CORTEX-M4 / LM4F120XL main@f1041c8 2026-11-08T23:36:57+00:00</h2>
 <p>
-<a href="#STACK">STACK</a> | <a href="#COMPARE">COMPARE</a> | <a href="#MATH">MATH</a> | <a href="#MIXED">MIXED</a> | <a href="#DOUBLE">DOUBLE</a> | <a href="#MEMORY">MEMORY</a> | <a href="#STRING">STRING</a> | <a href="#DICTIONARY">DICTIONARY</a> | <a href="#WORDLIST">WORDLIST</a> | <a href="#COMPILER">COMPILER</a> | <a href="#FLOW">FLOW</a> | <a href="#IO">IO</a> | <a href="#OUTPUT">OUTPUT</a> | <a href="#SYSTEM">SYSTEM</a> | <a href="#TOOLS">TOOLS</a> | <a href="#FLASH">FLASH</a> | <a href="#OTHER">OTHER</a> | <a href="#MCU">MCU</a> | <a href="#UNCATEGORIZED">UNCATEGORIZED</a> | <a href="#LEGEND">LEGEND</a>
+<a href="#STACK">STACK</a> | <a href="#COMPARE">COMPARE</a> | <a href="#MATH">MATH</a> | <a href="#MIXED">MIXED</a> | <a href="#DOUBLE">DOUBLE</a> | <a href="#MEMORY">MEMORY</a> | <a href="#STRING">STRING</a> | <a href="#DICTIONARY">DICTIONARY</a> | <a href="#WORDLIST">WORDLIST</a> | <a href="#COMPILER">COMPILER</a> | <a href="#FLOW">FLOW</a> | <a href="#IO">IO</a> | <a href="#OUTPUT">OUTPUT</a> | <a href="#SYSTEM">SYSTEM</a> | <a href="#TOOLS">TOOLS</a> | <a href="#FLASH">FLASH</a> | <a href="#OTHER">OTHER</a> | <a href="#SYSTICK">SYSTICK</a> | <a href="#MCU">MCU</a> | <a href="#UNCATEGORIZED">UNCATEGORIZED</a> | <a href="#LEGEND">LEGEND</a>
 </p>
 <h2 id="STACK">STACK</h2>
 <table>
@@ -64,16 +64,16 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 <tr><td title="2R_FROM">2r&gt;</td><td>CODEWORD</td><td>(R: d -- )( -- d )</td><td>move top 2 cells from return stack to data stack</td><td>arm/words/2r-from.s:1<td></tr>
 <tr><td title="2TO_R">2&gt;r</td><td>CODEWORD</td><td>( d -- )(R: -- d )</td><td>move top two cells from data stack to return stack</td><td>arm/words/2to-r.s:1<td></tr>
 <tr><td title="2R_FETCH">2r@</td><td>CODEWORD</td><td>(R: d -- d )( -- d )</td><td>copy top 2 cells from return stack to data stack</td><td>arm/words/2r-fetch.s:1<td></tr>
-<tr><td title="LDROP">ldrop</td><td>COLON</td><td>(L: x -- )</td><td>remove TOS from leave stack</td><td>core/words/lstack.s:37<td></tr>
+<tr><td title="LDROP">ldrop</td><td>COLON</td><td>(L: x -- )</td><td>remove TOS from leave stack</td><td>core/words/lstack.s:38<td></tr>
 <tr><td title="LDEPTH">ldepth</td><td>COLON</td><td>( -- n )</td><td>n is current depth of the leave stack</td><td>core/words/lstack.s:45<td></tr>
-<tr><td title="L_FETCH">l@</td><td>COLON</td><td>( -- x ) (L: x -- x )</td><td>copy TOS from leave stack to data stack</td><td>core/words/lstack.s:20<td></tr>
-<tr><td title="L_FROM">l&gt;</td><td>COLON</td><td>( -- x ) (L: x -- )</td><td>move TOS from leave stack to data stack</td><td>core/words/lstack.s:9<td></tr>
-<tr><td title="TO_L">&gt;l</td><td>COLON</td><td>( x -- )(L: -- x )</td><td>move TOS from data stack to leave stack</td><td>core/words/lstack.s:27<td></tr>
+<tr><td title="L_FETCH">l@</td><td>COLON</td><td>( -- x ) (L: x -- x )</td><td>copy TOS from leave stack to data stack</td><td>core/words/lstack.s:23<td></tr>
+<tr><td title="L_FROM">l&gt;</td><td>COLON</td><td>( -- x ) (L: x -- )</td><td>move TOS from leave stack to data stack</td><td>core/words/lstack.s:13<td></tr>
+<tr><td title="TO_L">&gt;l</td><td>COLON</td><td>( x -- )(L: -- x )</td><td>move TOS from data stack to leave stack</td><td>core/words/lstack.s:29<td></tr>
 <tr><td title="2L_FETCH">2l@</td><td>COLON</td><td>( -- x2 x1 ) (L: x1 x2 -- x1 x2 )</td><td>copy cell pair from top of leave stack to data stack</td><td>core/words/lstack.s:63<td></tr>
 <tr><td title="2L_FROM">2l&gt;</td><td>COLON</td><td>( -- x2 x1 ) (L: x1 x2 -- )</td><td>move cell pair from top of leave stack to data stack</td><td>core/words/lstack.s:53<td></tr>
-<tr><td title="2TO_L">2&gt;l</td><td>COLON</td><td>( x1 x2 -- )(L: -- x2 x1 )</td><td>move cell pair from top of data stack to leave stack</td><td>core/words/lstack.s:74<td></tr>
-<tr><td title="LP">lp</td><td>VARIABLE</td><td></td><td>leave stack pointer</td><td>core/words/lstack.s:6<td></tr>
-<tr><td title="LP0">lp0</td><td>VALUE</td><td>RAM_upper_leavestack</td><td>start of the leave stack</td><td>core/words/lstack.s:3<td></tr>
+<tr><td title="2TO_L">2&gt;l</td><td>COLON</td><td>( x1 x2 -- )(L: -- x2 x1 )</td><td>move cell pair from top of data stack to leave stack</td><td>core/words/lstack.s:73<td></tr>
+<tr><td title="LP">lp</td><td>USER</td><td>USER_LP</td><td>leave stack pointer address</td><td>core/words/lstack.s:6<td></tr>
+<tr><td title="LP0">lp0</td><td>USER</td><td>USER_LP0</td><td>start of the leave stack</td><td>core/words/lstack.s:3<td></tr>
 </table>
 <h2 id="COMPARE">COMPARE</h2>
 <table>
@@ -266,7 +266,7 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 <tr><td title="NFA2XT">nfa&gt;xt</td><td>COLON</td><td>( nfa -- xt )</td><td>Given NFA find XT</td><td>core/words/dictopt-newb.s:165<td></tr>
 <tr><td title="LFA2FFA">lfa&gt;ffa</td><td>COLON</td><td>( lfa -- ffa )</td><td>Given LFA find FFA</td><td>core/words/dictopt-newb.s:216<td></tr>
 <tr><td title="FFA2NFA">ffa&gt;nfa</td><td>COLON</td><td>( ffa -- nfa )</td><td>Given FFA find NFA</td><td>core/words/dictopt-newb.s:226<td></tr>
-<tr><td title="XT2STRING">xt&gt;string</td><td>COLON</td><td>( xt -- c-addr u )</td><td>leave string associated with name of xt</td><td>core/words/xt2string.s:54<td></tr>
+<tr><td title="XT2STRING">xt&gt;string</td><td>COLON</td><td>( xt -- c-addr u )</td><td>leave string associated with name of xt</td><td>core/words/xt2string.s:67<td></tr>
 <tr><td title="TO_BODY">&gt;body</td><td>COLON</td><td>( xt -- pfa )</td><td>given xt return pfa</td><td>core/words/to-body.s:3<td></tr>
 <tr><td title="FFA2STRING">ffa&gt;string</td><td>COLON</td><td>( ffa -- caddr u )</td><td>Given FFA leave c-addr u string</td><td>core/words/dictopt-newb.s:238<td></tr>
 <tr><td title="FFA2CFA">ffa2cfa</td><td>COLON</td><td>( ffa -- xt )</td><td>Given FFA find XT</td><td>core/words/dictopt-newb.s:205<td></tr>
@@ -274,7 +274,7 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 <tr><td title="XT2FFA">xt&gt;ffa</td><td>COLON</td><td>( xt -- ffa )</td><td>Given XT find FFA</td><td>core/words/dictopt-newb.s:231<td></tr>
 <tr><td title="XT2NFA">xt&gt;nfa</td><td>COLON</td><td>( xt -- nfa | 0 )</td><td>Given XT find NFA , 0 if not found, [NFA]==3 if NONAME|HEADLESS</td><td>core/words/dictopt-newb.s:94<td></tr>
 <tr><td title="XT2LFA">xt&gt;lfa</td><td>COLON</td><td>( xt -- lfa )</td><td>Given XT find LFA</td><td>core/words/dictopt-newb.s:247<td></tr>
-<tr><td title="QIP">?ip</td><td>COLON</td><td>( a -- f )</td><td>is a likely to be a valid IP address</td><td>core/words/debugger.s:151<td></tr>
+<tr><td>?ip</td></tr>
 <tr><td title="QNFA">?nfa</td><td>COLON</td><td>( nfa -- nfa )</td><td>nfa when nfa!=0 and [nfa]!=3</td><td>core/words/dictopt-newb.s:182<td></tr>
 <tr><td>anybranch?</td></tr>
 <tr><td>branch?</td></tr>
@@ -289,8 +289,8 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 <tr><td>value?</td></tr>
 <tr><td>variable?</td></tr>
 <tr><td>xliteral?</td></tr>
-<tr><td title="IP2NAME">ip2name</td><td>COLON</td><td>( a -- u s true | u a false )</td><td>convert IP a to the name of its containing word, u = a - xt (in cells)</td><td>core/words/debugger.s:211<td></tr>
-<tr><td title="IP2XT">ip2xt</td><td>COLON</td><td>( a -- xt u true | a false )</td><td>convert IP to the XT of its containing word, u = a - xt (in cells)</td><td>core/words/debugger.s:181<td></tr>
+<tr><td>ip2name</td></tr>
+<tr><td>ip2xt</td></tr>
 <tr><td title="FLAGDOTTABLE">flag.table</td><td>CONSTANT</td><td>0x100</td><td></td><td>core/words/flag.s:24<td></tr>
 <tr><td title="FLAGDOTINIT">flag.init</td><td>CONSTANT</td><td>0x080</td><td></td><td>core/words/flag.s:22<td></tr>
 <tr><td title="FLAGDOTDEFER">flag.defer</td><td>CONSTANT</td><td>0x040</td><td></td><td>core/words/flag.s:20<td></tr>
@@ -379,8 +379,8 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 <tr><td title="QABORT">?abort</td><td>COLON</td><td>( f s -- )</td><td>abort and type string s if f true</td><td>core/words/q-abort.s:3<td></tr>
 <tr><td title="ABORTQUOTE">abort&quot;</td><td>IMMED</td><td>( f -- )</td><td>abort with the enclosed string if f is true</td><td>core/words/abort-string.s:3<td></tr>
 <tr><td title="ABORT">abort</td><td>COLON</td><td>( i*x -- )(R: j*x -- )</td><td>throw EABRT exception (-1)</td><td>core/words/abort.s:3<td></tr>
-<tr><td title="TRAP_BASE">trap.base</td><td>CONSTANT</td><td>ram_vector_base</td><td>beginning of Forth interrupt table</td><td>core/words/traps.s:5<td></tr>
-<tr><td title="TRAP_STORE">trap!</td><td>COLON</td><td>( xt n -- )</td><td>TRAP: store xt at trap number n in RAM vector</td><td>core/words/traps.s:8<td></tr>
+<tr><td title="TRAP_BASE">trap.base</td><td>CONSTANT</td><td>ram_vector_base</td><td>beginning of Forth interrupt table</td><td>core/words/traps.s:6<td></tr>
+<tr><td title="TRAP_STORE">trap!</td><td>COLON</td><td>( xt n -- )</td><td>TRAP: store xt at trap number n in RAM vector</td><td>core/words/traps.s:9<td></tr>
 <tr><td title="THROW">throw</td><td>COLON</td><td>( n -- )</td><td>throw exception n if n != 0</td><td>core/words/throw.s:2<td></tr>
 <tr><td title="CATCH">catch</td><td>COLON</td><td>( i*x xt -- j*x 0 | i*x n )</td><td>execute XT and check for exceptions</td><td>core/words/catch.s:6<td></tr>
 <tr><td title="HANDLER">handler</td><td>USER</td><td>USER_HANDLER</td><td>used by catch/throw</td><td>core/words/catch.s:3<td></tr>
@@ -484,7 +484,7 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 <tr><td title="QUIT">quit</td><td>COLON</td><td>( -- )</td><td>top level frame of the VM, endless loop</td><td>core/words/quit.s:2<td></tr>
 <tr><td title="PAUSE">pause</td><td>DEFER</td><td>( -- )</td><td>multitasking: task switch point</td><td>core/words/pause.s:2<td></tr>
 <tr><td title="INTERPRET">interpret</td><td>COLON</td><td>( i*x -- j*x )</td><td>interpret SOURCE word by word</td><td>core/words/interpret.s:3<td></tr>
-<tr><td title="MS">ms</td><td>COLON</td><td></td><td></td><td>arm/mcu/lm4f120/words/delay.s:35<td></tr>
+<tr><td title="MS">ms</td><td>COLON</td><td></td><td></td><td>arm/mcu/lm4f120/words/ms.s:35<td></tr>
 <tr><td title="DOT_VER">.ver</td><td>COLON</td><td>( -- )</td><td>show amforth version</td><td>core/words/ver.s:3<td></tr>
 <tr><td title="DOT_BUILD">.build</td><td>ENVIRONMENT</td><td>( -- )</td><td>show build information</td><td>arm/mcu/lm4f120/words/build-info.s:15<td></tr>
 <tr><td title="BUILD_REV">build.rev</td><td>ENVIRONMENT</td><td>( -- addr u )</td><td>string with build revision</td><td>arm/mcu/lm4f120/words/build-info.s:7<td></tr>
@@ -512,16 +512,16 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 <tr><th>Word</th><th>Type</th><th>Stack Signature</th><th>Description</th><th>Location</th></tr>
 <tr><td title="DOTS">.s</td><td>COLON</td><td>( -- )</td><td>show data stack non-destructively</td><td>core/words/dot-s.s:3<td></tr>
 <tr><td title="DOTK">.k</td><td>COLON</td><td>( nN..n1 -- )</td><td>delete all entries in stack</td><td>core/words/dot-k.s:8<td></tr>
-<tr><td title="DOTRS">.rs</td><td>COLON</td><td>( u -- )</td><td>print return stack (top first) skipping top u cells, use raw IP addresses</td><td>core/words/debugger.s:299<td></tr>
-<tr><td title="DOTBT">.bt</td><td>COLON</td><td>( u -- )</td><td>print return stack (top first) skipping top u cells, use word names</td><td>core/words/debugger.s:250<td></tr>
-<tr><td title="DOTITC">.itc</td><td>COLON</td><td>( u1 u2 -- )</td><td>dump u1 XTs starting from current IP u2 cells down the return stack</td><td>core/words/debugger.s:329<td></tr>
+<tr><td>.rs</td></tr>
+<tr><td>.bt</td></tr>
+<tr><td>.itc</td></tr>
 <tr><td title="DUMP">dump</td><td>COLON</td><td>( a u -- )</td><td>dump u lines of 16 bytes including [a]</td><td>core/words/dump.s:125<td></tr>
 <tr><td title="QASCII">?ascii</td><td>COLON</td><td>( c -- f )</td><td>f is true if c is printable character</td><td>core/words/dump.s:13<td></tr>
 <tr><td title="VDUMP">vdump</td><td>COLON</td><td>( addr u -- )</td><td>dump u bytes from addr as words</td><td>core/words/vdump.s:1<td></tr>
 <tr><td title="BREAK">break</td><td>CODEWORD</td><td>( -- )</td><td>activate the debugger (if enabled)</td><td>arm/interpreter.s:41<td></tr>
-<tr><td title="DEBUGPLUS">debug+</td><td>COLON</td><td>( -- )</td><td>enable debugger, break will interrupt execution</td><td>core/words/debugger.s:500<td></tr>
-<tr><td title="DEBUGMINUS">debug-</td><td>COLON</td><td>( -- )</td><td>disable debugger, break will do nothing</td><td>core/words/debugger.s:508<td></tr>
-<tr><td title="BARBAR">||</td><td>IMMED</td><td>( -- )</td><td>code after || is ignored during compilation if debugger is disabled</td><td>core/words/barbar.s:3<td></tr>
+<tr><td>debug+</td></tr>
+<tr><td>debug-</td></tr>
+<tr><td>||</td></tr>
 <tr><td title="SHOW">show</td><td>COLON</td><td>( &quot;name&quot; -- )</td><td>SHOW: List words containing substring name</td><td>core/words/show.s:254<td></tr>
 </table>
 <h2 id="FLASH">FLASH</h2>
@@ -576,20 +576,31 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 <tr><td title="MCLR">mclr</td><td>COLON</td><td></td><td></td><td>core/words/mop.s:48<td></tr>
 <tr><td title="MSET">mset</td><td>COLON</td><td></td><td></td><td>core/words/mop.s:44<td></tr>
 </table>
+<h2 id="SYSTICK">SYSTICK</h2>
+<table>
+<tr><th>Word</th><th>Type</th><th>Stack Signature</th><th>Description</th><th>Location</th></tr>
+<tr><td>systick#</td></tr>
+<tr><td>-systick</td></tr>
+<tr><td>+systick</td></tr>
+<tr><td>systick@</td></tr>
+<tr><td>systick-</td></tr>
+<tr><td>systick!</td></tr>
+<tr><td>systick.init</td></tr>
+</table>
 <h2 id="MCU">MCU</h2>
 <table>
 <tr><th>Word</th><th>Type</th><th>Stack Signature</th><th>Description</th><th>Location</th></tr>
 <tr><td title="STORE_FLASH">!flash</td><td>CODEWORD</td><td>( x Addr -- )</td><td></td><td>arm/mcu/lm4f120/words/flash.s:13<td></tr>
-<tr><td title="NVIC_ST_CTRL_R">NVIC_ST_CTRL_R</td><td>ARM_CONSTANT</td><td>0xE000E010</td><td></td><td>arm/mcu/lm4f120/words/delay.s:2<td></tr>
-<tr><td title="NVIC_ST_CURRENT_R">NVIC_ST_CURRENT_R</td><td>ARM_CONSTANT</td><td>0xE000E018</td><td></td><td>arm/mcu/lm4f120/words/delay.s:4<td></tr>
-<tr><td title="NVIC_ST_RELOAD_R">NVIC_ST_RELOAD_R</td><td>ARM_CONSTANT</td><td>0xE000E014</td><td></td><td>arm/mcu/lm4f120/words/delay.s:3<td></tr>
+<tr><td title="NVIC_ST_CTRL_R">NVIC_ST_CTRL_R</td><td>ARM_CONSTANT</td><td>0xE000E010</td><td></td><td>arm/mcu/lm4f120/words/ms.s:2<td></tr>
+<tr><td title="NVIC_ST_CURRENT_R">NVIC_ST_CURRENT_R</td><td>ARM_CONSTANT</td><td>0xE000E018</td><td></td><td>arm/mcu/lm4f120/words/ms.s:4<td></tr>
+<tr><td title="NVIC_ST_RELOAD_R">NVIC_ST_RELOAD_R</td><td>ARM_CONSTANT</td><td>0xE000E014</td><td></td><td>arm/mcu/lm4f120/words/ms.s:3<td></tr>
 <tr><td title="BLACK">black</td><td>CODEWORD</td><td></td><td></td><td>arm/mcu/lm4f120/words/led.s:84<td></tr>
 <tr><td title="BLUE">blue</td><td>CODEWORD</td><td></td><td></td><td>arm/mcu/lm4f120/words/led.s:48<td></tr>
 <tr><td title="CSTORE_FLASH">c!flash</td><td>CODEWORD</td><td>( x Addr -- )</td><td></td><td>arm/mcu/lm4f120/words/flash.s:102<td></tr>
 <tr><td title="CACHEFLUSH">cacheflush</td><td>COLON</td><td></td><td></td><td>arm/mcu/lm4f120/words/flash.s:169<td></tr>
 <tr><td title="CYAN">cyan</td><td>CODEWORD</td><td></td><td></td><td>arm/mcu/lm4f120/words/led.s:72<td></tr>
-<tr><td title="DELAY_INIT">delay-init</td><td>ARM_COLON</td><td></td><td></td><td>arm/mcu/lm4f120/words/delay.s:6<td></tr>
-<tr><td title="DELAY_TICKS">delay-ticks</td><td>ARM_COLON</td><td></td><td></td><td>arm/mcu/lm4f120/words/delay.s:20<td></tr>
+<tr><td title="DELAY_INIT">delay-init</td><td>ARM_COLON</td><td></td><td></td><td>arm/mcu/lm4f120/words/ms.s:6<td></tr>
+<tr><td title="DELAY_TICKS">delay-ticks</td><td>ARM_COLON</td><td></td><td></td><td>arm/mcu/lm4f120/words/ms.s:20<td></tr>
 <tr><td title="FLASHPAGEERASE">flashpageerase</td><td>CODEWORD</td><td>( Addr -- )</td><td></td><td>arm/mcu/lm4f120/words/flash.s:144<td></tr>
 <tr><td title="GREEN">green</td><td>CODEWORD</td><td></td><td></td><td>arm/mcu/lm4f120/words/led.s:42<td></tr>
 <tr><td title="INFLASHQ">inflash?</td><td>COLON</td><td></td><td></td><td>arm/mcu/lm4f120/words/flash.s:165<td></tr>
@@ -597,7 +608,7 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 <tr><td title="MAGENTA">magenta</td><td>CODEWORD</td><td></td><td></td><td>arm/mcu/lm4f120/words/led.s:78<td></tr>
 <tr><td title="RED">red</td><td>CODEWORD</td><td></td><td></td><td>arm/mcu/lm4f120/words/led.s:54<td></tr>
 <tr><td title="UART_INIT">uart-init</td><td>CODEWORD</td><td></td><td></td><td>arm/mcu/lm4f120/words/usart.s:31<td></tr>
-<tr><td title="US">us</td><td>COLON</td><td></td><td></td><td>arm/mcu/lm4f120/words/delay.s:32<td></tr>
+<tr><td title="US">us</td><td>COLON</td><td></td><td></td><td>arm/mcu/lm4f120/words/ms.s:32<td></tr>
 <tr><td title="W_STORE_FLASH">w!flash</td><td>CODEWORD</td><td>( x Addr -- )</td><td></td><td>arm/mcu/lm4f120/words/flash.s:53<td></tr>
 <tr><td title="WHITE">white</td><td>CODEWORD</td><td></td><td></td><td>arm/mcu/lm4f120/words/led.s:60<td></tr>
 <tr><td title="YELLOW">yellow</td><td>CODEWORD</td><td></td><td></td><td>arm/mcu/lm4f120/words/led.s:66<td></tr>
@@ -614,56 +625,52 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 <tr><td title="DOPP">(pp)</td><td>COLON</td><td></td><td></td><td>core/words/alto.s:71<td></tr>
 <tr><td title="QDOCHECK">(qdocheck)</td><td>COLON</td><td></td><td></td><td>core/words/qdo.s:13<td></tr>
 <tr><td title="XDODOES">(xdoes)</td><td>CODEWORD</td><td>( -- u)</td><td>prepares interpreter state for execution of the DOES&gt; wordlist, u is child&#x27;s PFA</td><td>arm/words/does.s:79<td></tr>
-<tr><td title="DOTCHAR">.char</td><td>COLON</td><td></td><td></td><td>core/words/mlc.s:128<td></tr>
+<tr><td title="PLUSINT">+int</td><td>CODEWORD</td><td>( -- )</td><td>enable interrupts</td><td>arm/words/interrupts.s:3<td></tr>
+<tr><td title="PLUSTASK">+task</td><td>COLON</td><td>( n -- )</td><td>make task n active</td><td>core/words/mtask-common.s:518<td></tr>
+<tr><td title="MINUSINT">-int</td><td>CODEWORD</td><td>( -- )</td><td>disable interrupts</td><td>arm/words/interrupts.s:8<td></tr>
+<tr><td title="MINUSTASK">-task</td><td>COLON</td><td>( n -- )</td><td>make task n inactive (sleep)</td><td>core/words/mtask-common.s:544<td></tr>
 <tr><td title="COLONIMMED">:immed</td><td>COLON</td><td>( -- )</td><td>define an immediate word (for mcu that&#x27;s can&#x27;t use immediate)</td><td>core/words/immediate.s:26<td></tr>
-<tr><td title="SEMICOLOND">;d</td><td>IMMED</td><td></td><td></td><td>core/words/debugger2.s:18<td></tr>
-<tr><td title="CON_REGABI">REGABI</td><td>CONSTANT</td><td>REGABI</td><td></td><td>core/words/dicthelp.s:268<td></tr>
-<tr><td title="CON_REGITC">REGITC</td><td>CONSTANT</td><td>REGITC</td><td></td><td>core/words/dicthelp.s:269<td></tr>
-<tr><td title="CON_REGNUM">REGNUM</td><td>CONSTANT</td><td>REGNUM</td><td></td><td>core/words/dicthelp.s:267<td></tr>
-<tr><td title="CON_DONEXT">XT.DONEXT</td><td>CONSTANT</td><td>DO_NEXT</td><td></td><td>core/words/dicthelp.s:9<td></tr>
 <tr><td title="LBRACKDEFINEDRBRACK">[defined]</td><td>IMMED</td><td>( &quot;name&quot; -- f )</td><td>f is true if name defined</td><td>core/words/immediate.s:56<td></tr>
 <tr><td title="LBRACKUNDEFINEDRBRACK">[undefined]</td><td>IMMED</td><td>( &quot;name -- f )</td><td>f is true if name undefined</td><td>core/words/immediate.s:71<td></tr>
 <tr><td title="CARETCOMMA">^,</td><td>COLON</td><td>( x -- )</td><td>append x to RAM dictionary</td><td>core/words/comma.s:5<td></tr>
 <tr><td title="CARETCCOMMA">^c,</td><td>COLON</td><td></td><td></td><td>core/words/ccomma.s:5<td></tr>
 <tr><td title="CARETDALLOT">^dallot</td><td>COLON</td><td></td><td></td><td>core/words/dallot.s:5<td></tr>
-<tr><td title="CCOUNT">ccount</td><td>VARIABLE</td><td></td><td></td><td>core/words/mlc.s:109<td></tr>
-<tr><td title="CIMAG">cimag</td><td>VARIABLE</td><td></td><td></td><td>core/words/mlc.s:106<td></tr>
-<tr><td title="COUNTUNDERANDUNDERTESTQ">count_and_test?</td><td>COLON</td><td></td><td></td><td>core/words/mlc.s:144<td></tr>
-<tr><td title="CREAL">creal</td><td>VARIABLE</td><td></td><td></td><td>core/words/mlc.s:105<td></tr>
-<tr><td title="DEBUG_BREAK">debug.break</td><td>USER</td><td>USER_DEBUG_BREAK</td><td>XT of debugger, invoked when BREAK is reached</td><td>core/words/debugger2.s:5<td></tr>
-<tr><td title="DEBUG_NEXT">debug.next</td><td>USER</td><td>USER_DEBUG_NEXT</td><td>next debug action, 0 if none</td><td>core/words/debugger2.s:2<td></tr>
-<tr><td title="DEBUGDOTRDEPTH">debug.rdepth</td><td>CONSTANT</td><td>2</td><td>step until rdepth, argument is desired rdepth</td><td>core/words/debugger.s:388<td></tr>
-<tr><td title="DEBUGDOTSTEP">debug.step</td><td>CONSTANT</td><td>1</td><td>single step, no argument</td><td>core/words/debugger.s:385<td></tr>
 <tr><td title="DEBUG_BUF">debug_buf</td><td>CODEWORD</td><td>( -- addr )</td><td>debugger input buffer address</td><td>arm/interpreter.s:53<td></tr>
 <tr><td title="DECDOT">dec.</td><td>COLON</td><td>( n -- )</td><td>print n in base 10</td><td>core/words/output.s:11<td></tr>
-<tr><td title="DOCELL">docell</td><td>COLON</td><td></td><td></td><td>core/words/mlc.s:211<td></tr>
-<tr><td title="DOESCAPE">doescape</td><td>COLON</td><td></td><td></td><td>core/words/mlc.s:177<td></tr>
-<tr><td title="DOROW">dorow</td><td>COLON</td><td></td><td></td><td>core/words/mlc.s:221<td></tr>
-<tr><td title="ERR_WORDLIST">err-wordlist</td><td>CONSTANT</td><td>90b</td><td></td><td>core/words/throwerr.s:77<td></tr>
-<tr><td title="ERRQ">err?</td><td>COLON</td><td>( n -- c-addr u )</td><td>search err-wordlist for err num = n and return error string</td><td>core/words/throwerr.s:109<td></tr>
-<tr><td title="ESCAPESQ">escapes?</td><td>COLON</td><td></td><td></td><td>core/words/mlc.s:139<td></tr>
+<tr><td title="ERR_WORDLIST">err-wordlist</td><td>CONSTANT</td><td>90b</td><td></td><td>core/words/throwerr.s:82<td></tr>
+<tr><td title="ERRQ">err?</td><td>COLON</td><td>( n -- c-addr u )</td><td>search err-wordlist for err num = n and return error string</td><td>core/words/throwerr.s:114<td></tr>
 <tr><td title="FLAGDOTALIAS">flag.alias</td><td>CONSTANT</td><td>0x800</td><td></td><td>core/words/flag.s:30<td></tr>
+<tr><td title="IN_ISRQ">in-isr?</td><td>VARIABLE</td><td></td><td></td><td>core/words/isr-common.s:3<td></tr>
 <tr><td title="INIT_DP_FLASH">init.dp.flash</td><td>COLON</td><td>( -- )</td><td>set dp.flash to the first erased cell after end of flash dictionary</td><td>core/words/here.s:87<td></tr>
-<tr><td title="INITUNDERVARS">init_vars</td><td>COLON</td><td></td><td></td><td>core/words/mlc.s:155<td></tr>
+<tr><td title="LEDMINUSTASK">led-task</td><td>COLON</td><td></td><td></td><td>core/words/led-task.s:16<td></tr>
+<tr><td title="LP_FETCH">lp@</td><td>COLON</td><td>( -- addr )</td><td>current value of the leave stack pointer</td><td>core/words/lstack.s:9<td></tr>
 <tr><td title="MANDELBROT">mandelbrot</td><td>COLON</td><td></td><td></td><td>core/words/mlc.s:237<td></tr>
-<tr><td title="MAXITER">maxiter</td><td>CONSTANT</td><td>20</td><td></td><td>core/words/mlc.s:100<td></tr>
-<tr><td title="MAXVAL">maxval</td><td>CONSTANT</td><td>20</td><td></td><td>core/words/mlc.s:102<td></tr>
-<tr><td title="MINVAL">minval</td><td>CONSTANT</td><td>-19</td><td></td><td>core/words/mlc.s:101<td></tr>
+<tr><td title="MTPAUSE">mtpause</td><td>CODEWORD</td><td></td><td></td><td>arm/words/mtpause.s:9<td></tr>
+<tr><td title="MULTI">multi</td><td>COLON</td><td>( -- )</td><td>enable task switching</td><td>core/words/mtask-common.s:579<td></tr>
+<tr><td title="NVARIABLE">nvariable</td><td>COLON</td><td>( n &quot;&lt;spaces&gt;name&quot; -- )</td><td>create variable definition for name</td><td>core/words/variable.s:25<td></tr>
 <tr><td title="PP">pp</td><td>IMMED</td><td></td><td></td><td>core/words/alto.s:59<td></tr>
 <tr><td title="QNOP">qnop</td><td>COLON</td><td></td><td></td><td>core/words/qnop.s:3<td></tr>
-<tr><td title="RESCALE">rescale</td><td>CONSTANT</td><td>640</td><td></td><td>core/words/mlc.s:103<td></tr>
-<tr><td title="SUNDERESCAPE">s_escape</td><td>CONSTANT</td><td>2560</td><td></td><td>core/words/mlc.s:104<td></tr>
+<tr><td title="REC_RECORD">rec-record</td><td>COLON</td><td></td><td></td><td>core/words/record.s:26<td></tr>
+<tr><td title="RECORDDOTCHAR">record.char</td><td>VALUE</td><td>0x3A</td><td></td><td>core/words/record.s:10<td></tr>
+<tr><td title="RECORDDOTDO">record.do</td><td>DEFER</td><td>( a n -- )</td><td></td><td>core/words/record.s:16<td></tr>
+<tr><td title="RECORDDOTMINLEN">record.minlen</td><td>VALUE</td><td>8</td><td></td><td>core/words/record.s:13<td></tr>
+<tr><td title="RECTYPE_RECORD">rectype-record</td><td>DATA</td><td></td><td></td><td>core/words/record.s:19<td></tr>
+<tr><td title="RELEASE">release</td><td>COLON</td><td>( a -- )</td><td>mark resource as not available</td><td>core/words/mtask-common.s:213<td></tr>
+<tr><td title="RESERVE">reserve</td><td>COLON</td><td>( a -- )</td><td>wait for resource to be available and claim</td><td>core/words/mtask-common.s:201<td></tr>
 <tr><td title="SHOWDOTFLASH">show.flash</td><td>COLON</td><td></td><td></td><td>core/words/show.s:278<td></tr>
 <tr><td title="SHOWDOTPAGE">show.page</td><td>COLON</td><td></td><td></td><td>core/words/show.s:288<td></tr>
 <tr><td title="SHOWDOTRAM">show.ram</td><td>COLON</td><td></td><td></td><td>core/words/show.s:268<td></tr>
+<tr><td title="SHOWDOTTASK">show.task</td><td>COLON</td><td>( -- )</td><td>show tasks</td><td>core/words/mtask-common.s:588<td></tr>
+<tr><td title="SHOWDOTUA">show.ua</td><td>COLON</td><td>( n -- )</td><td>show user area task n</td><td>core/words/mtask-common.s:1045<td></tr>
+<tr><td title="SHOWDOTUSER">show.user</td><td>COLON</td><td>( n -- )</td><td>show user area task n</td><td>core/words/mtask-common.s:655<td></tr>
+<tr><td title="SINGLE">single</td><td>COLON</td><td>( -- )</td><td>disable task switching</td><td>core/words/mtask-common.s:570<td></tr>
 <tr><td title="SYNONYM">synonym</td><td>COLON</td><td>( &quot;&lt;spaces&gt;new-name&quot; &quot;name&quot; -- )</td><td>create alias of existing word</td><td>core/words/synonym.s:19<td></tr>
-<tr><td title="TPILE">tpile</td><td>VARIABLE</td><td>( -- f )</td><td>transpiling status</td><td>core/words/tpile.s:13<td></tr>
-<tr><td title="TPILEPLUS">tpile+</td><td>COLON</td><td>( -- )</td><td>enable transpiling during compilation</td><td>core/words/tpile.s:16<td></tr>
-<tr><td title="TPILEMINUS">tpile-</td><td>COLON</td><td>( -- )</td><td>disable transpiling during compilation</td><td>core/words/tpile.s:20<td></tr>
-<tr><td title="ZIUNDERSQ">zi_sq</td><td>COLON</td><td></td><td></td><td>core/words/mlc.s:120<td></tr>
-<tr><td title="ZIMAG">zimag</td><td>VARIABLE</td><td></td><td></td><td>core/words/mlc.s:108<td></tr>
-<tr><td title="ZRUNDERSQ">zr_sq</td><td>COLON</td><td></td><td></td><td>core/words/mlc.s:112<td></tr>
-<tr><td title="ZREAL">zreal</td><td>VARIABLE</td><td></td><td></td><td>core/words/mlc.s:107<td></tr>
+<tr><td title="TASKBANG">task!</td><td>COLON</td><td>( xt n -- )</td><td>write task to slot n</td><td>core/words/mtask-common.s:390<td></tr>
+<tr><td title="TASK_BLOCK">task-block</td><td>CONSTANT</td><td>TASK_BLOCK_SIZE</td><td></td><td>arm/words/mtpause.s:5<td></tr>
+<tr><td title="TASKDOTWARM">task.warm</td><td>COLON</td><td>( n -- )</td><td>reset task n</td><td>core/words/mtask-common.s:423<td></tr>
+<tr><td title="TASKDOTWARMMINUSALL">task.warm-all</td><td>COLON</td><td>( -- )</td><td>reset all tasks execept operator</td><td>core/words/mtask-common.s:504<td></tr>
+<tr><td title="TASKN">taskn</td><td>CONSTANT</td><td>TASKN</td><td></td><td>arm/words/mtpause.s:2<td></tr>
+<tr><td title="VACANT">vacant</td><td>COLON</td><td>( -- )</td><td>a task that does nothing</td><td>core/words/mtask-common.s:194<td></tr>
 <tr><td title="TILDESTORE_I">~!i</td><td>COLON</td><td></td><td></td><td>core/words/flash.s:5<td></tr>
 <tr><td title="TILDECOMMA">~,</td><td>COLON</td><td></td><td></td><td>core/words/flash.s:66<td></tr>
 <tr><td title="TILDECSTORE_I">~c!i</td><td>COLON</td><td></td><td></td><td>core/words/flash.s:13<td></tr>
