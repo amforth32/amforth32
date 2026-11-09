@@ -2,13 +2,6 @@
 
 COLON "init-ram", INIT_RAM /* ( -- ) startup/reset RAM initialization */
 
-    /*
-    .word XT_DOLITERAL, RAM_lower_isr_userarea, XT_UP_STORE    
-    .word XT_DOLITERAL, RAM_upper_isr_datastack, XT_DOLITERAL   , USER_SP0 , XT_UP_FETCH , XT_PLUS , XT_STORE
-    .word XT_DOLITERAL, RAM_upper_isr_returnstack, XT_DOLITERAL , USER_RP0 , XT_UP_FETCH , XT_PLUS , XT_STORE
-    .word XT_DOLITERAL, RAM_lower_userarea, XT_UP_STORE
-    */
-
     .word XT_INITMINUSUSER 
 
     .word XT_DOLITERAL, XT_FORTH_WORDLIST, XT_TO_BODY,XT_DUP,XT_CELLPLUS,XT_FETCH,XT_SWAP,XT_FETCH,XT_STORE

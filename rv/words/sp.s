@@ -18,5 +18,6 @@ END SP_STORE
 USER "sp", SP, USER_SP /* ( -- addr ) storage address of data stack pointer */
 END SP
 
-USER "sp0", SP0, USER_SP0 /* ( -- addr ) storage address of initial data stack pointer */
+COLON "sp0", SP0 /* ( -- addr ) start of the data stack */
+    .word XT_UP_FETCH, XT_DOLITERAL, USER_SP0, XT_PLUS, XT_EXIT
 END SP0

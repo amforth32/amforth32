@@ -481,8 +481,8 @@ _master_int:   # interrupt entry
         for RV this is not needed as will
         run on the interrupted tasks stacks
 
-     lw s4, USER_SP0(s6)
-     lw s5, USER_RP0(s6)
+     addi s4, s6, USER_SP0
+     addi s5, s6, USER_RP0
 
         currently THIS IS THE flashed case
         need to remake next time

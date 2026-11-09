@@ -2,8 +2,8 @@
 
 .include "words/led.s"
 .include "words/appl-turnkey.s"
+# delay.s conflicts with systick.s
 #.include "words/delay.s"
-#.include "words/ms.s"
 
 .include "words/clock.s"
 .include "words/sci.s"

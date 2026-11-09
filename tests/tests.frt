@@ -12,6 +12,7 @@ s" TESTS STARTING" type cr
 #include "tests/cpp-core.fr"
 #include "tests/core2.fr"
 #include "tests/pvalue.fr"
+#include "tests/mtask.fr"
 
 \ Do not remove as required by awk processing script
 s" TESTS FINISHED" type cr

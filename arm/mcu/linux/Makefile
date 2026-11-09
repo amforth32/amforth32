@@ -36,7 +36,7 @@ image:
 # Once terminal to the container opens you can start amforth, the binary is on the PATH.
 # The whole host amforth directory is mounted in the container at /amforth.
 # Apparently cannot run gdb inside the container, because ptrace sys call is not supported in emulation.
-DOCKER = docker run --rm --volume $(AMFORTH):/amforth
+DOCKER = docker run --rm --ulimit core=-1 --volume $(AMFORTH):/amforth
 ## Run AmForth in docker container
 drun: image
 	$(DOCKER) --interactive --tty amforth:latest
