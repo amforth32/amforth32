@@ -22,7 +22,7 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 </head>
 <body>
 <h1>AmForth32 Reference Card</h1>
-<h2>RV32IMAFC / QEMU main@2a8b05e 2026-11-10T02:31:23+00:00</h2>
+<h2>RV32IMAFC / QEMU main@698900b 2026-11-10T17:37:13+00:00</h2>
 <p>
 <a href="#STACK">STACK</a> | <a href="#COMPARE">COMPARE</a> | <a href="#MATH">MATH</a> | <a href="#MIXED">MIXED</a> | <a href="#DOUBLE">DOUBLE</a> | <a href="#MEMORY">MEMORY</a> | <a href="#STRING">STRING</a> | <a href="#DICTIONARY">DICTIONARY</a> | <a href="#WORDLIST">WORDLIST</a> | <a href="#COMPILER">COMPILER</a> | <a href="#FLOW">FLOW</a> | <a href="#IO">IO</a> | <a href="#OUTPUT">OUTPUT</a> | <a href="#SYSTEM">SYSTEM</a> | <a href="#TOOLS">TOOLS</a> | <a href="#FLASH">FLASH</a> | <a href="#OTHER">OTHER</a> | <a href="#SYSTICK">SYSTICK</a> | <a href="#MCU">MCU</a> | <a href="#UNCATEGORIZED">UNCATEGORIZED</a> | <a href="#LEGEND">LEGEND</a>
 </p>
@@ -47,7 +47,7 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 <tr><td title="2NIP">2nip</td><td>CODEWORD</td><td>( d2 d1 -- d1 )</td><td>remove 2nd cell pair from the stack</td><td>rv/words/2nip.s:2<td></tr>
 <tr><td title="DEPTH">depth</td><td>CODEWORD</td><td>( -- n )</td><td>n is current dept of the data stack</td><td>rv/words/stack.s:4<td></tr>
 <tr><td title="QSTACK">?stack</td><td>COLON</td><td>( -- )</td><td>throw if stack depth is negative</td><td>core/words/q-stack.s:2<td></tr>
-<tr><td title="SP0">sp0</td><td>USER</td><td>( -- addr )</td><td>storage address of initial data stack pointer</td><td>rv/words/sp.s:21<td></tr>
+<tr><td title="SP0">sp0</td><td>COLON</td><td>( -- addr )</td><td>start of the data stack</td><td>rv/words/sp.s:21<td></tr>
 <tr><td title="SP">sp</td><td>USER</td><td>( -- addr )</td><td>storage address of data stack pointer</td><td>rv/words/sp.s:18<td></tr>
 <tr><td title="SP_STORE">sp!</td><td>CODEWORD</td><td>( addr -- )</td><td>set data stack pointer to addr</td><td>rv/words/sp.s:11<td></tr>
 <tr><td title="SP_FETCH">sp@</td><td>CODEWORD</td><td>( -- addr )</td><td>addr is current data stack pointer</td><td>rv/words/sp.s:3<td></tr>
@@ -64,16 +64,16 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 <tr><td title="2R_FROM">2r&gt;</td><td>CODEWORD</td><td>(R: d -- )( -- d )</td><td>move top 2 cells from return stack to data stack</td><td>rv/words/2r-from.s:2<td></tr>
 <tr><td title="2TO_R">2&gt;r</td><td>CODEWORD</td><td>( d -- )(R: -- d )</td><td>move top two cells from data stack to return stack</td><td>rv/words/2to-r.s:2<td></tr>
 <tr><td title="2R_FETCH">2r@</td><td>CODEWORD</td><td>(R: d -- d )( -- d )</td><td>copy top 2 cells from return stack to data stack</td><td>rv/words/2r-fetch.s:2<td></tr>
-<tr><td title="LDROP">ldrop</td><td>COLON</td><td>(L: x -- )</td><td>remove TOS from leave stack</td><td>core/words/lstack.s:38<td></tr>
-<tr><td title="LDEPTH">ldepth</td><td>COLON</td><td>( -- n )</td><td>n is current depth of the leave stack</td><td>core/words/lstack.s:45<td></tr>
-<tr><td title="L_FETCH">l@</td><td>COLON</td><td>( -- x ) (L: x -- x )</td><td>copy TOS from leave stack to data stack</td><td>core/words/lstack.s:23<td></tr>
-<tr><td title="L_FROM">l&gt;</td><td>COLON</td><td>( -- x ) (L: x -- )</td><td>move TOS from leave stack to data stack</td><td>core/words/lstack.s:13<td></tr>
-<tr><td title="TO_L">&gt;l</td><td>COLON</td><td>( x -- )(L: -- x )</td><td>move TOS from data stack to leave stack</td><td>core/words/lstack.s:29<td></tr>
-<tr><td title="2L_FETCH">2l@</td><td>COLON</td><td>( -- x2 x1 ) (L: x1 x2 -- x1 x2 )</td><td>copy cell pair from top of leave stack to data stack</td><td>core/words/lstack.s:63<td></tr>
-<tr><td title="2L_FROM">2l&gt;</td><td>COLON</td><td>( -- x2 x1 ) (L: x1 x2 -- )</td><td>move cell pair from top of leave stack to data stack</td><td>core/words/lstack.s:53<td></tr>
-<tr><td title="2TO_L">2&gt;l</td><td>COLON</td><td>( x1 x2 -- )(L: -- x2 x1 )</td><td>move cell pair from top of data stack to leave stack</td><td>core/words/lstack.s:73<td></tr>
-<tr><td title="LP">lp</td><td>USER</td><td>USER_LP</td><td>leave stack pointer address</td><td>core/words/lstack.s:6<td></tr>
-<tr><td title="LP0">lp0</td><td>USER</td><td>USER_LP0</td><td>start of the leave stack</td><td>core/words/lstack.s:3<td></tr>
+<tr><td title="LDROP">ldrop</td><td>COLON</td><td>(L: x -- )</td><td>remove TOS from leave stack</td><td>core/words/lstack.s:39<td></tr>
+<tr><td title="LDEPTH">ldepth</td><td>COLON</td><td>( -- n )</td><td>n is current depth of the leave stack</td><td>core/words/lstack.s:46<td></tr>
+<tr><td title="L_FETCH">l@</td><td>COLON</td><td>( -- x ) (L: x -- x )</td><td>copy TOS from leave stack to data stack</td><td>core/words/lstack.s:24<td></tr>
+<tr><td title="L_FROM">l&gt;</td><td>COLON</td><td>( -- x ) (L: x -- )</td><td>move TOS from leave stack to data stack</td><td>core/words/lstack.s:14<td></tr>
+<tr><td title="TO_L">&gt;l</td><td>COLON</td><td>( x -- )(L: -- x )</td><td>move TOS from data stack to leave stack</td><td>core/words/lstack.s:30<td></tr>
+<tr><td title="2L_FETCH">2l@</td><td>COLON</td><td>( -- x2 x1 ) (L: x1 x2 -- x1 x2 )</td><td>copy cell pair from top of leave stack to data stack</td><td>core/words/lstack.s:64<td></tr>
+<tr><td title="2L_FROM">2l&gt;</td><td>COLON</td><td>( -- x2 x1 ) (L: x1 x2 -- )</td><td>move cell pair from top of leave stack to data stack</td><td>core/words/lstack.s:54<td></tr>
+<tr><td title="2TO_L">2&gt;l</td><td>COLON</td><td>( x1 x2 -- )(L: -- x2 x1 )</td><td>move cell pair from top of data stack to leave stack</td><td>core/words/lstack.s:74<td></tr>
+<tr><td title="LP">lp</td><td>USER</td><td>USER_LP</td><td>leave stack pointer address</td><td>core/words/lstack.s:7<td></tr>
+<tr><td title="LP0">lp0</td><td>COLON</td><td>( -- a )</td><td>start of the leave stack</td><td>core/words/lstack.s:3<td></tr>
 </table>
 <h2 id="COMPARE">COMPARE</h2>
 <table>
@@ -478,7 +478,6 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 <tr><th>Word</th><th>Type</th><th>Stack Signature</th><th>Description</th><th>Location</th></tr>
 <tr><td title="COLD">cold</td><td>CODEWORD</td><td>( i*x -- )(R: j*y -- )</td><td>assembler part of the boot sequence, starting the VM</td><td>rv/words/cold.s:2<td></tr>
 <tr><td title="WARM">warm</td><td>COLON</td><td>( -- )</td><td>high level part of the boot sequence, VM is running</td><td>rv/words/warm.s:2<td></tr>
-<tr><td title="INIT_RAM">init-ram</td><td>COLON</td><td>( -- )</td><td>startup/reset RAM initialization</td><td>core/words/init-ram.s:3<td></tr>
 <tr><td title="TURNKEY">turnkey</td><td>DEFER</td><td>( -- i*x )</td><td>startup/reset action</td><td>core/words/turnkey.s:3<td></tr>
 <tr><td>appl-turnkey</td></tr>
 <tr><td title="QUIT">quit</td><td>COLON</td><td>( -- )</td><td>top level frame of the VM, endless loop</td><td>core/words/quit.s:2<td></tr>
@@ -607,9 +606,9 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 <tr><td title="QDOCHECK">(qdocheck)</td><td>COLON</td><td></td><td></td><td>core/words/qdo.s:13<td></tr>
 <tr><td title="LPARENSEERPAREN">(see)</td><td>COLON</td><td>( xt -- )</td><td>deconstruct word from XT</td><td>core/words/see.s:702<td></tr>
 <tr><td title="PLUSINT">+int</td><td>CODEWORD</td><td>( -- )</td><td>enable interrupts</td><td>rv/words/interrupts.s:3<td></tr>
-<tr><td title="PLUSTASK">+task</td><td>COLON</td><td>( n -- )</td><td>make task n active</td><td>core/words/mtask-common.s:518<td></tr>
+<tr><td title="PLUSTASK">+task</td><td>COLON</td><td>( n -- )</td><td>make task n active</td><td>core/words/mtask-common.s:425<td></tr>
 <tr><td title="MINUSINT">-int</td><td>CODEWORD</td><td>( -- )</td><td>disable interrupts</td><td>rv/words/interrupts.s:8<td></tr>
-<tr><td title="MINUSTASK">-task</td><td>COLON</td><td>( n -- )</td><td>make task n inactive (sleep)</td><td>core/words/mtask-common.s:544<td></tr>
+<tr><td title="MINUSTASK">-task</td><td>COLON</td><td>( n -- )</td><td>make task n inactive (sleep)</td><td>core/words/mtask-common.s:447<td></tr>
 <tr><td title="N1MS">1ms</td><td>COLON</td><td></td><td>1 ms busy loop</td><td>core/words/ms.s:9<td></tr>
 <tr><td title="COLONIMMED">:immed</td><td>COLON</td><td>( -- )</td><td>define an immediate word (for mcu that&#x27;s can&#x27;t use immediate)</td><td>core/words/immediate.s:26<td></tr>
 <tr><td title="SEMICOLOND">;d</td><td>IMMED</td><td></td><td></td><td>core/words/debugger2.s:18<td></tr>
@@ -630,10 +629,10 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 <tr><td title="IN_ISRQ">in-isr?</td><td>VARIABLE</td><td></td><td></td><td>core/words/isr-common.s:3<td></tr>
 <tr><td title="INIT_DP_FLASH">init.dp.flash</td><td>COLON</td><td>( -- )</td><td>set dp.flash to the first erased cell after end of flash dictionary</td><td>core/words/here.s:87<td></tr>
 <tr><td title="LEDMINUSTASK">led-task</td><td>COLON</td><td></td><td></td><td>core/words/led-task.s:16<td></tr>
-<tr><td title="LP_FETCH">lp@</td><td>COLON</td><td>( -- addr )</td><td>current value of the leave stack pointer</td><td>core/words/lstack.s:9<td></tr>
+<tr><td title="LP_FETCH">lp@</td><td>COLON</td><td>( -- addr )</td><td>current value of the leave stack pointer</td><td>core/words/lstack.s:10<td></tr>
 <tr><td title="MANDELBROT">mandelbrot</td><td>COLON</td><td></td><td></td><td>core/words/mlc.s:237<td></tr>
 <tr><td title="MTPAUSE">mtpause</td><td>CODEWORD</td><td></td><td></td><td>rv/words/mtpause.s:1<td></tr>
-<tr><td title="MULTI">multi</td><td>COLON</td><td>( -- )</td><td>enable task switching</td><td>core/words/mtask-common.s:579<td></tr>
+<tr><td title="MULTI">multi</td><td>COLON</td><td>( -- )</td><td>enable task switching</td><td>core/words/mtask-common.s:478<td></tr>
 <tr><td title="NVARIABLE">nvariable</td><td>COLON</td><td>( n &quot;&lt;spaces&gt;name&quot; -- )</td><td>create variable definition for name</td><td>core/words/variable.s:25<td></tr>
 <tr><td title="PP">pp</td><td>IMMED</td><td></td><td></td><td>core/words/alto.s:59<td></tr>
 <tr><td title="QNOP">qnop</td><td>COLON</td><td></td><td></td><td>core/words/qnop.s:3<td></tr>
@@ -643,28 +642,28 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 <tr><td title="RECORDDOTDO">record.do</td><td>DEFER</td><td>( a n -- )</td><td></td><td>core/words/record.s:16<td></tr>
 <tr><td title="RECORDDOTMINLEN">record.minlen</td><td>VALUE</td><td>8</td><td></td><td>core/words/record.s:13<td></tr>
 <tr><td title="RECTYPE_RECORD">rectype-record</td><td>DATA</td><td></td><td></td><td>core/words/record.s:19<td></tr>
-<tr><td title="RELEASE">release</td><td>COLON</td><td>( a -- )</td><td>mark resource as not available</td><td>core/words/mtask-common.s:213<td></tr>
-<tr><td title="RESERVE">reserve</td><td>COLON</td><td>( a -- )</td><td>wait for resource to be available and claim</td><td>core/words/mtask-common.s:201<td></tr>
+<tr><td title="RELEASE">release</td><td>COLON</td><td>( a -- )</td><td>mark resource as not available</td><td>core/words/mtask-common.s:202<td></tr>
+<tr><td title="RESERVE">reserve</td><td>COLON</td><td>( a -- )</td><td>wait for resource to be available and claim</td><td>core/words/mtask-common.s:190<td></tr>
 <tr><td title="SEE">see</td><td>COLON</td><td>( &quot;name&quot; -- )</td><td>deconstruct word &quot;name&quot;</td><td>core/words/see.s:805<td></tr>
 <tr><td title="SHOWDOTFLASH">show.flash</td><td>COLON</td><td></td><td></td><td>core/words/show.s:278<td></tr>
 <tr><td title="SHOWDOTPAGE">show.page</td><td>COLON</td><td></td><td></td><td>core/words/show.s:288<td></tr>
 <tr><td title="SHOWDOTRAM">show.ram</td><td>COLON</td><td></td><td></td><td>core/words/show.s:268<td></tr>
-<tr><td title="SHOWDOTTASK">show.task</td><td>COLON</td><td>( -- )</td><td>show tasks</td><td>core/words/mtask-common.s:588<td></tr>
-<tr><td title="SHOWDOTUA">show.ua</td><td>COLON</td><td>( n -- )</td><td>show user area task n</td><td>core/words/mtask-common.s:1045<td></tr>
-<tr><td title="SHOWDOTUSER">show.user</td><td>COLON</td><td>( n -- )</td><td>show user area task n</td><td>core/words/mtask-common.s:655<td></tr>
-<tr><td title="SINGLE">single</td><td>COLON</td><td>( -- )</td><td>disable task switching</td><td>core/words/mtask-common.s:570<td></tr>
+<tr><td title="SHOWDOTTASKS">show.tasks</td><td>COLON</td><td>( -- )</td><td>show tasks</td><td>core/words/mtask-common.s:487<td></tr>
+<tr><td title="SHOWDOTUA">show.ua</td><td>COLON</td><td></td><td></td><td>core/words/mtask-common.s:550<td></tr>
+<tr><td title="SINGLE">single</td><td>COLON</td><td>( -- )</td><td>disable task switching</td><td>core/words/mtask-common.s:469<td></tr>
 <tr><td title="SYMBOL">symbol</td><td>IMMED</td><td>( &quot;name&quot; -- )</td><td>emits assembler symbol token into transpiler output, compiles as a throw</td><td>core/words/tpile.s:24<td></tr>
 <tr><td title="SYNONYM">synonym</td><td>COLON</td><td>( &quot;&lt;spaces&gt;new-name&quot; &quot;name&quot; -- )</td><td>create alias of existing word</td><td>core/words/synonym.s:19<td></tr>
-<tr><td title="TASKBANG">task!</td><td>COLON</td><td>( xt n -- )</td><td>write task to slot n</td><td>core/words/mtask-common.s:390<td></tr>
-<tr><td title="TASK_BLOCK">task-block</td><td>CONSTANT</td><td>TASK_BLOCK_SIZE</td><td></td><td>core/words/mtask-common.s:191<td></tr>
-<tr><td title="TASKDOTWARM">task.warm</td><td>COLON</td><td>( n -- )</td><td>reset task n</td><td>core/words/mtask-common.s:423<td></tr>
-<tr><td title="TASKDOTWARMMINUSALL">task.warm-all</td><td>COLON</td><td>( -- )</td><td>reset all tasks execept operator</td><td>core/words/mtask-common.s:504<td></tr>
-<tr><td title="TASKN">taskn</td><td>CONSTANT</td><td>TASKN</td><td></td><td>core/words/mtask-common.s:189<td></tr>
+<tr><td title="TASKBANG">task!</td><td>COLON</td><td>( xt n -- )</td><td>write task to slot n</td><td>core/words/mtask-common.s:335<td></tr>
+<tr><td title="TASK_BLOCK">task-block</td><td>CONSTANT</td><td>TASK_BLOCK_SIZE</td><td></td><td>core/words/mtask-common.s:180<td></tr>
+<tr><td title="TASKDOTWARM">task.warm</td><td>COLON</td><td>( n -- )</td><td>reset task n</td><td>core/words/mtask-common.s:364<td></tr>
+<tr><td title="TASKDOTWARMMINUSALL">task.warm-all</td><td>COLON</td><td>( -- )</td><td>reset all tasks except operator</td><td>core/words/mtask-common.s:411<td></tr>
+<tr><td title="TASKAT">task@</td><td>COLON</td><td>( n -- a )</td><td>returns task block of task n</td><td>core/words/mtask-common.s:209<td></tr>
+<tr><td title="TASKN">taskn</td><td>CONSTANT</td><td>TASKN</td><td></td><td>core/words/mtask-common.s:178<td></tr>
 <tr><td title="TICKFETCH">tick@</td><td>COLON</td><td></td><td>fetch free running counter value (not implemented)</td><td>core/words/ms.s:34<td></tr>
 <tr><td title="TPILE">tpile</td><td>VARIABLE</td><td>( -- f )</td><td>transpiling status</td><td>core/words/tpile.s:13<td></tr>
 <tr><td title="TPILEPLUS">tpile+</td><td>COLON</td><td>( -- )</td><td>enable transpiling during compilation</td><td>core/words/tpile.s:16<td></tr>
 <tr><td title="TPILEMINUS">tpile-</td><td>COLON</td><td>( -- )</td><td>disable transpiling during compilation</td><td>core/words/tpile.s:20<td></tr>
-<tr><td title="VACANT">vacant</td><td>COLON</td><td>( -- )</td><td>a task that does nothing</td><td>core/words/mtask-common.s:194<td></tr>
+<tr><td title="VACANT">vacant</td><td>COLON</td><td>( -- )</td><td>a task that does nothing</td><td>core/words/mtask-common.s:183<td></tr>
 <tr><td title="TILDESTORE_I">~!i</td><td>COLON</td><td></td><td></td><td>core/words/flash.s:5<td></tr>
 <tr><td title="TILDECOMMA">~,</td><td>COLON</td><td></td><td></td><td>core/words/flash.s:66<td></tr>
 <tr><td title="TILDECSTORE_I">~c!i</td><td>COLON</td><td></td><td></td><td>core/words/flash.s:13<td></tr>
