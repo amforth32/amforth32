@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
-USER "lp0", LP0, USER_LP0 /* start of the leave stack */
+COLON "lp0", LP0 /* ( -- a ) start of the leave stack */
+    .word XT_UP_FETCH, XT_DOLITERAL, USER_LP0, XT_PLUS, XT_EXIT
 END LP0
 
 USER "lp", LP, USER_LP /* leave stack pointer address */
@@ -43,7 +44,7 @@ COLON "ldrop", LDROP /* (L: x -- ) remove TOS from leave stack */
 END LDROP
 
 COLON "ldepth", LDEPTH /* ( -- n ) n is current depth of the leave stack */
-    .word XT_LP0, XT_FETCH
+    .word XT_LP0
     .word XT_LP_FETCH
     .word XT_MINUS
     .word XT_TWO, XT_RSHIFT /* cells */

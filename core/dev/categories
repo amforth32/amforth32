@@ -65,7 +65,7 @@ OUTPUT:
     base binary hex decimal 
     <# sign #s # hold #> hld pad 
 SYSTEM:
-    cold warm init-ram turnkey appl-turnkey quit pause interpret
+    cold warm turnkey appl-turnkey quit pause interpret
     ms .ver .build build.rev build.time build.config arch cpu board version name /user
     set-base bases .ready .ok .input .error
     first-boot.done ?first-boot first-boot.marker first-boot.start

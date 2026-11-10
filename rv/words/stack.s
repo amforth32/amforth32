@@ -5,7 +5,7 @@
 # -----------------------------------------------------------------------------
   # Berechne den Stackfüllstand
   # la t0, RAM_upper_datastack # Anfang laden  Calculate stack fill gauge
-  lw t0 , USER_SP0(s6)
+  addi t0 , s6, USER_SP0
   sub t0, t0, s4            # und aktuellen Stackpointer abziehen
   savetos
   srai s3, t0, 2 # Durch 4 teilen  Divide through 4 Bytes/element.
@@ -17,7 +17,7 @@ END DEPTH
 # -----------------------------------------------------------------------------
   # Berechne den Stackfüllstand
   #la t0, RAM_upper_returnstack # Anfang laden  Calculate stack fill gauge
-  lw t0 , USER_RP0(s6)
+  addi t0 , s6, USER_RP0
   sub t0, t0, s5          # und aktuellen Stackpointer abziehen
   savetos
   srai s3, t0, 2 # Durch 4 teilen  Divide through 4 Bytes/element.

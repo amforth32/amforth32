@@ -1,27 +1,42 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
-.equ USER_RP0        ,            0
-.equ USER_RP         ,   1*cellsize
-.equ USER_SP0        ,   2*cellsize
-.equ USER_SP         ,   3*cellsize
-.equ USER_LP0        ,   4*cellsize
-.equ USER_LP         ,   5*cellsize
-.equ USER_HANDLER    ,   6*cellsize
-.equ USER_BASE       ,   7*cellsize
-.equ USER_LOOP_INDEX ,   8*cellsize
-.equ USER_LOOP_LIMIT ,   9*cellsize
-.equ USER_LINK       ,  10*cellsize
-.equ USER_IP         ,  11*cellsize
-.equ USER_TOS        ,  12*cellsize
-.equ USER_STATUS     ,  13*cellsize
-.equ USER_XT         ,  14*cellsize
-.equ USER_EMIT       ,  15*cellsize
+# link to the next task block
+.equ USER_LINK       ,   0*cellsize
+# task status (0 = inactive) 
+.equ USER_STATUS     ,   1*cellsize
+# task word
+.equ USER_XT         ,   2*cellsize
+# task exception handler
+.equ USER_HANDLER    ,   3*cellsize
+
+# current loop index
+.equ USER_LOOP_INDEX ,   4*cellsize
+# current loop limit
+.equ USER_LOOP_LIMIT ,   5*cellsize
+
+# saved return stack pointer
+.equ USER_RP         ,   6*cellsize
+# saved data stack pointer
+.equ USER_SP         ,   7*cellsize
+# current leave stack pointer
+# Note that USER_LP is unlike USER_RP/SP
+# because it's actively used when the task is running.
+.equ USER_LP         ,   8*cellsize
+# saved instruction pointer
+.equ USER_IP         ,   9*cellsize
+# saved top of data stack
+.equ USER_TOS        ,  10*cellsize
+
+# task number base
+.equ USER_BASE       ,  11*cellsize
+# task emit word (unused)
+.equ USER_EMIT       ,  12*cellsize
 
 .if WANT_DEBUGGER == YES
-.equ USER_DEBUG_BREAK,  16*cellsize
-.equ USER_DEBUG_NEXT ,  17*cellsize
+.equ USER_DEBUG_BREAK,  13*cellsize
+.equ USER_DEBUG_NEXT ,  14*cellsize
 .endif
 
 /* TODO: check that userarea_size is large enough */
-.equ userarea_size, (2 + 32) * cellsize
+.equ userarea_size, 32 * cellsize
 .global userarea_size

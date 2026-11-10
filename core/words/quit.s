@@ -3,11 +3,6 @@ COLON "quit", QUIT /* ( -- ) top level frame of the VM, endless loop */
 /* QUIT initializes stack pointers by reading them from the user area and enters the traditional ACCEPT-INTERPRET loop that never ends.
 It provides the topmost exception catcher as well. Depending on the exception thrown, it prints an error message and restarts itself.
 */
-    .word XT_LP0, XT_FETCH, XT_LP, XT_STORE
-#    .dw XT_SP0
-#    .dw XT_SP_STORE
-#    .dw XT_RP0
-#    .dw XT_RP_STORE
     .word XT_LBRACKET
 
 PFA_QUIT2:

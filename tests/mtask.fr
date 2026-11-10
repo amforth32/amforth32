@@ -1,0 +1,16 @@
+multi
+
+TESTING multitasking
+
+variable mt_count
+: mt_counter begin 10 ms mt_count dup @ 1+ swap ! again ;
+
+' mt_counter 1 task!
+1 +task
+
+\ check that the task incremented the count a few times
+T{ 100 ms mt_count @ 5 > -> true }T
+
+1 -task
+
+single

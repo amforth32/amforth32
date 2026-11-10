@@ -25,8 +25,9 @@ isrstub:
     mov     up , r0 
 
     @ Load incoming (ISR) state from ISR userarea
-    ldr     DSP, [UP, #USER_SP0]           @ fresh data stack (ISRs start clean)
-    ldr     sp,  [UP, #USER_RP0]           @ uncomment for Option B (separate RP)    
+    add     DSP, UP, #USER_SP0           @ fresh data stack (ISRs start clean)
+    add     r0,  UP, #USER_RP0           @ uncomment for Option B (separate RP)    
+    mov      sp, r0
 
     b       DO_EXECUTE             @ enter word via existing inner interpreter
 
