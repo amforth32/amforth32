@@ -12,7 +12,7 @@ Found 3 name(s) that resolve to multiple XT symbols:
 */
 #======================================================================
 #======================================================================
-# transpiling lib/transpiled/mtask.f on 2026/11/09 20:59:34
+# transpiling lib/transpiled/mtask.f on 2026/11/10 11:47:32
 # \# # SPDX-License-Identifier: GPL-3.0-only
 # 
 # {
@@ -39,27 +39,23 @@ Found 3 name(s) that resolve to multiple XT symbols:
 #     task-block * symbol RAM_TASK0 +
 # ;
 # 
+# 
+# :~ init-task \# ( n -- ) configure task block for task n
+#     task@ >r
+#     r@ symbol USER_XT  +  @ >body r@ symbol USER_IP + !
+#     r@ symbol USER_SP0 +  r@ symbol USER_SP + !
+#     r@ symbol USER_RP0 +  r@ symbol USER_RP + !
+#     r@ symbol USER_LP0 +  r@ symbol USER_LP + !
+#     0                     r@ symbol USER_STATUS + !
+#     rdrop
+# ;
+# 
 # :~ init-user \# ( -- )
 # 
-#     \ for TASK0 operator when this is executed sp and rp not
-#     \ correct but that is not important as they will written
-#     \ on first task switch. However, for task1...taskn-1 they
-#     \ ARE the initial values
-# 
+#     \ set the UP register to TASK0
 #     symbol RAM_TASK0 up!
-#     symbol USER_RP0 up@ + up@ symbol USER_RP + !
-#     symbol USER_SP0 up@ + up@ symbol USER_SP + !
-#     symbol USER_LP0 up@ + up@ symbol USER_LP + !
 # 
-#     \ taskn 1 ?do
-#     \     task-block 0 do
-#     \         i symbol USER_HANDLER cells < if
-#     \             up@ i + @ task-block j * + up@ i + task-block j * + !
-#     \         then
-#     \     cell +loop
-#     \ loop
-# 
-#     taskn 1- 0 ?do
+#     taskn 0 ?do
 #         \ link task i+1 to task i
 #         i 1+ task@ i task@ symbol USER_LINK + !
 # 
@@ -67,6 +63,9 @@ Found 3 name(s) that resolve to multiple XT symbols:
 #         i 0= if ['] quit else ['] vacant then
 #         i task@ symbol USER_XT + !
 #         i 0= if
+#             \ cannot use task.warm on TASK0 because it is already running
+#             \ just make sure the task is configured properly
+#             i init-task
 #             \ set operator as active
 #             true i task@ symbol USER_STATUS + !
 #         else
@@ -86,24 +85,21 @@ Found 3 name(s) that resolve to multiple XT symbols:
 # ;
 # 
 # : task.warm \# ( n -- ) reset task n
-#     dup 1 taskn 1- within not if symbol ENTASK throw then
+#     dup 1 taskn within not if symbol ENTASK throw then
+#     \ make sure the task is not resetting itself while running
+#     dup task@ up@ = if symbol ENTASK throw then
+# 
+#     \ configure the task
+#     dup init-task
+#     \ reset task state
 #     task@ >r
-# 
-#     r@ symbol USER_XT  + @ >body r@ symbol USER_IP + !
-#     r@ symbol USER_SP0 +       r@ symbol USER_SP + !
-#     r@ symbol USER_RP0 +       r@ symbol USER_RP + !
-#     r@ symbol USER_LP0 +       r@ symbol USER_LP + !
-# 
 #     0 r@ symbol USER_LOOP_INDEX + !
 #     0 r@ symbol USER_LOOP_LIMIT + !
-#     0 r@ symbol USER_STATUS     + !
-# 
 #     10 r@ symbol USER_BASE + !
-# 
 #     rdrop
 # ;
 # 
-# : task.warm-all \# ( -- ) reset all tasks execept operator
+# : task.warm-all \# ( -- ) reset all tasks except operator
 #     taskn 1- 1 ?do i task.warm loop
 # ;
 # 
@@ -125,7 +121,7 @@ Found 3 name(s) that resolve to multiple XT symbols:
 #     ['] mtpause is pause
 # ;
 # 
-# : show.task \# ( -- ) show tasks
+# : show.tasks \# ( -- ) show tasks
 #     \ need single or multi
 #     symbol XT_PAUSE defer@ symbol XT_NOP = if
 #         s" single"
@@ -133,7 +129,7 @@ Found 3 name(s) that resolve to multiple XT symbols:
 #         s" multi"
 #     then type cr
 #     s" # UP...... ? LINK.... NAME...." type cr
-#     taskn 1- 0 ?do
+#     taskn 0 ?do
 #         i .
 #         i task@
 #         dup hex.
@@ -145,29 +141,33 @@ Found 3 name(s) that resolve to multiple XT symbols:
 #     loop
 # ;
 # 
-# : show.ua ( n -- ) \ show user area task n
+# : show.ua ( n -- ) \ show user area of task n
 #     \ drop
-#     s" OFF A....... [A]..... Desc........ OFF A....... [A]..... Desc........"
+#     s" OFF A....... [A]..... Desc............ OFF A....... [A]..... Desc............"
 #     type cr
 #     symbol userarea_size 4 / 0 do
 #         i cells 3 u.r space \ print cell offset
-#         dup task-block * up@ + ( n -- addr ) \ addr is taskN UA
+#         dup task-block * symbol RAM_TASK0 + ( n -- addr ) \ addr is taskN UA
 #         i cells + dup hex. @ hex. \ emit i-th UA field address and value
 #         i 4 * case
-#         symbol USER_LINK        of s" LINK........ " type endof
-#         symbol USER_STATUS      of s" STATUS...... " type endof
-#         symbol USER_XT          of s" XT.......... " type endof
-#         symbol USER_HANDLER     of s" HANDLER..... " type endof
-#         symbol USER_LOOP_INDEX  of s" LOOP_INDEX.. " type endof
-#         symbol USER_LOOP_LIMIT  of s" LOOP_LIMIT.. " type endof
-#         symbol USER_RP          of s" RP.......... " type endof
-#         symbol USER_SP          of s" SP.......... " type endof
-#         symbol USER_LP          of s" LP.......... " type endof
-#         symbol USER_IP          of s" IP.......... " type endof
-#         symbol USER_TOS         of s" TOS......... " type endof
-#         symbol USER_BASE        of s" BASE........ " type endof
-#         symbol USER_EMIT        of s" EMIT........ " type endof
-#         s" ............ " type
+#         symbol USER_LINK        of s" LINK............ " type endof
+#         symbol USER_STATUS      of s" STATUS.......... " type endof
+#         symbol USER_XT          of s" XT.............. " type endof
+#         symbol USER_HANDLER     of s" HANDLER......... " type endof
+#         symbol USER_LOOP_INDEX  of s" LOOP_INDEX...... " type endof
+#         symbol USER_LOOP_LIMIT  of s" LOOP_LIMIT...... " type endof
+#         symbol USER_RP          of s" RP.............. " type endof
+#         symbol USER_SP          of s" SP.............. " type endof
+#         symbol USER_LP          of s" LP.............. " type endof
+#         symbol USER_IP          of s" IP.............. " type endof
+#         symbol USER_TOS         of s" TOS............. " type endof
+#         symbol USER_BASE        of s" BASE............ " type endof
+#         symbol USER_EMIT        of s" EMIT............ " type endof
+# { .if WANT_DEBUGGER == 1 }
+#         symbol USER_DEBUG_BREAK of s" USER_DEBUG_BREAK " type endof
+#         symbol USER_DEBUG_NEXT  of s" USER_DEBUG_NEXT. " type endof
+# { .endif }
+#         s" ................ " type
 #         endcase
 #         i 1+ 2 mod 0= if cr then
 #     loop
@@ -216,39 +216,63 @@ COLON "task@", TASKAT /* ( n -- a ) returns task block of task n */
 END TASKAT
 # ----------------------------------------------------------------------
 # ----------------------------------------------------------------------
-NONAME "init-user", INITMINUSUSER /* ( -- ) */
+NONAME "init-task", INITMINUSTASK /* ( n -- ) configure task block for task n */
+	.word XT_TASKAT
+	.word XT_TO_R
+	.word XT_R_FETCH
 	.word XT_DOLITERAL
-	.word RAM_TASK0
-	.word XT_UP_STORE
-	.word XT_DOLITERAL
-	.word USER_RP0
-	.word XT_UP_FETCH
+	.word USER_XT
 	.word XT_PLUS
-	.word XT_UP_FETCH
+	.word XT_FETCH
+	.word XT_TO_BODY
+	.word XT_R_FETCH
 	.word XT_DOLITERAL
-	.word USER_RP
+	.word USER_IP
 	.word XT_PLUS
 	.word XT_STORE
+	.word XT_R_FETCH
 	.word XT_DOLITERAL
 	.word USER_SP0
-	.word XT_UP_FETCH
 	.word XT_PLUS
-	.word XT_UP_FETCH
+	.word XT_R_FETCH
 	.word XT_DOLITERAL
 	.word USER_SP
 	.word XT_PLUS
 	.word XT_STORE
+	.word XT_R_FETCH
+	.word XT_DOLITERAL
+	.word USER_RP0
+	.word XT_PLUS
+	.word XT_R_FETCH
+	.word XT_DOLITERAL
+	.word USER_RP
+	.word XT_PLUS
+	.word XT_STORE
+	.word XT_R_FETCH
 	.word XT_DOLITERAL
 	.word USER_LP0
-	.word XT_UP_FETCH
 	.word XT_PLUS
-	.word XT_UP_FETCH
+	.word XT_R_FETCH
 	.word XT_DOLITERAL
 	.word USER_LP
 	.word XT_PLUS
 	.word XT_STORE
+	.word XT_ZERO
+	.word XT_R_FETCH
+	.word XT_DOLITERAL
+	.word USER_STATUS
+	.word XT_PLUS
+	.word XT_STORE
+	.word XT_RDROP
+	.word XT_EXIT
+END INITMINUSTASK
+# ----------------------------------------------------------------------
+# ----------------------------------------------------------------------
+NONAME "init-user", INITMINUSUSER /* ( -- ) */
+	.word XT_DOLITERAL
+	.word RAM_TASK0
+	.word XT_UP_STORE
 	.word XT_TASKN
-	.word XT_1MINUS
 	.word XT_ZERO
 	.word XT_QDOCHECK, XT_DOCONDBRANCH,INITMINUSUSER_0001 /* ?do */
 	.word XT_DODO
@@ -281,6 +305,8 @@ INITMINUSUSER_0004: /* then */
 	.word XT_I
 	.word XT_ZEROEQUAL
 	.word XT_DOCONDBRANCH,INITMINUSUSER_0005 /* if */
+	.word XT_I
+	.word XT_INITMINUSTASK
 	.word XT_TRUE
 	.word XT_I
 	.word XT_TASKAT
@@ -339,7 +365,6 @@ COLON "task.warm", TASKDOTWARM /* ( n -- ) reset task n */
 	.word XT_DUP
 	.word XT_ONE
 	.word XT_TASKN
-	.word XT_1MINUS
 	.word XT_WITHIN
 	.word XT_NOT
 	.word XT_DOCONDBRANCH,TASKDOTWARM_0001 /* if */
@@ -347,46 +372,19 @@ COLON "task.warm", TASKDOTWARM /* ( n -- ) reset task n */
 	.word ENTASK
 	.word XT_THROW
 TASKDOTWARM_0001: /* then */
+	.word XT_DUP
+	.word XT_TASKAT
+	.word XT_UP_FETCH
+	.word XT_EQUAL
+	.word XT_DOCONDBRANCH,TASKDOTWARM_0002 /* if */
+	.word XT_DOLITERAL
+	.word ENTASK
+	.word XT_THROW
+TASKDOTWARM_0002: /* then */
+	.word XT_DUP
+	.word XT_INITMINUSTASK
 	.word XT_TASKAT
 	.word XT_TO_R
-	.word XT_R_FETCH
-	.word XT_DOLITERAL
-	.word USER_XT
-	.word XT_PLUS
-	.word XT_FETCH
-	.word XT_TO_BODY
-	.word XT_R_FETCH
-	.word XT_DOLITERAL
-	.word USER_IP
-	.word XT_PLUS
-	.word XT_STORE
-	.word XT_R_FETCH
-	.word XT_DOLITERAL
-	.word USER_SP0
-	.word XT_PLUS
-	.word XT_R_FETCH
-	.word XT_DOLITERAL
-	.word USER_SP
-	.word XT_PLUS
-	.word XT_STORE
-	.word XT_R_FETCH
-	.word XT_DOLITERAL
-	.word USER_RP0
-	.word XT_PLUS
-	.word XT_R_FETCH
-	.word XT_DOLITERAL
-	.word USER_RP
-	.word XT_PLUS
-	.word XT_STORE
-	.word XT_R_FETCH
-	.word XT_DOLITERAL
-	.word USER_LP0
-	.word XT_PLUS
-	.word XT_R_FETCH
-	.word XT_DOLITERAL
-	.word USER_LP
-	.word XT_PLUS
-	.word XT_STORE
 	.word XT_ZERO
 	.word XT_R_FETCH
 	.word XT_DOLITERAL
@@ -397,12 +395,6 @@ TASKDOTWARM_0001: /* then */
 	.word XT_R_FETCH
 	.word XT_DOLITERAL
 	.word USER_LOOP_LIMIT
-	.word XT_PLUS
-	.word XT_STORE
-	.word XT_ZERO
-	.word XT_R_FETCH
-	.word XT_DOLITERAL
-	.word USER_STATUS
 	.word XT_PLUS
 	.word XT_STORE
 	.word XT_DOLITERAL
@@ -416,7 +408,7 @@ TASKDOTWARM_0001: /* then */
 	.word XT_EXIT
 END TASKDOTWARM
 # ----------------------------------------------------------------------
-COLON "task.warm-all", TASKDOTWARMMINUSALL /* ( -- ) reset all tasks execept operator */
+COLON "task.warm-all", TASKDOTWARMMINUSALL /* ( -- ) reset all tasks except operator */
 	.word XT_TASKN
 	.word XT_1MINUS
 	.word XT_ONE
@@ -492,30 +484,29 @@ COLON "multi", MULTI /* ( -- ) enable task switching */
 	.word XT_EXIT
 END MULTI
 # ----------------------------------------------------------------------
-COLON "show.task", SHOWDOTTASK /* ( -- ) show tasks */
+COLON "show.tasks", SHOWDOTTASKS /* ( -- ) show tasks */
 	.word XT_DOLITERAL
 	.word XT_PAUSE
 	.word XT_DEFER_FETCH
 	.word XT_DOLITERAL
 	.word XT_NOP
 	.word XT_EQUAL
-	.word XT_DOCONDBRANCH,SHOWDOTTASK_0001 /* if */
+	.word XT_DOCONDBRANCH,SHOWDOTTASKS_0001 /* if */
 	STRING "single"
-	.word XT_DOBRANCH,SHOWDOTTASK_0002
-SHOWDOTTASK_0001: /* else */
+	.word XT_DOBRANCH,SHOWDOTTASKS_0002
+SHOWDOTTASKS_0001: /* else */
 	STRING "multi"
-SHOWDOTTASK_0002: /* then */
+SHOWDOTTASKS_0002: /* then */
 	.word XT_TYPE
 	.word XT_CR
 	STRING "# UP...... ? LINK.... NAME...."
 	.word XT_TYPE
 	.word XT_CR
 	.word XT_TASKN
-	.word XT_1MINUS
 	.word XT_ZERO
-	.word XT_QDOCHECK, XT_DOCONDBRANCH,SHOWDOTTASK_0003 /* ?do */
+	.word XT_QDOCHECK, XT_DOCONDBRANCH,SHOWDOTTASKS_0003 /* ?do */
 	.word XT_DODO
-SHOWDOTTASK_0004: /* do */
+SHOWDOTTASKS_0004: /* do */
 	.word XT_I
 	.word XT_DOT
 	.word XT_I
@@ -527,16 +518,16 @@ SHOWDOTTASK_0004: /* do */
 	.word USER_STATUS
 	.word XT_PLUS
 	.word XT_FETCH
-	.word XT_DOCONDBRANCH,SHOWDOTTASK_0005 /* if */
+	.word XT_DOCONDBRANCH,SHOWDOTTASKS_0005 /* if */
 	.word XT_DOLITERAL 
 	.word 65 /* A */
 	.word XT_EMIT
-	.word XT_DOBRANCH,SHOWDOTTASK_0006
-SHOWDOTTASK_0005: /* else */
+	.word XT_DOBRANCH,SHOWDOTTASKS_0006
+SHOWDOTTASKS_0005: /* else */
 	.word XT_DOLITERAL 
 	.word 83 /* S */
 	.word XT_EMIT
-SHOWDOTTASK_0006: /* then */
+SHOWDOTTASKS_0006: /* then */
 	.word XT_SPACE
 	.word XT_DUP
 	.word XT_DOLITERAL
@@ -551,13 +542,13 @@ SHOWDOTTASK_0006: /* then */
 	.word XT_XT2STRING
 	.word XT_TYPE
 	.word XT_CR
-	.word XT_DOLOOP,SHOWDOTTASK_0004 /* loop */
-SHOWDOTTASK_0003: /* (for ?do IF required) */
+	.word XT_DOLOOP,SHOWDOTTASKS_0004 /* loop */
+SHOWDOTTASKS_0003: /* (for ?do IF required) */
 	.word XT_EXIT
-END SHOWDOTTASK
+END SHOWDOTTASKS
 # ----------------------------------------------------------------------
 COLON "show.ua", SHOWDOTUA 
-	STRING "OFF A....... [A]..... Desc........ OFF A....... [A]..... Desc........"
+	STRING "OFF A....... [A]..... Desc............ OFF A....... [A]..... Desc............"
 	.word XT_TYPE
 	.word XT_CR
 	.word XT_DOLITERAL
@@ -576,7 +567,8 @@ SHOWDOTUA_0002: /* do */
 	.word XT_DUP
 	.word XT_TASK_BLOCK
 	.word XT_STAR
-	.word XT_UP_FETCH
+	.word XT_DOLITERAL
+	.word RAM_TASK0
 	.word XT_PLUS
 	.word XT_I
 	.word XT_CELLS
@@ -594,7 +586,7 @@ SHOWDOTUA_0002: /* do */
 	.word XT_EQUAL
 	.word XT_DOCONDBRANCH,SHOWDOTUA_0003 /* if */
 	.word XT_DROP
-	STRING "LINK........ "
+	STRING "LINK............ "
 	.word XT_TYPE
 	.word XT_DOBRANCH,SHOWDOTUA_0004
 SHOWDOTUA_0003: /* else */
@@ -604,7 +596,7 @@ SHOWDOTUA_0003: /* else */
 	.word XT_EQUAL
 	.word XT_DOCONDBRANCH,SHOWDOTUA_0005 /* if */
 	.word XT_DROP
-	STRING "STATUS...... "
+	STRING "STATUS.......... "
 	.word XT_TYPE
 	.word XT_DOBRANCH,SHOWDOTUA_0006
 SHOWDOTUA_0005: /* else */
@@ -614,7 +606,7 @@ SHOWDOTUA_0005: /* else */
 	.word XT_EQUAL
 	.word XT_DOCONDBRANCH,SHOWDOTUA_0007 /* if */
 	.word XT_DROP
-	STRING "XT.......... "
+	STRING "XT.............. "
 	.word XT_TYPE
 	.word XT_DOBRANCH,SHOWDOTUA_0008
 SHOWDOTUA_0007: /* else */
@@ -624,7 +616,7 @@ SHOWDOTUA_0007: /* else */
 	.word XT_EQUAL
 	.word XT_DOCONDBRANCH,SHOWDOTUA_0009 /* if */
 	.word XT_DROP
-	STRING "HANDLER..... "
+	STRING "HANDLER......... "
 	.word XT_TYPE
 	.word XT_DOBRANCH,SHOWDOTUA_000A
 SHOWDOTUA_0009: /* else */
@@ -634,7 +626,7 @@ SHOWDOTUA_0009: /* else */
 	.word XT_EQUAL
 	.word XT_DOCONDBRANCH,SHOWDOTUA_000B /* if */
 	.word XT_DROP
-	STRING "LOOP_INDEX.. "
+	STRING "LOOP_INDEX...... "
 	.word XT_TYPE
 	.word XT_DOBRANCH,SHOWDOTUA_000C
 SHOWDOTUA_000B: /* else */
@@ -644,7 +636,7 @@ SHOWDOTUA_000B: /* else */
 	.word XT_EQUAL
 	.word XT_DOCONDBRANCH,SHOWDOTUA_000D /* if */
 	.word XT_DROP
-	STRING "LOOP_LIMIT.. "
+	STRING "LOOP_LIMIT...... "
 	.word XT_TYPE
 	.word XT_DOBRANCH,SHOWDOTUA_000E
 SHOWDOTUA_000D: /* else */
@@ -654,7 +646,7 @@ SHOWDOTUA_000D: /* else */
 	.word XT_EQUAL
 	.word XT_DOCONDBRANCH,SHOWDOTUA_000F /* if */
 	.word XT_DROP
-	STRING "RP.......... "
+	STRING "RP.............. "
 	.word XT_TYPE
 	.word XT_DOBRANCH,SHOWDOTUA_0010
 SHOWDOTUA_000F: /* else */
@@ -664,7 +656,7 @@ SHOWDOTUA_000F: /* else */
 	.word XT_EQUAL
 	.word XT_DOCONDBRANCH,SHOWDOTUA_0011 /* if */
 	.word XT_DROP
-	STRING "SP.......... "
+	STRING "SP.............. "
 	.word XT_TYPE
 	.word XT_DOBRANCH,SHOWDOTUA_0012
 SHOWDOTUA_0011: /* else */
@@ -674,7 +666,7 @@ SHOWDOTUA_0011: /* else */
 	.word XT_EQUAL
 	.word XT_DOCONDBRANCH,SHOWDOTUA_0013 /* if */
 	.word XT_DROP
-	STRING "LP.......... "
+	STRING "LP.............. "
 	.word XT_TYPE
 	.word XT_DOBRANCH,SHOWDOTUA_0014
 SHOWDOTUA_0013: /* else */
@@ -684,7 +676,7 @@ SHOWDOTUA_0013: /* else */
 	.word XT_EQUAL
 	.word XT_DOCONDBRANCH,SHOWDOTUA_0015 /* if */
 	.word XT_DROP
-	STRING "IP.......... "
+	STRING "IP.............. "
 	.word XT_TYPE
 	.word XT_DOBRANCH,SHOWDOTUA_0016
 SHOWDOTUA_0015: /* else */
@@ -694,7 +686,7 @@ SHOWDOTUA_0015: /* else */
 	.word XT_EQUAL
 	.word XT_DOCONDBRANCH,SHOWDOTUA_0017 /* if */
 	.word XT_DROP
-	STRING "TOS......... "
+	STRING "TOS............. "
 	.word XT_TYPE
 	.word XT_DOBRANCH,SHOWDOTUA_0018
 SHOWDOTUA_0017: /* else */
@@ -704,7 +696,7 @@ SHOWDOTUA_0017: /* else */
 	.word XT_EQUAL
 	.word XT_DOCONDBRANCH,SHOWDOTUA_0019 /* if */
 	.word XT_DROP
-	STRING "BASE........ "
+	STRING "BASE............ "
 	.word XT_TYPE
 	.word XT_DOBRANCH,SHOWDOTUA_001A
 SHOWDOTUA_0019: /* else */
@@ -714,13 +706,37 @@ SHOWDOTUA_0019: /* else */
 	.word XT_EQUAL
 	.word XT_DOCONDBRANCH,SHOWDOTUA_001B /* if */
 	.word XT_DROP
-	STRING "EMIT........ "
+	STRING "EMIT............ "
 	.word XT_TYPE
 	.word XT_DOBRANCH,SHOWDOTUA_001C
 SHOWDOTUA_001B: /* else */
-	STRING "............ "
+.if WANT_DEBUGGER == 1
+	.word XT_DOLITERAL
+	.word USER_DEBUG_BREAK
+	.word XT_OVER
+	.word XT_EQUAL
+	.word XT_DOCONDBRANCH,SHOWDOTUA_001D /* if */
+	.word XT_DROP
+	STRING "USER_DEBUG_BREAK "
+	.word XT_TYPE
+	.word XT_DOBRANCH,SHOWDOTUA_001E
+SHOWDOTUA_001D: /* else */
+	.word XT_DOLITERAL
+	.word USER_DEBUG_NEXT
+	.word XT_OVER
+	.word XT_EQUAL
+	.word XT_DOCONDBRANCH,SHOWDOTUA_001F /* if */
+	.word XT_DROP
+	STRING "USER_DEBUG_NEXT. "
+	.word XT_TYPE
+	.word XT_DOBRANCH,SHOWDOTUA_0020
+SHOWDOTUA_001F: /* else */
+.endif
+	STRING "................ "
 	.word XT_TYPE
 	.word XT_DROP
+SHOWDOTUA_0020: /* then */
+SHOWDOTUA_001E: /* then */
 SHOWDOTUA_001C: /* then */
 SHOWDOTUA_001A: /* then */
 SHOWDOTUA_0018: /* then */
@@ -739,9 +755,9 @@ SHOWDOTUA_0004: /* then */
 	.word XT_TWO
 	.word XT_MOD
 	.word XT_ZEROEQUAL
-	.word XT_DOCONDBRANCH,SHOWDOTUA_001D /* if */
+	.word XT_DOCONDBRANCH,SHOWDOTUA_0021 /* if */
 	.word XT_CR
-SHOWDOTUA_001D: /* then */
+SHOWDOTUA_0021: /* then */
 	.word XT_DOLOOP,SHOWDOTUA_0002 /* loop */
 SHOWDOTUA_0001: /* (for ?do IF required) */
 	.word XT_DROP

@@ -18,7 +18,9 @@
 .equ USER_RP         ,   6*cellsize
 # saved data stack pointer
 .equ USER_SP         ,   7*cellsize
-# saved leave stack pointer
+# current leave stack pointer
+# Note that USER_LP is unlike USER_RP/SP
+# because it's actively used when the task is running.
 .equ USER_LP         ,   8*cellsize
 # saved instruction pointer
 .equ USER_IP         ,   9*cellsize
@@ -36,5 +38,5 @@
 .endif
 
 /* TODO: check that userarea_size is large enough */
-.equ userarea_size, 16 * cellsize
+.equ userarea_size, 32 * cellsize
 .global userarea_size

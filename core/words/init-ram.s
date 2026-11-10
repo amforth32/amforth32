@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
-COLON "init-ram", INIT_RAM /* ( -- ) startup/reset RAM initialization */
+NONAME "init-ram", INIT_RAM /* ( -- ) startup/reset RAM initialization */
 
     .word XT_INITMINUSUSER 
 
