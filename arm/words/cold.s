@@ -6,6 +6,18 @@ CODEWORD "cold", COLD /* ( i*x -- )(R: j*y -- ) assembler part of startup sequen
    MCUs may override this to inject additional initialization at specific points.
 */
 
+.if CORTEXM == YES
+/* Switch to PSP (to leave MSP for interrupts)
+   Note: Switching to Unprivileged mode (nPRIV=1) prevents access to the system control block and such,
+   so WARM initializations (like systick-init) and similar would fail.
+   Privileged mode is more suitable for development activities.
+*/
+   mrs r0, control
+   orr r0, 2         @ CONTROL = SPSEL
+   msr control, r0
+   isb               @ flush instruction pipeline
+.endif
+
    ldr r0, =RAM_upper_TASK0_returnstack
    mov sp, r0
    ldr DSP, =RAM_upper_TASK0_datastack
@@ -14,7 +26,7 @@ CODEWORD "cold", COLD /* ( i*x -- )(R: j*y -- ) assembler part of startup sequen
    mov DEBUG, 0
 .endif
 
-RAMAFILL forthvector , 0x00
+RAMAFILL ram_vector , 0x00
 
 /* Copy RAM functions from Flash to RAM */
    ldr r0, =RAM_lower_res    

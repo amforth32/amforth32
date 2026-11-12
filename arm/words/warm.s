@@ -8,6 +8,9 @@ COLON "warm", WARM /* ( -- ) high level part of the boot sequence, VM is running
   MCUs may override this to inject additional initialization at specific points
 */
 
+  /* disable interrupts */
+  .word XT_MINUSINT
+
   /* initialize values and defers to their defaults */
   .word XT_INIT_RAM
 

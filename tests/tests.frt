@@ -6,6 +6,10 @@
 \ the tester itself
 #include "tests/tester.frt"
 
+#ifdef IRQ_HAMMER
+#include "irq-hammer.frt"
+#endif
+
 s" TESTS STARTING" type cr
 
 \ The files that contain the tests.
@@ -13,6 +17,10 @@ s" TESTS STARTING" type cr
 #include "tests/core2.fr"
 #include "tests/pvalue.fr"
 #include "tests/mtask.fr"
+
+#if defined(TARGET_MPS2) && !defined(IRQ_HAMMER)
+#include "tests/interrupts-cortexm.fr"
+#endif
 
 \ Do not remove as required by awk processing script
 s" TESTS FINISHED" type cr

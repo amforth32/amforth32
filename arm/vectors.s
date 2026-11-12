@@ -1,5 +1,8 @@
-.word RAM_upper_TASK0_returnstack @ 00: Stack top address
-
+.if CORTEXM == YES
+.word RAM_upper_ISR_stack @ 00: initial MSP value
+.else
+.word RAM_upper_TASK0_returnstack @ 00: initial MSP value
+.endif
 .word PFA_COLD        @ 01: Reset Vector
 .word nullhandler     @ 02: NMI
 .word faulthandler    @ 03: HARD fault
@@ -14,4 +17,8 @@
 .word nullhandler     @ 12: Debug monitor handler
 .word 0               @ 13: Reserved
 .word nullhandler     @ 14: PendSV handler
+.if CORTEXM == YES
+.word isrstub         @ 15: SysTick handler
+.else
 .word nullhandler     @ 15: SysTick handler
+.endif
