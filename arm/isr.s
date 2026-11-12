@@ -34,6 +34,7 @@ isrstub:
     cmp     FW, #0                  @ null — no handler?
     beq     stub_exit
 
+/*
     @ --- Task switch: foreground -> ISR ---
     @ Save outgoing (foreground) state into foreground userarea
     str     DSP, [UP, #USER_SP]           @ UP currently = foreground userarea
@@ -47,6 +48,7 @@ isrstub:
     add     DSP, UP, #USER_SP0           @ fresh data stack (ISRs start clean)
     add     r0,  UP, #USER_RP0           @ fresh return stack    
     mov     sp, r0
+*/
 
     b       DO_EXECUTE             @ enter word via existing inner interpreter
 
