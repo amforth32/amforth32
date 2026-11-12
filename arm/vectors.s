@@ -14,4 +14,4 @@
 .word nullhandler     @ 12: Debug monitor handler
 .word 0               @ 13: Reserved
 .word nullhandler     @ 14: PendSV handler
-.word nullhandler     @ 15: SysTick handler
+.word isrstub     @ 15: SysTick handler

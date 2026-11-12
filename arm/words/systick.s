@@ -30,7 +30,9 @@
 .equ SYST_CVR,   0xE000E018
 .equ SYST_CALIB, 0xE000E01C
 
-CODEWORD "systick.init", SYSTICK_INIT /* ( -- ) init with $00ffffff count (but do not start) systick */
+CODEWORD "systick.init", SYSTICK_INIT /* ( -- ) initialize systick */
+/* set reload value to maximum possible, use processor clock as source
+and enable systick interrupt */
     ldr     r0, =SYST_RVR
     ldr     r1, =0x00FFFFFF        @ max count
     str     r1, [r0]
@@ -41,7 +43,16 @@ CODEWORD "systick.init", SYSTICK_INIT /* ( -- ) init with $00ffffff count (but d
     NEXT
 END SYSTICK_INIT
 
+CODEWORD "systick.max", SYSTICK_MAX /* ( -- ) set reload value to maximum possible $00ffffff */
+    ldr     r0, =SYST_RVR
+    ldr     r1, =0x00FFFFFF        @ max count
+    str     r1, [r0]
+    NEXT
+END SYSTICK_MAX
+
 CODEWORD "systick!" , SYSTICK_STORE /* ( n -- ) write max count */
+/* Note that ms implementation requires max count to be large,
+ideally maximum possible (see systick.max) */
     ldr     r0, =SYST_RVR
     str     TOS , [r0]
     ldr     r0, =SYST_CVR
@@ -87,6 +98,8 @@ CODEWORD "-systick", MINUSSYSTICK /* ( -- ) stop systick */
     NEXT
 END MINUSSYSTICK
 
+CONSTANT "systick.ms", SYSTICK_MS, SYSTICK_TICKS_PER_MS /* ( -- n ) systick ticks per millisecond */
+END SYSTICK_MS
 
 CONSTANT "systick#" SYSTICKHASH , 15 /* ( -- n ) ISR slot number */
 END SYSTICKHASH
