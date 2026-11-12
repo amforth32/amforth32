@@ -1,3 +1,30 @@
+# Ref: Cortex-M4 User Guide: 4.4 System timer, SysTick
+# Ref: Renesas RA4M1 User Manual: 2.9 SysTick System Timer
+
+# SYST_CSR SysTick Control and Status Register
+# Bits   | Name     | Function
+# ----------------------------
+# [31:17] | -         | Reserved
+# [16]    | COUNTFLAG | Returns 1 if timer counted to 0 since last time this was read.
+# [15:3]  | -         | Reseverd
+# [2]     | CLKSOURCE | Clock source: 0 = external clock / 1 = processor clock.
+# [1]     | TICKINT   | Enables SysTick exception request; Software can use COUNTFLAG to determine if SysTick has ever counted to zero.
+# [0]     | ENABLE    | Enables the counter
+# When ENABLE is set to 1, the counter loads the RELOAD value from the SYST_RVR register
+# and then counts down. On reaching 0, it sets the COUNTFLAG to 1 and optionally asserts the
+# SysTick depending on the value of TICKINT. It then loads the RELOAD value again, and begins counting.
+
+# SYST_RVR SysTick Reload Value Register (lower 24 bits only)
+# The RELOAD value can be any value in the range 0x00000001-0x00FFFFFF. A start value of 0 is possible,
+# but has no effect because the SysTick exception request and COUNTFLAG are activated when counting from 1 to 0.
+# The RELOAD value is calculated according to its use. For example, to generate a multi-shot
+# timer with a period of N processor clock cycles, use a RELOAD value of N-1. If the SysTick
+# interrupt is required every 100 clock pulses, set RELOAD to 99.
+
+# SYST_CVR SysTick Current Value Register (lower 24 bits only)
+# Reads return the current value of the SysTick counter.
+# A write of any value clears the field to 0, and also clears the SYST_CSR COUNTFLAG bit to 0.
+
 .equ SYST_CSR,   0xE000E010
 .equ SYST_RVR,   0xE000E014
 .equ SYST_CVR,   0xE000E018

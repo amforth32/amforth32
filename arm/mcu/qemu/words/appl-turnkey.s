@@ -1,7 +1,7 @@
 
 COLON "appl-turnkey", APPLTURNKEY
 .if TARGET_MPS2==1
-  .word XT_DOLITERAL, UART0, XT_APB_INIT
+  .word XT_DOLITERAL, UART0, XT_UART_INIT
 .endif
 
   .word XT_DECIMAL

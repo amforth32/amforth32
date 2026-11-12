@@ -1,22 +1,39 @@
-# AmForth for ARM QEMU -M virt
+# AmForth for ARM QEMU
 
 AmForth is published under the GNU Public License v3 (GPL).
+
+Several QEMU ARM machine targets are provided.
+
+## virt
 
 The `virt` machine of `qemu-system-arm` is a generic Cortex-A system with large RAM capacity
 and choice of Cortex-A cores. This AmForth build targets the 32-bit `cortex-a15`.
 
-This build is configured for 256K of RAM backed FLASH memory region and 256K of RAM memory region (see qemu.ld for details).
+This build is configured for 256K of RAM backed FLASH memory region and 256K of RAM memory region (see virt.ld for details).
+
 There is no point giving QEMU more than 1M of memory to run it (a lot less than the default QEMU setup).
 
+## mps2
+
+The `mps2-an386` machine of `qemu-system-arm` is a Cortex-M4 FPGA based board as documented in Arm Application Note AN386.
+
+This build is configured for 256K of RAM backed FLASH memory region and 256K of RAM memory region (see mps2.ld for details).
 
 # Running AmForth
 
 To run this AmForth build you will need `qemu-system-arm` which is best installed through
 the package management facilities of the host OS.
 
-To run AmForth you need just the QEMU executable and `amforth.elf` file. The basic command to run it is
+To run AmForth you need just the QEMU executable and `amforth.elf` file.
+
+The basic command to run the `virt` build is
 ```
 qemu-system-arm -M virt -cpu cortex-a15 -m 1M -kernel amforth.elf -display none -serial stdio
+```
+
+The basic command to run the `mps2` build is
+```
+qemu-system-arm -M mps2-an386 -kernel amforth.elf -display none -serial stdio
 ```
 
 The `stdio` interface is very basic and uncomfortable to use for anything but a quick test. For regular use
@@ -27,13 +44,13 @@ as the terminal emulator as it provides a lot of AmForth specific usability feat
 `amforth-shell.py` requires Python3 and the `pyserial` package. Python3 is often pre-installed by the host OS. If it isn't follow the recommended installation approach for your OS. The `pyserial` package usually needs to be installed with `pip3 install pyserial` command. If this gives you `error: externally-managed-environment`, and you don't want to heed its warnings and deal with Python virtual environments, then `pip3 install --user --break-system-packages pyserial` should be a relatively safe work-around.
 See `amforth-shell.py` comments for more details on how to use it.
 
-The command to run AmForth connected to PTY is
+The command to run AmForth connected to PTY employs option `-serial pty` instead of `-serial stdio`:
 ```
-qemu-system-arm -M virt -cpu cortex-a15 -m 1M -kernel amforth.elf -nographic -serial pty
+qemu-system-arm -M mps2-an386 -kernel amforth.elf -nographic -serial pty
 ```
 
 In this configuration the I/O of the qemu process is connected to the QEMU monitor, which facilitates control of the emulation process.
-It will output the file name of the PTY to connect to on start, it looks something like this:
+It will output the path of the PTY to connect to on start, it looks something like this:
 ```
 QEMU 10.2.0 monitor - type 'help' for more information
 char device redirected to /dev/ttys012 (label serial0)
@@ -99,3 +116,9 @@ Note that the only tools needed for this process are AmForth running on the targ
 ## QEMU ARM virt machine
 * ARM virt machine: https://www.qemu.org/docs/master/system/arm/virt.html
 * ARM virt machine UART: PL011 https://developer.arm.com/documentation/ddi0183/g
+
+## QEMU ARM mps2 machine
+* ARM mps2 machine: https://www.qemu.org/docs/master/system/arm/mps2.html
+* V2M-MPS2: https://www.keil.arm.com/boards/arm-v2m-mps2-b-87aa37a/documentation/
+* CMSDK (UART): https://support.arm.com/documentation/ddi0479/d/introduction/about-the-cortex-m-system-design-kit
+

@@ -25,11 +25,14 @@ jobs:
         if: steps.cache-toolchain.outputs.cache-hit != 'true'
         run: cd arm/dev && make toolchain
 
-      - name: Build QEMU virt
-        run: cd arm/mcu/qemu && VERSION=${{github.ref_name}} make dist
+      - name: Build QEMU VIRT
+        run: cd arm/mcu/qemu && VERSION=${{github.ref_name}} TARGET=VIRT make dist
+
+      - name: Build QEMU MPS2
+        run: cd arm/mcu/qemu && VERSION=${{github.ref_name}} TARGET=MPS2 make dist
 
       - name: Build RA4M1/UNOR4
-        run: cd arm/mcu/ra4m1 && VERSION=${{github.ref_name}} make dist
+        run: cd arm/mcu/ra4m1 && VERSION=${{github.ref_name}} TARGET=UNOR4 make dist
 
       - name: Upload ARM artifacts
         uses: actions/upload-artifact@v4

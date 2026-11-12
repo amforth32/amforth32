@@ -1,7 +1,7 @@
 /*
-    APB UART from Cortex-M System Design Kit
+    UART from Cortex-M System Design Kit
 
-The QEMU mps2 machines for ARM use APB UARTs. Relevant registers are:
+The QEMU mps2 machines for ARM use CMSDK UARTs. Relevant registers are:
 
 Name    | Base offset | Type | Width | Reset value |  Description
 --------------------------------------------------------------
@@ -44,6 +44,8 @@ Interrupt Routing Details
   split transmit and receive lines (RX on IRQ 0/2, TX on IRQ 1/3) as well as combined interrupt options;
   QEMU wires the OR-gated combined output directly to the primary interrupt indices (0 and 2).
 
+https://support.arm.com/documentation/ddi0479/d/introduction/about-the-cortex-m-system-design-kit
+
 */
 
 .equ UART0,	0x40004000
@@ -61,7 +63,7 @@ Interrupt Routing Details
 .eqv TXBF, 1 << 0
 
 
-CODEWORD  "apb-init", APB_INIT /* ( a -- ) enable UART with base address a */
+CODEWORD  "uart-init", UART_INIT /* ( a -- ) enable UART with base address a */
     poptos r1
 
     /* 1. Configure the Baud Rate */
@@ -76,9 +78,9 @@ CODEWORD  "apb-init", APB_INIT /* ( a -- ) enable UART with base address a */
     mov     r2, #3
     str     r2, [r1, #CTRL]
     NEXT
-END APB_INIT
+END UART_INIT
 
-CODEWORD  "apb-emit", APB_EMIT /* ( c a -- ) emit c on UART with base address a */ 
+CODEWORD  "uart-emit", UART_EMIT /* ( c a -- ) emit c on UART with base address a */ 
     poptos r1
 tx_wait:
     /* Wait for the transmit FIFO to have space (TXFF bit 5 to be 0) */
@@ -90,9 +92,9 @@ tx_wait:
     str TOS, [r1, #DATA]
     loadtos
     NEXT
-END APB_EMIT
+END UART_EMIT
 
-CODEWORD  "apb-emit?", APB_EMITQ /* ( a -- f ) check if UART with base address a is ready to transmit */ 
+CODEWORD  "uart-emit?", UART_EMITQ /* ( a -- f ) check if UART with base address a is ready to transmit */ 
     mov r1, TOS
     mov TOS, #0
     ldr r2, [r1, #STATE]     
@@ -101,9 +103,9 @@ CODEWORD  "apb-emit?", APB_EMITQ /* ( a -- f ) check if UART with base address a
     mvns TOS, TOS
 1: 
     NEXT
-END APB_EMITQ
+END UART_EMITQ
 
-CODEWORD  "apb-key", APB_KEY /* ( a -- c ) receive c from  UART with base address a */ 
+CODEWORD  "uart-key", UART_KEY /* ( a -- c ) receive c from  UART with base address a */ 
     mov r1, TOS
 rx_wait:
     ldr r2, [r1, #STATE]   
@@ -114,9 +116,9 @@ rx_wait:
     ldr TOS, [r1, #DATA]
     and     r0, r0, #0xFF  @ mask out upper bits
     NEXT
-END APB_KEY
+END UART_KEY
 
-CODEWORD  "apb-key?", APB_KEYQ /* ( a -- f ) check if UART with base address a has data to read */
+CODEWORD  "uart-key?", UART_KEYQ /* ( a -- f ) check if UART with base address a has data to read */
     mov r1, TOS
     mov TOS, #0
     ldr r2, [r1, #STATE]   
@@ -125,4 +127,39 @@ CODEWORD  "apb-key?", APB_KEYQ /* ( a -- f ) check if UART with base address a h
     mvns TOS, TOS
 1: 
     NEXT
-END APB_KEYQ
+END UART_KEYQ
+
+/*
+    Tie the standard I/O words to UART0
+*/
+
+CONSTANT "uart0", UART0, UART0
+END UART0
+
+CONSTANT "uart1", UART1, UART1
+END UART1
+
+CONSTANT "uart2", UART2, UART2
+END UART2
+
+CONSTANT "uart3", UART3, UART3
+END UART3
+
+CONSTANT "uart4", UART4, UART4
+END UART4
+
+COLON  "serial-emit", SERIAL_EMIT
+    .word XT_DOLITERAL, UART0, XT_UART_EMIT, XT_EXIT
+END SERIAL_EMIT
+
+COLON  "serial-emit?", SERIAL_EMITQ
+    .word XT_DOLITERAL, UART0, XT_UART_EMITQ, XT_EXIT
+END SERIAL_EMITQ
+
+COLON  "serial-key", SERIAL_KEY
+    .word XT_DOLITERAL, UART0, XT_UART_KEY, XT_EXIT
+END SERIAL_KEY
+
+COLON  "serial-key?", SERIAL_KEYQ
+    .word XT_DOLITERAL, UART0, XT_UART_KEYQ, XT_EXIT
+END SERIAL_KEYQ

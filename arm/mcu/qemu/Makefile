@@ -1,5 +1,5 @@
 -include .env
-TARGET ?= VIRT
+TARGET ?= MPS2
 TARGETS = VIRT MPS2
 
 ifeq ($(strip $(TARGET)), VIRT)
@@ -9,7 +9,7 @@ QEMU := qemu-system-arm -M virt -cpu cortex-a15 -m 1M -kernel build/amforth.elf
 else ifeq ($(strip $(TARGET)), MPS2)
 DIST_TARGET ?= arm-qemu-mps2
 MCU_LD ?= mps2.ld
-QEMU := qemu-system-arm -M mps2-an386 -cpu cortex-m4 -m 16M -kernel build/amforth.elf
+QEMU := qemu-system-arm -M mps2-an386 -kernel build/amforth.elf
 else
 $(error Unknown TARGET '$(TARGET)')
 endif
