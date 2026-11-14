@@ -62,11 +62,11 @@ def stacked_pc(frame):
 def fault_analysis(frame, exception_number):
     names = {
         3: "HardFault",
-        4: "MemManage fault",
+        4: "MemManage",
         5: "BusFault",
         6: "UsageFault",
     }
-    lines = [f"Exception: {exception_number} ({names.get(exception_number, 'fault')})"]
+    lines = [f"Fault: {exception_number} ({names.get(exception_number)})"]
     try:
         cfsr = read_system_word(0xE000ED28)
         hfsr = read_system_word(0xE000ED2C)
@@ -75,34 +75,37 @@ def fault_analysis(frame, exception_number):
         return lines
 
     causes = []
-    cfsr_causes = (
-        (0, "instruction access violation"),
-        (1, "data access violation"),
-        (3, "unstacking error"),
-        (4, "stacking error"),
-        (5, "lazy FP state preservation error"),
-        (7, "MMFAR contains the fault address"),
-        (8, "instruction bus error"),
-        (9, "precise data bus error"),
-        (10, "imprecise data bus error"),
-        (11, "unstacking bus error"),
-        (12, "stacking bus error"),
-        (13, "lazy FP state preservation bus error"),
-        (15, "BFAR contains the fault address"),
-        (16, "undefined instruction"),
-        (17, "invalid state"),
-        (18, "invalid PC load"),
-        (19, "unaligned access"),
-        (24, "no coprocessor available"),
+    hfsr_causes = (
+        (1, "VECTTBL", "vector table read fault"),
+        (30, "FORCED", "escalated configurable fault"),
+        (31, "DEBUGEVT", "debug event"),
     )
-    causes.extend(description for bit, description in cfsr_causes if cfsr & (1 << bit))
-    if hfsr & (1 << 1):
-        causes.append("vector table read fault")
-    if hfsr & (1 << 30):
-        causes.append("escalated configurable fault (FORCED)")
-    if hfsr & (1 << 31):
-        causes.append("debug event")
-    lines.append("Fault cause: " + (", ".join(causes) if causes else "no status bits set"))
+    causes.extend([name, description] for bit, name, description in hfsr_causes if hfsr & (1 << bit))
+    cfsr_causes = (
+        (0, "IACCVIOL", "instruction access violation"),
+        (1, "DACCVIOL", "data access violation"),
+        (3, "MUNSTKERR", "MemManage unstacking error"),
+        (4, "MSTKERR", "MemManage stacking error"),
+        (5, "MLSPERR", "MemManage lazy FP state preservation error"),
+        (8, "IBUSERR", "instruction bus error"),
+        (9, "PRECISERR", "precise data bus error"),
+        (10, "IMPRECISERR", "imprecise data bus error"),
+        (11, "UNSTKERR", "BusFault unstacking error"),
+        (12, "STKERR", "BusFault stacking error"),
+        (13, "LSPERR", "BusFault lazy FP state preservation error"),
+        (16, "UNDEFINSTR", "undefined instruction"),
+        (17, "INVSTATE", "invalid state"),
+        (18, "INVPC", "invalid PC load"),
+        (19, "NOCP", "no coprocessor available"),
+        (20, "SKTOF", "stack overflow"),
+        (24, "UNALIGNED", "unaligned access"),
+        (25, "DIVBYZERO", "divide by zero")
+    )
+    causes.extend([name, description] for bit, name, description in cfsr_causes if cfsr & (1 << bit))
+    if causes:
+        lines.extend(f"{name}: {description}" for name, description in causes if causes)
+    else:
+        lines.append("no status bits set")
 
     # MMFARVALID and BFARVALID indicate whether these registers hold the
     # address associated with the recorded fault.
@@ -113,17 +116,17 @@ def fault_analysis(frame, exception_number):
         if cfsr & (1 << valid_bit):
             try:
                 address = read_system_word(address_register)
-                lines.append(f"Fault address ({label}): {gdb.format_address(address)}")
+                lines.append(f"Address ({label}): {gdb.format_address(address)}")
             except Exception:
-                lines.append(f"Fault address ({label}): <unavailable>")
-    # IBUSERR and PRECISERR identify precise faults; the stacked PC points
+                lines.append(f"Address ({label}): <unavailable>")
+    # IBUSERR, PRECISERR, etc identify precise faults; the stacked PC points
     # to the instruction that caused the fault, while BFAR/MMFAR identifies
     # the data address for a precise data access fault.
-    if cfsr & ((1 << 8) | (1 << 9)):
+    if cfsr & ((1 << 0) | ( 1 << 1) | (1 << 8) | (1 << 9) | (1 << 10)):
         try:
-            lines.append(f"Faulting instruction (stacked PC): {stacked_pc(frame)}")
+            lines.append(f"Instruction (PC): {stacked_pc(frame)}")
         except Exception:
-            lines.append("Faulting instruction (stacked PC): <unavailable>")
+            lines.append("Instruction (PC): <unavailable>")
     return lines
 
 def exception_analysis(frame, psr_name):
@@ -133,6 +136,9 @@ def exception_analysis(frame, psr_name):
         return []
     if exception_number == 0:
         return []
+
+    if exception_number in (3, 4, 5, 6):
+        return fault_analysis(frame, exception_number)
 
     exception_names = {
         1: "Reset",
@@ -151,8 +157,6 @@ def exception_analysis(frame, psr_name):
         irq_number = exception_number - 16
         name = f"IRQ {irq_number}"
     lines = [f"Exception: {exception_number}" + (f" ({name})" if name else "")]
-    if exception_number in (3, 4, 5, 6):
-        return fault_analysis(frame, exception_number)
     return lines
 
 def register_lines(frame):
