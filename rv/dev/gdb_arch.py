@@ -46,3 +46,6 @@ def register_lines(frame):
         value_register(frame, "a6"),
         value_register(frame, "a7"),
     ]
+
+def in_interrupt(frame):
+    return false

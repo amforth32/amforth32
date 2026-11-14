@@ -22,15 +22,20 @@ _start:
 .include "config.inc"
 .include "build-config.inc"
 .include "arm/macros.inc"
+
 .include "user.inc"
 
 .section .vector, "ax"
 .include "vectors.s"
 
 .section amforth, "ax"
-.include "isr.s"
 
 STARTDICT
+
+.if CORTEXM == YES
+.include "isr.s"
+.include "system-m.s"
+.endif
 
 .include "dict_prims.inc"
 .include "dict_secs.inc"

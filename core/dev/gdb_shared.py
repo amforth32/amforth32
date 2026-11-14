@@ -32,6 +32,8 @@ RAM_lower_returnstack = get_sym_val("RAM_lower_TASK0_returnstack", 0x20000080)
 RAM_upper_returnstack = get_sym_val("RAM_upper_TASK0_returnstack", 0x20000100)
 RAM_lower_userarea = get_sym_val("RAM_lower_TASK0_userarea", 0x20000100)
 RAM_upper_userarea = get_sym_val("RAM_upper_TASK0_userarea", 0x20000188)
+RAM_lower_ISR_stack = get_sym_val("RAM_lower_ISR_stack", 0x20000000)
+RAM_upper_ISR_stack = get_sym_val("RAM_upper_ISR_stack", 0x20000100)
 
 def value(val):
     # If val is in the flash code range, treat it as address
