@@ -9,6 +9,12 @@
 
 # RAMLO areas
 
+.equ ram_vector_size, 256*cellsize
+.global ram_vector_size
+
+.equ isr_stack_size, 256*cellsize
+.global isr_stack_size
+
 .equ datastack_size, 40 * cellsize
 .global datastack_size
 

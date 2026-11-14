@@ -1,26 +1,31 @@
 .thumb_func
 nullhandler:
+/*
    push {r1}
    ldr r1, =#48
    SEMIT r1
    mrs r1, ipsr
    add r1, #48 @ +"0"
    SEMIT r1
-
    pop {r1}
-   bx lr
+*/
+   
+.Lspin_null:
+   b .Lspin_null
 
 .thumb_func
 faulthandler:
+/* 
    push {r1}
-
    ldr r1, =#70 @ F
    SEMIT r1
    mrs r1, ipsr
    adds r1, #48 @ +"0"
    SEMIT r1
    pop {r1}
-   bx lr
+*/
+.Lspin_fault:
+   b .Lspin_fault
 
 .ltorg
 

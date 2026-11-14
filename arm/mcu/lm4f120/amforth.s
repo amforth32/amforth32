@@ -11,12 +11,14 @@
 .thumb
 
 .section .vector, "ax"
-.include "mcu/lm4f120/vectors.s"
+.include "vectors.s"
 
 .section amforth, "ax"
-.include "isr.s"
 
 STARTDICT
+
+.include "isr.s"
+.include "system-m.s"
 
 .include "dict_prims.inc"
 .include "dict_secs.inc"

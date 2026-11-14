@@ -38,6 +38,123 @@ def find_psr_name():
             return name
     return None
 
+PSR = find_psr_name()
+
+def in_interrupt(frame):
+    rsp = frame.read_register(PSR).cast(gdb.lookup_type("unsigned int"))
+    return bool(rsp & 0x1ff)
+
+def read_system_word(address):
+    """Read a 32-bit little-endian Cortex-M system register."""
+    data = gdb.selected_inferior().read_memory(address, 4)
+    return int.from_bytes(bytes(data), byteorder="little")
+
+def stacked_pc(frame):
+    """Return the PC saved in the exception stack frame."""
+    exc_return = int(frame.read_register("lr"))
+    stack_register = "psp" if exc_return & 0x4 else "msp"
+    stack_pointer = int(frame.read_register(stack_register))
+    # An extended FP frame has 18 words ahead of the basic eight-word frame.
+    frame_offset = 18 * 4 if not (exc_return & (1 << 4)) else 0
+    pc = read_system_word(stack_pointer + frame_offset + 6 * 4)
+    return gdb.format_address(pc)
+
+def fault_analysis(frame, exception_number):
+    names = {
+        3: "HardFault",
+        4: "MemManage fault",
+        5: "BusFault",
+        6: "UsageFault",
+    }
+    lines = [f"Exception: {exception_number} ({names.get(exception_number, 'fault')})"]
+    try:
+        cfsr = read_system_word(0xE000ED28)
+        hfsr = read_system_word(0xE000ED2C)
+    except Exception as exc:
+        lines.append(f"Fault status: <unavailable: {exc}>")
+        return lines
+
+    causes = []
+    cfsr_causes = (
+        (0, "instruction access violation"),
+        (1, "data access violation"),
+        (3, "unstacking error"),
+        (4, "stacking error"),
+        (5, "lazy FP state preservation error"),
+        (7, "MMFAR contains the fault address"),
+        (8, "instruction bus error"),
+        (9, "precise data bus error"),
+        (10, "imprecise data bus error"),
+        (11, "unstacking bus error"),
+        (12, "stacking bus error"),
+        (13, "lazy FP state preservation bus error"),
+        (15, "BFAR contains the fault address"),
+        (16, "undefined instruction"),
+        (17, "invalid state"),
+        (18, "invalid PC load"),
+        (19, "unaligned access"),
+        (24, "no coprocessor available"),
+    )
+    causes.extend(description for bit, description in cfsr_causes if cfsr & (1 << bit))
+    if hfsr & (1 << 1):
+        causes.append("vector table read fault")
+    if hfsr & (1 << 30):
+        causes.append("escalated configurable fault (FORCED)")
+    if hfsr & (1 << 31):
+        causes.append("debug event")
+    lines.append("Fault cause: " + (", ".join(causes) if causes else "no status bits set"))
+
+    # MMFARVALID and BFARVALID indicate whether these registers hold the
+    # address associated with the recorded fault.
+    for valid_bit, address_register, label in (
+        (7, 0xE000ED34, "MMFAR"),
+        (15, 0xE000ED38, "BFAR"),
+    ):
+        if cfsr & (1 << valid_bit):
+            try:
+                address = read_system_word(address_register)
+                lines.append(f"Fault address ({label}): {gdb.format_address(address)}")
+            except Exception:
+                lines.append(f"Fault address ({label}): <unavailable>")
+    # IBUSERR and PRECISERR identify precise faults; the stacked PC points
+    # to the instruction that caused the fault, while BFAR/MMFAR identifies
+    # the data address for a precise data access fault.
+    if cfsr & ((1 << 8) | (1 << 9)):
+        try:
+            lines.append(f"Faulting instruction (stacked PC): {stacked_pc(frame)}")
+        except Exception:
+            lines.append("Faulting instruction (stacked PC): <unavailable>")
+    return lines
+
+def exception_analysis(frame, psr_name):
+    try:
+        exception_number = int(frame.read_register(psr_name)) & 0x1ff
+    except Exception:
+        return []
+    if exception_number == 0:
+        return []
+
+    exception_names = {
+        1: "Reset",
+        2: "NMI",
+        3: "HardFault",
+        4: "MemManage",
+        5: "BusFault",
+        6: "UsageFault",
+        11: "SVCall",
+        12: "DebugMonitor",
+        14: "PendSV",
+        15: "SysTick",
+    }
+    name = exception_names.get(exception_number)
+    if exception_number >= 16:
+        irq_number = exception_number - 16
+        name = f"IRQ {irq_number}"
+    lines = [f"Exception: {exception_number}" + (f" ({name})" if name else "")]
+    if exception_number in (3, 4, 5, 6):
+        return fault_analysis(frame, exception_number)
+    return lines
+
 def register_lines(frame):
     lines = [
         value_register(frame, "r0"),
@@ -61,6 +178,7 @@ def register_lines(frame):
     psr_name = find_psr_name()
     if psr_name:
         lines.append(status_register(frame, psr_name))
+        lines.extend(exception_analysis(frame, psr_name))
     else:
         lines.append(register_prefix("PSR") + "<not found>")
 
