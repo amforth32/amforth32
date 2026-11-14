@@ -33,6 +33,14 @@ faulthandler:
 isrstub:
     push    {r4-r11, lr}
 
+    /* save sp on the now inactive task return stack,
+      so that we can reliably restore the saved registers in exiti
+    */
+    mrs r0, PSP
+    mov r1, sp
+    str sp, [r0, #-4]!
+    msr PSP, r0
+
     mrs     r0, ipsr
     ldr     r1, =RAM_lower_forthvector
     ldr     FW, [r1, r0, lsl #2]   @ FW = XT for this exception

@@ -9,7 +9,15 @@ CODEWORD "(exiti)", EXITI /* return from interrupt handler; compiled by ;i. */
      # DO_COLON will push FIP to the return stack before executing the word.
      # so we need to compensate for that push here, otherwise the pop that follows
      # will not be aligned with the push in isrstub and we're off the rails.
-     add sp, 4
+     # add sp, 4
+
+    /* restore SP from the inactive task's return stack,
+     this should fix any stack imbalance before restoring all registers */
+    mrs r0, PSP
+    ldr r1, [r0], #4
+    mov sp, r1
+    msr PSP, r0
+
 
      # This must match the push in isrstub
      pop {r4-r11, lr}
