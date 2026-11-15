@@ -1,3 +1,4 @@
+# This conflicts with systick.s
 
 # Delay processing busy waits on the Cortex-M4 system timer, SysTick
 # RA4M1 provides external SYSTICCLK clock fixed at 32.768 kHz as an alternative to using the MCU clock 48Mhz.

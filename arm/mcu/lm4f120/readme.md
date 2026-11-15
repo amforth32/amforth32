@@ -10,11 +10,15 @@ Stellaris LM4F120 LaunchPad Evaluation Board
 * 32 kB SRAM: $20000000 .. $20008000
 * 80 MHz
 
-## QEMU -M lm3s6965evb (can't write to flash!)
+## QEMU -M lm3s6965evb
 Luminary Micro Stellaris LM3S6965EVB emulation includes the following devices:
 * Cortex-M3 CPU core.
-* 256k Flash and 64k SRAM.
-* Timers, UARTs, ADC, I2C and SSI interfaces.
+* 256k on-chip Flash and 64k on-chip SRAM.
+* basic memory-mapped flash controller (ti, stellaris-flash-controller) 
+* NVIC & SysTick (24-bit)
+* 3 UARTs, I2C and SSI interfaces
+* GPIO (with interrupts), ADC
+* 4 GPTM timers (32/2x16-bit) 0x4003[0-3]000, SysTick (24-bit) 0xE000E010, Watchdog Timer (32-bit) 0x40000000
 * OSRAM Pictiva 128x64 OLED with SSD0323 controller connected via SSI.
 
 ## QEMU -M lm3s811evb (can't write to flash!)

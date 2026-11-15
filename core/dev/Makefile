@@ -98,7 +98,7 @@ buildinfo:
 	@mkdir -p build
 
 # Basic assembly flags and defining TARGET_XXX symbol.
-# String value symbols cannot be defined through command line, so TARGET=XXX wouldn't work.
+# Symbol value must be a number, so TARGET=XXX wouldn't work.
 ASFLAGS += -g --warn --fatal-warnings -ahlmn=build/amforth.lst-as --defsym TARGET_$(TARGET)=1
 # if you want to run standard tests you need WANT_IGNORECASE flag set
 ifdef WANT_IGNORECASE

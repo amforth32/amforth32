@@ -1,56 +1,104 @@
+/*
+Found 3 name(s) that resolve to multiple XT symbols:
+  name='1ms':
+    xtname='XT_N1MS'  file='./rv/words/ms.s'
+    xtname='XT_1MS'  file='./rv/mcu/ch32v307/words/ms.s'
+  name='led.init':
+    xtname='XT_LEDDOTINIT'  file='./rv/mcu/ch32v307/words/led.s'
+    xtname='XT_LED_INIT'  file='./rv/mcu/ch32v307/words/led.s'
+  name='^led':
+    xtname='XT_CARETLED'  file='./rv/mcu/ch32v307/words/led.s'
+    xtname='XT_TOGLED'  file='./rv/mcu/ch32v307/words/led.s'
+*/
+#======================================================================
+#======================================================================
+# transpiling lib/transpiled/ms-arm.f on 2026/11/10 21:38:50
+# \
+# \ Using Systick for the default ARM implementation of ms as that is available
+# \ on any Cortex-M target. May be overridden in specific targets.
+# \
+# \ SYSTICK_TICKS_PER_MS is supplied by the MCU configuration and must match
+# \ the clock selected by systick.init.
+# : ms ( n -- ) \ delay n milliseconds, calling PAUSE
+#     systick@
+#     begin
+#         \ ( n start )
+#         over 0= if 2drop exit then
+#         begin
+#             \ ( n start )
+#             pause
+#             systick@
+#             over over - \ ( n start end elapsed )
+#             \ if elapsed is negative due to systick rollover,
+#             \ adjust it by adding timer's 24-bit period (2^24)
+#             dup 0< if $01000000 + then
+#             \ if elapsed is more than 1 ms leave the loop,
+#             \ otherwise drop elapsed and end, and loop again
+#             dup symbol SYSTICK_TICKS_PER_MS > dup not if
+#                 nip nip
+#             then
+#         until
+#         \ ( n start end elapsed )
+#         \ adjust end with elapsed so that it reflects where 1ms elapsed
+#         \ end = end + (elapsed - SYSTICK_TICKS_PER_MS)
+#         symbol SYSTICK_TICKS_PER_MS - +
+#         \ fix ajdusted end if it exceeds the timer range
+#         $00ffffff and
+#         \ end is now the new start and decrement n
+#         nip swap 1- swap
+#     again
+# ;
 
-CODEWORD "cntpct@", CNTPCTFETCH  /* ( -- u ) lower 32 bits of CNTPCT */
-    savetos
-    mrrc    p15, 0, TOS, r0, c14  @ TOS = low 32, r0 = high (discarded)
-    NEXT
-END CNTPCTFETCH
-
-CODEWORD "cntfrq@", CNTFRQFETCH  /* ( -- u ) read CNTFRQ */
-    savetos
-    mrc     p15, 0, TOS, c14, c0, 0
-    NEXT
-END CNTFRQFETCH
-
-CODEWORD "1ms", N1MS          /* ( -- ) busy-wait 1ms, wrap-safe */
-    mrc     p15, 0, r1, c14, c0, 0  @ r1 = CNTFRQ
-    mov     r2, #1000
-    udiv    r1, r1, r2              @ r1 = ticks per ms
-    mrrc    p15, 0, r2, r0, c14    @ r2 = start (low 32)
-1:
-    mrrc    p15, 0, r3, r0, c14    @ r3 = now (low 32)
-    sub     r3, r3, r2             @ r3 = elapsed (wrap-safe)
-    cmp     r3, r1
-    blo     1b
-    NEXT
-END N1MS
-
-COLON "ms", MS /* ( n -- ) a non-busy delay of n ms that calls PAUSE */
-    .word XT_CNTFRQFETCH
-    .word XT_DOLITERAL
-    .word 1000
-    .word XT_SLASH
-    .word XT_STAR
-    .word XT_TO_R
-    .word XT_CNTPCTFETCH
+# comment \ hanging on its own 0
+# comment \ hanging on its own 3
+# ----------------------------------------------------------------------
+COLON "ms", MS 
+	.word XT_SYSTICK_FETCH
 MS_0001: /* begin */
-    .word XT_PAUSE
-    .word XT_CNTPCTFETCH
-    .word XT_OVER
-    .word XT_MINUS
-    .word XT_R_FETCH
-    .word XT_UGREATER
-    .word XT_DOCONDBRANCH,MS_0001 /* until */
-    .word XT_DROP
-    .word XT_RDROP
-    .word XT_EXIT
+	.word XT_OVER
+	.word XT_ZEROEQUAL
+	.word XT_DOCONDBRANCH,MS_0002 /* if */
+	.word XT_2DROP
+	.word XT_FINISH
+MS_0002: /* then */
+MS_0003: /* begin */
+	.word XT_PAUSE
+	.word XT_SYSTICK_FETCH
+	.word XT_OVER
+	.word XT_OVER
+	.word XT_MINUS
+	.word XT_DUP
+	.word XT_ZEROLESS
+	.word XT_DOCONDBRANCH,MS_0004 /* if */
+	.word XT_DOLITERAL
+	.word 0x1000000
+	.word XT_PLUS
+MS_0004: /* then */
+	.word XT_DUP
+	.word XT_DOLITERAL
+	.word SYSTICK_TICKS_PER_MS
+	.word XT_GREATER
+	.word XT_DUP
+	.word XT_NOT
+	.word XT_DOCONDBRANCH,MS_0005 /* if */
+	.word XT_NIP
+	.word XT_NIP
+MS_0005: /* then */
+	.word XT_DOCONDBRANCH,MS_0003 /* until */
+	.word XT_DOLITERAL
+	.word SYSTICK_TICKS_PER_MS
+	.word XT_MINUS
+	.word XT_PLUS
+	.word XT_DOLITERAL
+	.word 0xffffff
+	.word XT_AND
+	.word XT_NIP
+	.word XT_SWAP
+	.word XT_1MINUS
+	.word XT_SWAP
+	.word XT_DOBRANCH,MS_0001 /* again */
+	.word XT_EXIT
 END MS
-
-CODEALIAS "ms.init", MSDOTINIT, NOP /* ( -- ) start free running counter that back ms */ 
-END MSDOTINIT
-
-CODEALIAS "tick@", TICKFETCH, CNTPCTFETCH /* ( -- ) fetch free running counter value */ 
-END TICKFETCH
-
-CODEALIAS "ms.tickf" , MSDOTTICKF , CNTFRQFETCH
-END MSDOTTICKF
-
+# ----------------------------------------------------------------------
+#=====================================================================
+#======================================================================

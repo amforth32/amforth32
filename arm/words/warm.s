@@ -11,6 +11,11 @@ COLON "warm", WARM /* ( -- ) high level part of the boot sequence, VM is running
   /* initialize values and defers to their defaults */
   .word XT_INIT_RAM
 
+.if CORTEXM == YES
+  /* ms.s uses systick on Cortex-M targets by default */
+  .word XT_SYSTICK_INIT
+.endif
+
 .if WANT_DEBUGGER == YES
   /* initialize debugger to disabled state,
     needs UP initialized so after INIT_RAM! */

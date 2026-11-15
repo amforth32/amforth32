@@ -28,39 +28,45 @@ jobs:
         run: cd arm/dev && make toolchain
 
       - name: Build RA4M1 (WANT_ITC)
-        run: cd arm/mcu/ra4m1 && WANT_ITC=1 make all
+        run: cd arm/mcu/ra4m1 && TARGET=UNOR4 WANT_ITC=1 make all
 
       - name: Build RA4M1
-        run: cd arm/mcu/ra4m1 && WANT_IGNORECASE=1 make all
+        run: cd arm/mcu/ra4m1 && TARGET=UNOR4 WANT_IGNORECASE=1 make all
 
-      - name: Build LM4120 (WANT_ITC)
-        run: cd arm/mcu/lm4f120 && WANT_ITC=1 make all
+      - name: Build LM3QEM (WANT_ITC)
+        run: cd arm/mcu/lm4f120 && TARGET=LM3QEM WANT_ITC=1 make all
 
       - name: Build LM4F120 (TARGET=LM4)
         run: cd arm/mcu/lm4f120 && TARGET=LM4 make all
 
-      - name: Build LM4120 (WANT_IGNORECASE)
-        run: cd arm/mcu/lm4f120 && WANT_IGNORECASE=1 make all
+      - name: Build LM3QEM (WANT_IGNORECASE)
+        run: cd arm/mcu/lm4f120 && TARGET=LM3QEM WANT_IGNORECASE=1 make all
 
       - name: Install QEMU ARM
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends qemu-system
 
-      - name: LM4F120 Core Tests (WANT_ITC)
-        run: cd arm/mcu/lm4f120 && TIMEOUT=5s make tests
+      - name: LM3QEM Core Tests (WANT_ITC)
+        run: cd arm/mcu/lm4f120 && TARGET=LM3QEM TIMEOUT=5s make tests
 
-      - name: Build QEMU virt (WANT_ITC)
-        run: cd arm/mcu/qemu && WANT_IGNORECASE=1 WANT_ITC=1 make all
+      - name: Build QEMU VIRT (WANT_ITC)
+        run: cd arm/mcu/qemu && TARGET=VIRT WANT_IGNORECASE=1 WANT_ITC=1 make all
 
-      - name: QEMU Core Tests (WANT_ITC)
-        run: cd arm/mcu/qemu && TIMEOUT=5s make tests
+      - name: QEMU VIRT Core Tests (WANT_ITC)
+        run: cd arm/mcu/qemu && TARGET=VIRT TIMEOUT=5s make tests
 
-      - name: Build QEMU virt
-        run: cd arm/mcu/qemu && WANT_IGNORECASE=1 make all
+      - name: Build QEMU VIRT
+        run: cd arm/mcu/qemu && TARGET=VIRT WANT_IGNORECASE=1 make all
 
-      - name: QEMU Core Tests
-        run: cd arm/mcu/qemu && TIMEOUT=5s make tests
+      - name: QEMU VIRT Core Tests
+        run: cd arm/mcu/qemu && TARGET=VIRT TIMEOUT=5s make tests
+
+      - name: Build QEMU MPS2
+        run: cd arm/mcu/qemu && TARGET=MPS2 WANT_IGNORECASE=1 make all
+
+      - name: QEMU MPS2 Core Tests
+        run: cd arm/mcu/qemu && TARGET=MPS2 TIMEOUT=8s make tests
 
       - name: Update Refcards
         if: github.ref == 'refs/heads/main'

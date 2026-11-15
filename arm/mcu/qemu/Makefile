@@ -1,11 +1,18 @@
 -include .env
-TARGET ?= QEM
-TARGETS = QEM
-ifneq ($(strip $(TARGET)), QEM)
+TARGET ?= MPS2
+TARGETS = VIRT MPS2
+
+ifeq ($(strip $(TARGET)), VIRT)
+DIST_TARGET ?= arm-qemu-virt
+MCU_LD ?= virt.ld
+QEMU := qemu-system-arm -M virt -cpu cortex-a15 -m 1M -kernel build/amforth.elf
+else ifeq ($(strip $(TARGET)), MPS2)
+DIST_TARGET ?= arm-qemu-mps2
+MCU_LD ?= mps2.ld
+QEMU := qemu-system-arm -M mps2-an386 -kernel build/amforth.elf
+else
 $(error Unknown TARGET '$(TARGET)')
 endif
-DIST_TARGET ?= arm-qemu-virt
-MCU_LD ?= qemu.ld
 
 LANG=C
 AMFORTH ?= $(shell git rev-parse --show-toplevel)
@@ -13,8 +20,6 @@ AMFORTH ?= $(shell git rev-parse --show-toplevel)
 # Included after various configuration bits are defined (importantly MCU_LD)
 include $(AMFORTH)/arm/dev/Makefile
 
-QEMU := qemu-system-arm -M virt -cpu cortex-a15 -m 1M -kernel build/amforth.elf
-#QEMU := qemu-system-arm -M mps2-an386 -cpu cortex-m4 -m 16M -kernel build/amforth.elf
 
 # -nographic is incompatible with -serial stdio as the monitor takes over the serial device
 ## Start AmForth under QEMU with operator uart connected to stdio
@@ -34,7 +39,7 @@ pty:
 # Add -S if you want QEMU to not start the quest.
 ## Like pty but allows GDB to attach to it (-s).
 debug:
-	$(QEMU) -nographic -serial pty -s
+	$(QEMU) -nographic -serial pty -s -S
 
 ## Connect GDB to running amforth (must be running with -s, see debug)
 gdb:
