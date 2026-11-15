@@ -29,8 +29,11 @@ The default (custom) section flags seem to be CONTENTS and READONLY so not ALLOC
 
 STARTDICT
 
+if CORTEXM == YES
+.include "system-m.s"
 .include "isr.s"
-.include "system.s"
+.endif
+
 .include "dict_prims.inc"
 .include "dict_secs.inc"
 .include "dict_env.inc"

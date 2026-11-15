@@ -48,7 +48,7 @@ jobs:
           sudo apt-get install -y --no-install-recommends qemu-system
 
       - name: LM3QEM Core Tests (WANT_ITC)
-        run: cd arm/mcu/lm4f120 && TARGET=LM3QEM TIMEOUT=5s make tests
+        run: cd arm/mcu/lm4f120 && TARGET=LM3QEM TIMEOUT=8s make tests
 
       - name: Build QEMU VIRT (WANT_ITC)
         run: cd arm/mcu/qemu && TARGET=VIRT WANT_IGNORECASE=1 WANT_ITC=1 make all

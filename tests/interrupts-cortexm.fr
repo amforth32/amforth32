@@ -1,0 +1,101 @@
+\ Interrupt tests for ARM Cortex-M.
+
+TESTING SysTick interrupt delivery and return
+
+-int
+-systick
+
+\ Preserve the previous systick handler
+variable irq_old_handler
+systick# trap@ irq_old_handler !
+
+\ use a 1 ms SysTick period.
+systick.ms 1- systick!
++systick
+
+TESTING simple count ISR
+
+-int
+variable irq_count_before
+variable irq_count
+0 irq_count !
+
+:noname irq_count @ 1+ irq_count ! ;i systick# trap!
+
++int
+\ check that ISR was invoked
+T{ 20 ms irq_count @ 0 > -> true }T
+
+irq_count @ irq_count_before !
+T{ 10 ms irq_count @ irq_count_before @ > -> true }T
+
+\ Mask interrupts while the timer continues running.
+-int
+irq_count @ irq_count_before !
+T{ 10 ms irq_count @ irq_count_before @ = -> true }T
++int
+irq_count @ irq_count_before !
+T{ 10 ms irq_count @ irq_count_before @ > -> true }T
+
+
+TESTING ISR with loop
+
+-int 
+variable irq_loop_count
+0 irq_loop_count !
+0 irq_count !
+
+:noname
+   irq_count @ 1+ irq_count !
+   5 0 do
+      irq_loop_count @ 1+ irq_loop_count !
+   loop
+;i systick# trap!
+
++int
+
+\ run a slow loop on the main task ~25ms
+: sum 0 5 0 do 5 ms i + loop ;
+\ check that the loop worked on the main task while being interrupted
+T { sum -> 10 }
+
+\ check that ISR was invoked
+T{ irq_loop_count @ 0 > -> true }T
+
+-int
+\ check that the loop count matches irq count
+T{ irq_loop_count @ irq_count @ 5 * = -> true }T
+
+
+TESTING ISR with recursion
+
+-int 
+0 irq_count !
+: fib 
+   dup 2 > if 
+       dup 1- recurse swap 1- 1- recurse + exit 
+    then 
+    drop 1 
+;
+
+variable irq_result
+:noname
+   irq_count @ 1+ irq_count !
+   10 fib irq_result !
+;i systick# trap!
+
++int
+\ check that ISR was invoked
+T{ 20 ms irq_count @ 0 > -> true }T
+
+-int
+\ check ISR computation result
+T{ irq_result @ -> 55 }T
+
+\ CLEANUP
+
+\ Leave the system timer and vector table in their normal state.
+-systick
+systick.max
+irq_old_handler @ systick# trap!
++systick

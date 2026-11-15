@@ -2,12 +2,13 @@
 # before words definitions are compiled.
 # Code here should pertain to general AmForth32 architecture only.
 
-# Allocate core system RAM areas: interrupt vector and task areas (stacks, tib, user areas, ...)
-
-RAMALLOT ram_vector, 256*cellsize, 4
+# Allocate core system RAM areas: interrupt vector/stack and task areas (stacks, tib, user areas, ...)
 
 # Local symbols
 .eqv pad, 4 
+
+RAMALLOT ram_vector, ram_vector_size, pad
+RAMALLOT ISR_stack, isr_stack_size, pad
 
 # DO_TASK allocates RAM for task number i
 .macro DO_TASK i

@@ -13,6 +13,7 @@ Also look for TODO: in source files
 * proper, and extractable comments for all words
 * add long word description to the html refcard as title attribute, so that it shows on hover
 
+* exception propagation from ISR handlers (maybe even fault handlers?)
 * leave stack vs interrupts
 * sort out issues with `to` word (to.s/alto.s)
 * header flags don't each need their own bit in FFA
@@ -26,8 +27,6 @@ Also look for TODO: in source files
 
 # ARM
 
-* `(exiti)` needs work
-* better HW fault handling
 * can we use LR as top of return stack?
 
 ## LM4F120
@@ -41,12 +40,8 @@ Also look for TODO: in source files
 
 ## LINUX
 
-* make dtests is failing
-
 
 # RISC-V
-
-* CI caching of qemu installation (or maybe try docker instead?)
 
 ## CH32V307
 

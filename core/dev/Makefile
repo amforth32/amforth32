@@ -16,9 +16,6 @@ MODIFIED := $(shell git diff --quiet HEAD || echo "*")
 # add asterix at the end if there were modified files present.
 # example: main@0e24376*
 REVISION := $(BRANCH)@$(COMMIT)$(MODIFIED)
-ifeq ("$(REVISION)", "")
-    REVISION := $(shell svnversion -n)
-endif
 
 # These are implicit variables in make, can't use ?=
 # see https://www.gnu.org/software/make/manual/html_node/Implicit-Variables.html
@@ -218,18 +215,22 @@ export AMFORTH_LIB=.:$(AMFORTH)/tests:$(AMFORTH)/lib:$(AMFORTH)/examples
 ## Connect via AmShell (needs MODEM)
 shell:
 	# export EDITOR in your .env file to make the #edit shell directive work.
-	$(AMSHELL) --no-error-on-output --sym-file build/amforth.sym -i
+	$(AMSHELL) --no-error-on-output --sym-file build/amforth.sym -i $(ARGS)
 
 # Running full test suite:
 # Not finished means we didn't get through the whole test file.
 # Requires WANT_IGNORECASE, because the standard tests
 # are in all caps and all AmForth words are in lowercase;
-# `WANT_IGNORECASE=1 make` should do it.
+# `WANT_IGNORECASE=1 make all` should do it.
 # Uses timeout command to terminate QEMU, because there is no way
 # to do it from the inside, i.e. from AmForth running in it.
 # WARNING: some of the tests can run destructive operations,
 # don't run against real MCUs without reviewing the tests.
-SKIP := $(PP) -w -E --no-line-commands -x assembler-with-cpp
+SKIP_OPTS := -w -E --no-line-commands -x assembler-with-cpp -DTARGET_$(TARGET)
+ifdef HAMMER
+SKIP_OPTS += -DIRQ_HAMMER
+endif
+SKIP := $(PP) $(SKIP_OPTS)
 QEMU_TESTS ?= $(QEMU) -display none -serial stdio
 ## Run standard tests, output failures and summarize the results (QEMU only)
 tests: TIMEOUT ?= 10s
@@ -246,9 +247,11 @@ test: TESTER ?= $(AMFORTH)/tests/tester.frt
 test:
 	@{ cat $(TESTER); \
 	  echo '\ TESTS STARTING' ; \
-	  cat $(AMFORTH)/tests/$(TEST); \
+	  cat $(firstword $(wildcard $(AMFORTH)/tests/*$(TEST)*.f*)); \
 	  echo '\ TESTS FINISHED' ; \
-	} | timeout -s TERM $(TIMEOUT) $(QEMU_TESTS) | \
+	} > build/tests.frt
+	@cat build/tests.frt \
+	| timeout -s TERM $(TIMEOUT) $(QEMU_TESTS) | \
 	tee build/tests.log | \
 	awk -f $(AMFORTH)/tests/results.awk
 

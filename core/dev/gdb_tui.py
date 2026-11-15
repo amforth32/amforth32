@@ -129,14 +129,21 @@ class ForthReturnStack:
         ]
         rsp = frame.read_register(RSP).cast(gdb.lookup_type("unsigned int").pointer())
 
-        if not (RAM_lower_returnstack <= rsp <= RAM_upper_returnstack):
-            return (f"SP 0x{rsp} out of range.\n"
-                    f"Expected [0x{RAM_lower_returnstack}, 0x{RAM_upper_returnstack})")
+        if in_interrupt(frame):            
+            if not (RAM_lower_ISR_stack <= rsp <= RAM_upper_ISR_stack):
+                return (f"SP 0x{rsp} out of range.\n"
+                        f"Expected [0x{RAM_lower_ISR_stack}, 0x{RAM_upper_ISR_stack})")
+            bottom = RAM_upper_ISR_stack
+        else:
+            if not (RAM_lower_returnstack <= rsp <= RAM_upper_returnstack):
+                return (f"SP 0x{rsp} out of range.\n"
+                        f"Expected [0x{RAM_lower_returnstack}, 0x{RAM_upper_returnstack})")
+            bottom = RAM_upper_returnstack
 
         # cast rsp from int to int* so that we can dereference it
         rsp = rsp.cast(rsp.type.pointer())
         count = 0
-        while rsp < RAM_upper_returnstack and count < 16:
+        while rsp < bottom and count < 16:
             addr = rsp.format_string(format="x")
             lines.append(f"{addr}:\t{gdb.format_address(int(rsp.dereference()))}")
             rsp += 1

@@ -67,3 +67,5 @@ pvarena.swap
 T{ pvarena -> pvarena2 }T \ pvarena2 is current arena now
 T{ pvp -> pvcount 1+ cells 2* pvarena + }T \ pvcount records were written (1+ for arena record)
 T{ pvarena1 @ -> pvflash.erased }T \ pvarena1 erased
+
+decimal
