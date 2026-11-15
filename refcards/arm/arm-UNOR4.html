@@ -22,7 +22,7 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 </head>
 <body>
 <h1>AmForth32 Reference Card</h1>
-<h2>CORTEX-M4 / UNO R4 WIFI main@389cd40 2026-11-15T13:39:47+00:00</h2>
+<h2>CORTEX-M4 / UNO R4 WIFI main@54c97f7 2026-11-15T13:44:27+00:00</h2>
 <p>
 <a href="#STACK">STACK</a> | <a href="#COMPARE">COMPARE</a> | <a href="#MATH">MATH</a> | <a href="#MIXED">MIXED</a> | <a href="#DOUBLE">DOUBLE</a> | <a href="#MEMORY">MEMORY</a> | <a href="#STRING">STRING</a> | <a href="#DICTIONARY">DICTIONARY</a> | <a href="#WORDLIST">WORDLIST</a> | <a href="#COMPILER">COMPILER</a> | <a href="#FLOW">FLOW</a> | <a href="#IO">IO</a> | <a href="#OUTPUT">OUTPUT</a> | <a href="#SYSTEM">SYSTEM</a> | <a href="#TOOLS">TOOLS</a> | <a href="#FLASH">FLASH</a> | <a href="#OTHER">OTHER</a> | <a href="#SYSTICK">SYSTICK</a> | <a href="#MCU">MCU</a> | <a href="#UNCATEGORIZED">UNCATEGORIZED</a> | <a href="#LEGEND">LEGEND</a>
 </p>
@@ -379,8 +379,8 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 <tr><td title="QABORT">?abort</td><td>COLON</td><td>( f s -- )</td><td>abort and type string s if f true</td><td>core/words/q-abort.s:3<td></tr>
 <tr><td title="ABORTQUOTE">abort&quot;</td><td>IMMED</td><td>( f -- )</td><td>abort with the enclosed string if f is true</td><td>core/words/abort-string.s:3<td></tr>
 <tr><td title="ABORT">abort</td><td>COLON</td><td>( i*x -- )(R: j*x -- )</td><td>throw EABRT exception (-1)</td><td>core/words/abort.s:3<td></tr>
-<tr><td title="TRAP_BASE">trap.base</td><td>CONSTANT</td><td>ram_vector_base</td><td>beginning of Forth interrupt table</td><td>core/words/traps.s:6<td></tr>
-<tr><td title="TRAP_STORE">trap!</td><td>COLON</td><td>( xt n -- )</td><td>TRAP: store xt at trap number n in RAM vector</td><td>core/words/traps.s:9<td></tr>
+<tr><td title="TRAP_BASE">trap.base</td><td>CONSTANT</td><td>ram_vector_base</td><td>beginning of Forth interrupt table</td><td>core/words/traps.s:5<td></tr>
+<tr><td title="TRAP_STORE">trap!</td><td>COLON</td><td>( xt n -- )</td><td>TRAP: store xt at trap number n in RAM vector</td><td>core/words/traps.s:8<td></tr>
 <tr><td title="THROW">throw</td><td>COLON</td><td>( n -- )</td><td>throw exception n if n != 0</td><td>core/words/throw.s:2<td></tr>
 <tr><td title="CATCH">catch</td><td>COLON</td><td>( i*x xt -- j*x 0 | i*x n )</td><td>execute XT and check for exceptions</td><td>core/words/catch.s:6<td></tr>
 <tr><td title="HANDLER">handler</td><td>USER</td><td>USER_HANDLER</td><td>used by catch/throw</td><td>core/words/catch.s:3<td></tr>
@@ -579,12 +579,12 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 <table>
 <tr><th>Word</th><th>Type</th><th>Stack Signature</th><th>Description</th><th>Location</th></tr>
 <tr><td>systick#</td></tr>
-<tr><td title="MINUSSYSTICK">-systick</td><td>CODEWORD</td><td>( -- )</td><td>stop systick</td><td>arm/words/systick.s:82<td></tr>
-<tr><td title="PLUSSYSTICK">+systick</td><td>CODEWORD</td><td>( -- )</td><td>start systick</td><td>arm/words/systick.s:74<td></tr>
-<tr><td title="SYSTICK_FETCH">systick@</td><td>CODEWORD</td><td>( -- n )</td><td>read systick counter value</td><td>arm/words/systick.s:60<td></tr>
-<tr><td title="SYSTICKMINUS">systick-</td><td>CODEWORD</td><td>( -- )</td><td>clear systick interrupt flag</td><td>arm/words/systick.s:54<td></tr>
-<tr><td title="SYSTICK_STORE">systick!</td><td>CODEWORD</td><td>( n -- )</td><td>write max count</td><td>arm/words/systick.s:44<td></tr>
-<tr><td title="SYSTICK_INIT">systick.init</td><td>CODEWORD</td><td>( -- )</td><td>init with $00ffffff count (but do not start) systick</td><td>arm/words/systick.s:33<td></tr>
+<tr><td title="MINUSSYSTICK">-systick</td><td>CODEWORD</td><td>( -- )</td><td>stop systick</td><td>arm/words/systick.s:93<td></tr>
+<tr><td title="PLUSSYSTICK">+systick</td><td>CODEWORD</td><td>( -- )</td><td>start systick</td><td>arm/words/systick.s:85<td></tr>
+<tr><td title="SYSTICK_FETCH">systick@</td><td>CODEWORD</td><td>( -- n )</td><td>read systick counter value</td><td>arm/words/systick.s:71<td></tr>
+<tr><td title="SYSTICKMINUS">systick-</td><td>CODEWORD</td><td>( -- )</td><td>clear systick interrupt flag</td><td>arm/words/systick.s:65<td></tr>
+<tr><td title="SYSTICK_STORE">systick!</td><td>CODEWORD</td><td>( n -- )</td><td>write max count</td><td>arm/words/systick.s:53<td></tr>
+<tr><td title="SYSTICK_INIT">systick.init</td><td>CODEWORD</td><td>( -- )</td><td>initialize systick</td><td>arm/words/systick.s:33<td></tr>
 </table>
 <h2 id="MCU">MCU</h2>
 <table>
@@ -683,13 +683,16 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 <tr><td title="SHOWDOTUA">show.ua</td><td>COLON</td><td></td><td></td><td>core/words/mtask-common.s:550<td></tr>
 <tr><td title="SINGLE">single</td><td>COLON</td><td>( -- )</td><td>disable task switching</td><td>core/words/mtask-common.s:469<td></tr>
 <tr><td title="SYNONYM">synonym</td><td>COLON</td><td>( &quot;&lt;spaces&gt;new-name&quot; &quot;name&quot; -- )</td><td>create alias of existing word</td><td>core/words/synonym.s:19<td></tr>
-<tr><td title="SYSCSR_FETCH">syscsr@</td><td>CODEWORD</td><td></td><td></td><td>arm/words/systick.s:67<td></tr>
+<tr><td title="SYSCSR_FETCH">syscsr@</td><td>CODEWORD</td><td></td><td></td><td>arm/words/systick.s:78<td></tr>
+<tr><td title="SYSTICK_MAX">systick.max</td><td>CODEWORD</td><td>( -- )</td><td>set reload value to maximum possible $00ffffff</td><td>arm/words/systick.s:46<td></tr>
+<tr><td title="SYSTICK_MS">systick.ms</td><td>CONSTANT</td><td>( -- n )</td><td>systick ticks per millisecond</td><td>arm/words/systick.s:101<td></tr>
 <tr><td title="TASKBANG">task!</td><td>COLON</td><td>( xt n -- )</td><td>write task to slot n</td><td>core/words/mtask-common.s:335<td></tr>
 <tr><td title="TASK_BLOCK">task-block</td><td>CONSTANT</td><td>TASK_BLOCK_SIZE</td><td></td><td>arm/words/mtpause.s:5<td></tr>
 <tr><td title="TASKDOTWARM">task.warm</td><td>COLON</td><td>( n -- )</td><td>reset task n</td><td>core/words/mtask-common.s:364<td></tr>
 <tr><td title="TASKDOTWARMMINUSALL">task.warm-all</td><td>COLON</td><td>( -- )</td><td>reset all tasks except operator</td><td>core/words/mtask-common.s:411<td></tr>
 <tr><td title="TASKAT">task@</td><td>COLON</td><td>( n -- a )</td><td>returns task block of task n</td><td>core/words/mtask-common.s:209<td></tr>
 <tr><td title="TASKN">taskn</td><td>CONSTANT</td><td>TASKN</td><td></td><td>arm/words/mtpause.s:2<td></tr>
+<tr><td title="TRAP_FETCH">trap@</td><td>COLON</td><td>( n -- xt )</td><td>TRAP: fetch the xt at trap number n in RAM vector</td><td>core/words/traps.s:16<td></tr>
 <tr><td title="VACANT">vacant</td><td>COLON</td><td>( -- )</td><td>a task that does nothing</td><td>core/words/mtask-common.s:183<td></tr>
 </table>
 <h2 id="LEGEND">LEGEND</h2>
