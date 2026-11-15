@@ -22,7 +22,7 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 </head>
 <body>
 <h1>AmForth32 Reference Card</h1>
-<h2>RV32IMAFC / QEMU main@389cd40 2026-11-15T13:40:37+00:00</h2>
+<h2>RV32IMAFC / QEMU main@54c97f7 2026-11-15T13:45:13+00:00</h2>
 <p>
 <a href="#STACK">STACK</a> | <a href="#COMPARE">COMPARE</a> | <a href="#MATH">MATH</a> | <a href="#MIXED">MIXED</a> | <a href="#DOUBLE">DOUBLE</a> | <a href="#MEMORY">MEMORY</a> | <a href="#STRING">STRING</a> | <a href="#DICTIONARY">DICTIONARY</a> | <a href="#WORDLIST">WORDLIST</a> | <a href="#COMPILER">COMPILER</a> | <a href="#FLOW">FLOW</a> | <a href="#IO">IO</a> | <a href="#OUTPUT">OUTPUT</a> | <a href="#SYSTEM">SYSTEM</a> | <a href="#TOOLS">TOOLS</a> | <a href="#FLASH">FLASH</a> | <a href="#OTHER">OTHER</a> | <a href="#SYSTICK">SYSTICK</a> | <a href="#MCU">MCU</a> | <a href="#UNCATEGORIZED">UNCATEGORIZED</a> | <a href="#LEGEND">LEGEND</a>
 </p>
@@ -379,8 +379,8 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 <tr><td title="QABORT">?abort</td><td>COLON</td><td>( f s -- )</td><td>abort and type string s if f true</td><td>core/words/q-abort.s:3<td></tr>
 <tr><td title="ABORTQUOTE">abort&quot;</td><td>IMMED</td><td>( f -- )</td><td>abort with the enclosed string if f is true</td><td>core/words/abort-string.s:3<td></tr>
 <tr><td title="ABORT">abort</td><td>COLON</td><td>( i*x -- )(R: j*x -- )</td><td>throw EABRT exception (-1)</td><td>core/words/abort.s:3<td></tr>
-<tr><td title="TRAP_BASE">trap.base</td><td>CONSTANT</td><td>ram_vector_base</td><td>beginning of Forth interrupt table</td><td>core/words/traps.s:6<td></tr>
-<tr><td title="TRAP_STORE">trap!</td><td>COLON</td><td>( xt n -- )</td><td>TRAP: store xt at trap number n in RAM vector</td><td>core/words/traps.s:9<td></tr>
+<tr><td title="TRAP_BASE">trap.base</td><td>CONSTANT</td><td>ram_vector_base</td><td>beginning of Forth interrupt table</td><td>core/words/traps.s:5<td></tr>
+<tr><td title="TRAP_STORE">trap!</td><td>COLON</td><td>( xt n -- )</td><td>TRAP: store xt at trap number n in RAM vector</td><td>core/words/traps.s:8<td></tr>
 <tr><td title="THROW">throw</td><td>COLON</td><td>( n -- )</td><td>throw exception n if n != 0</td><td>core/words/throw.s:2<td></tr>
 <tr><td title="CATCH">catch</td><td>COLON</td><td>( i*x xt -- j*x 0 | i*x n )</td><td>execute XT and check for exceptions</td><td>core/words/catch.s:6<td></tr>
 <tr><td title="HANDLER">handler</td><td>USER</td><td>USER_HANDLER</td><td>used by catch/throw</td><td>core/words/catch.s:3<td></tr>
@@ -663,6 +663,7 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 <tr><td title="TPILE">tpile</td><td>VARIABLE</td><td>( -- f )</td><td>transpiling status</td><td>core/words/tpile.s:13<td></tr>
 <tr><td title="TPILEPLUS">tpile+</td><td>COLON</td><td>( -- )</td><td>enable transpiling during compilation</td><td>core/words/tpile.s:16<td></tr>
 <tr><td title="TPILEMINUS">tpile-</td><td>COLON</td><td>( -- )</td><td>disable transpiling during compilation</td><td>core/words/tpile.s:20<td></tr>
+<tr><td title="TRAP_FETCH">trap@</td><td>COLON</td><td>( n -- xt )</td><td>TRAP: fetch the xt at trap number n in RAM vector</td><td>core/words/traps.s:16<td></tr>
 <tr><td title="VACANT">vacant</td><td>COLON</td><td>( -- )</td><td>a task that does nothing</td><td>core/words/mtask-common.s:183<td></tr>
 <tr><td title="TILDESTORE_I">~!i</td><td>COLON</td><td></td><td></td><td>core/words/flash.s:5<td></tr>
 <tr><td title="TILDECOMMA">~,</td><td>COLON</td><td></td><td></td><td>core/words/flash.s:66<td></tr>
