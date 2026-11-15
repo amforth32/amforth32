@@ -22,7 +22,7 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 </head>
 <body>
 <h1>AmForth32 Reference Card</h1>
-<h2>CORTEX-A15 / QEMU-VIRT main@698900b 2026-11-10T20:59:12+00:00</h2>
+<h2>CORTEX-A15 / QEMU-VIRT main@389cd40 2026-11-15T13:40:34+00:00</h2>
 <p>
 <a href="#STACK">STACK</a> | <a href="#COMPARE">COMPARE</a> | <a href="#MATH">MATH</a> | <a href="#MIXED">MIXED</a> | <a href="#DOUBLE">DOUBLE</a> | <a href="#MEMORY">MEMORY</a> | <a href="#STRING">STRING</a> | <a href="#DICTIONARY">DICTIONARY</a> | <a href="#WORDLIST">WORDLIST</a> | <a href="#COMPILER">COMPILER</a> | <a href="#FLOW">FLOW</a> | <a href="#IO">IO</a> | <a href="#OUTPUT">OUTPUT</a> | <a href="#SYSTEM">SYSTEM</a> | <a href="#TOOLS">TOOLS</a> | <a href="#FLASH">FLASH</a> | <a href="#OTHER">OTHER</a> | <a href="#SYSTICK">SYSTICK</a> | <a href="#MCU">MCU</a> | <a href="#UNCATEGORIZED">UNCATEGORIZED</a> | <a href="#LEGEND">LEGEND</a>
 </p>
@@ -415,10 +415,10 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 <h2 id="IO">IO</h2>
 <table>
 <tr><th>Word</th><th>Type</th><th>Stack Signature</th><th>Description</th><th>Location</th></tr>
-<tr><td title="SERIAL_EMITQ">serial-emit?</td><td>CODEWORD</td><td></td><td></td><td>arm/mcu/qemu/words/uart.s:42<td></tr>
-<tr><td title="SERIAL_EMIT">serial-emit</td><td>CODEWORD</td><td></td><td></td><td>arm/mcu/qemu/words/uart.s:28<td></tr>
-<tr><td title="SERIAL_KEYQ">serial-key?</td><td>CODEWORD</td><td></td><td></td><td>arm/mcu/qemu/words/uart.s:68<td></tr>
-<tr><td title="SERIAL_KEY">serial-key</td><td>CODEWORD</td><td></td><td></td><td>arm/mcu/qemu/words/uart.s:54<td></tr>
+<tr><td title="SERIAL_EMITQ">serial-emit?</td><td>CODEWORD</td><td></td><td></td><td>arm/mcu/qemu/words/uart-pl011.s:42<td></tr>
+<tr><td title="SERIAL_EMIT">serial-emit</td><td>CODEWORD</td><td></td><td></td><td>arm/mcu/qemu/words/uart-pl011.s:28<td></tr>
+<tr><td title="SERIAL_KEYQ">serial-key?</td><td>CODEWORD</td><td></td><td></td><td>arm/mcu/qemu/words/uart-pl011.s:68<td></tr>
+<tr><td title="SERIAL_KEY">serial-key</td><td>CODEWORD</td><td></td><td></td><td>arm/mcu/qemu/words/uart-pl011.s:54<td></tr>
 <tr><td title="EMITQ">emit?</td><td>DEFER</td><td>( -- f )</td><td>ready for emission?</td><td>core/words/emitq.s:2<td></tr>
 <tr><td title="SERIAL_EMIT_PAUSE">serial-emit-pause</td><td>COLON</td><td>( c -- )</td><td>emit c on serial connection, pause until able</td><td>core/words/emit.s:5<td></tr>
 <tr><td title="EMIT">emit</td><td>DEFER</td><td>( c -- )</td><td>emit single character, pause until able</td><td>core/words/emit.s:2<td></tr>
@@ -483,7 +483,7 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 <tr><td title="QUIT">quit</td><td>COLON</td><td>( -- )</td><td>top level frame of the VM, endless loop</td><td>core/words/quit.s:2<td></tr>
 <tr><td title="PAUSE">pause</td><td>DEFER</td><td>( -- )</td><td>multitasking: task switch point</td><td>core/words/pause.s:2<td></tr>
 <tr><td title="INTERPRET">interpret</td><td>COLON</td><td>( i*x -- j*x )</td><td>interpret SOURCE word by word</td><td>core/words/interpret.s:3<td></tr>
-<tr><td title="MS">ms</td><td>COLON</td><td>( n -- )</td><td>a non-busy delay of n ms that calls PAUSE</td><td>arm/words/ms.s:27<td></tr>
+<tr><td title="MS">ms</td><td>COLON</td><td>( n -- )</td><td>a non-busy delay of n ms that calls PAUSE</td><td>arm/mcu/qemu/words/ms-cntpct.s:29<td></tr>
 <tr><td title="DOT_VER">.ver</td><td>COLON</td><td>( -- )</td><td>show amforth version</td><td>core/words/ver.s:3<td></tr>
 <tr><td title="DOT_BUILD">.build</td><td>ENVIRONMENT</td><td>( -- )</td><td>show build information</td><td>arm/mcu/qemu/words/build-info.s:15<td></tr>
 <tr><td title="BUILD_REV">build.rev</td><td>ENVIRONMENT</td><td>( -- addr u )</td><td>string with build revision</td><td>arm/mcu/qemu/words/build-info.s:7<td></tr>
@@ -589,7 +589,13 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 <h2 id="MCU">MCU</h2>
 <table>
 <tr><th>Word</th><th>Type</th><th>Stack Signature</th><th>Description</th><th>Location</th></tr>
-<tr><td title="UART_INIT">uart-init</td><td>CODEWORD</td><td></td><td></td><td>arm/mcu/qemu/words/uart.s:20<td></tr>
+<tr><td title="N1MS">1ms</td><td>CODEWORD</td><td>( -- )</td><td>busy-wait 1ms, wrap-safe</td><td>arm/mcu/qemu/words/ms-cntpct.s:16<td></tr>
+<tr><td title="CNTFRQFETCH">cntfrq@</td><td>CODEWORD</td><td>( -- u )</td><td>read CNTFRQ</td><td>arm/mcu/qemu/words/ms-cntpct.s:10<td></tr>
+<tr><td title="CNTPCTFETCH">cntpct@</td><td>CODEWORD</td><td>( -- u )</td><td>lower 32 bits of CNTPCT</td><td>arm/mcu/qemu/words/ms-cntpct.s:4<td></tr>
+<tr><td title="MSDOTINIT">ms.init</td><td>CODEALIAS</td><td>( -- )</td><td>start free running counter that back ms</td><td>arm/mcu/qemu/words/ms-cntpct.s:50<td></tr>
+<tr><td title="MSDOTTICKF">ms.tickf</td><td>CODEALIAS</td><td>CNTFRQFETCH</td><td></td><td>arm/mcu/qemu/words/ms-cntpct.s:56<td></tr>
+<tr><td title="TICKFETCH">tick@</td><td>CODEALIAS</td><td>( -- )</td><td>fetch free running counter value</td><td>arm/mcu/qemu/words/ms-cntpct.s:53<td></tr>
+<tr><td title="UART_INIT">uart-init</td><td>CODEWORD</td><td></td><td></td><td>arm/mcu/qemu/words/uart-pl011.s:20<td></tr>
 </table>
 <h2 id="UNCATEGORIZED">UNCATEGORIZED</h2>
 <table>
@@ -608,7 +614,6 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 <tr><td title="PLUSTASK">+task</td><td>COLON</td><td>( n -- )</td><td>make task n active</td><td>core/words/mtask-common.s:425<td></tr>
 <tr><td title="MINUSINT">-int</td><td>CODEWORD</td><td>( -- )</td><td>disable interrupts</td><td>arm/words/interrupts.s:8<td></tr>
 <tr><td title="MINUSTASK">-task</td><td>COLON</td><td>( n -- )</td><td>make task n inactive (sleep)</td><td>core/words/mtask-common.s:447<td></tr>
-<tr><td title="N1MS">1ms</td><td>CODEWORD</td><td>( -- )</td><td>busy-wait 1ms, wrap-safe</td><td>arm/words/ms.s:14<td></tr>
 <tr><td title="COLONIMMED">:immed</td><td>COLON</td><td>( -- )</td><td>define an immediate word (for mcu that&#x27;s can&#x27;t use immediate)</td><td>core/words/immediate.s:26<td></tr>
 <tr><td title="SEMICOLOND">;d</td><td>IMMED</td><td></td><td></td><td>core/words/debugger2.s:18<td></tr>
 <tr><td title="LBRACKDEFINEDRBRACK">[defined]</td><td>IMMED</td><td>( &quot;name&quot; -- f )</td><td>f is true if name defined</td><td>core/words/immediate.s:56<td></tr>
@@ -616,8 +621,6 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 <tr><td title="CARETCOMMA">^,</td><td>COLON</td><td>( x -- )</td><td>append x to RAM dictionary</td><td>core/words/comma.s:5<td></tr>
 <tr><td title="CARETCCOMMA">^c,</td><td>COLON</td><td></td><td></td><td>core/words/ccomma.s:5<td></tr>
 <tr><td title="CARETDALLOT">^dallot</td><td>COLON</td><td></td><td></td><td>core/words/dallot.s:5<td></tr>
-<tr><td title="CNTFRQFETCH">cntfrq@</td><td>CODEWORD</td><td>( -- u )</td><td>read CNTFRQ</td><td>arm/words/ms.s:8<td></tr>
-<tr><td title="CNTPCTFETCH">cntpct@</td><td>CODEWORD</td><td>( -- u )</td><td>lower 32 bits of CNTPCT</td><td>arm/words/ms.s:2<td></tr>
 <tr><td title="DEBUG_BREAK">debug.break</td><td>USER</td><td>USER_DEBUG_BREAK</td><td>XT of debugger, invoked when BREAK is reached</td><td>core/words/debugger2.s:5<td></tr>
 <tr><td title="DEBUG_NEXT">debug.next</td><td>USER</td><td>USER_DEBUG_NEXT</td><td>next debug action, 0 if none</td><td>core/words/debugger2.s:2<td></tr>
 <tr><td title="DEBUGDOTRDEPTH">debug.rdepth</td><td>CONSTANT</td><td>2</td><td>step until rdepth, argument is desired rdepth</td><td>core/words/debugger.s:388<td></tr>
@@ -632,8 +635,6 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 <tr><td title="LEDMINUSTASK">led-task</td><td>COLON</td><td></td><td></td><td>core/words/led-task.s:16<td></tr>
 <tr><td title="LP_FETCH">lp@</td><td>COLON</td><td>( -- addr )</td><td>current value of the leave stack pointer</td><td>core/words/lstack.s:10<td></tr>
 <tr><td title="MANDELBROT">mandelbrot</td><td>COLON</td><td></td><td></td><td>core/words/mlc.s:237<td></tr>
-<tr><td title="MSDOTINIT">ms.init</td><td>CODEALIAS</td><td>( -- )</td><td>start free running counter that back ms</td><td>arm/words/ms.s:48<td></tr>
-<tr><td title="MSDOTTICKF">ms.tickf</td><td>CODEALIAS</td><td>CNTFRQFETCH</td><td></td><td>arm/words/ms.s:54<td></tr>
 <tr><td title="MTPAUSE">mtpause</td><td>CODEWORD</td><td></td><td></td><td>arm/words/mtpause.s:9<td></tr>
 <tr><td title="MULTI">multi</td><td>COLON</td><td>( -- )</td><td>enable task switching</td><td>core/words/mtask-common.s:478<td></tr>
 <tr><td title="NVARIABLE">nvariable</td><td>COLON</td><td>( n &quot;&lt;spaces&gt;name&quot; -- )</td><td>create variable definition for name</td><td>core/words/variable.s:25<td></tr>
@@ -660,7 +661,6 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 <tr><td title="TASKDOTWARMMINUSALL">task.warm-all</td><td>COLON</td><td>( -- )</td><td>reset all tasks except operator</td><td>core/words/mtask-common.s:411<td></tr>
 <tr><td title="TASKAT">task@</td><td>COLON</td><td>( n -- a )</td><td>returns task block of task n</td><td>core/words/mtask-common.s:209<td></tr>
 <tr><td title="TASKN">taskn</td><td>CONSTANT</td><td>TASKN</td><td></td><td>arm/words/mtpause.s:2<td></tr>
-<tr><td title="TICKFETCH">tick@</td><td>CODEALIAS</td><td>( -- )</td><td>fetch free running counter value</td><td>arm/words/ms.s:51<td></tr>
 <tr><td title="VACANT">vacant</td><td>COLON</td><td>( -- )</td><td>a task that does nothing</td><td>core/words/mtask-common.s:183<td></tr>
 <tr><td title="TILDESTORE_I">~!i</td><td>COLON</td><td></td><td></td><td>core/words/flash.s:5<td></tr>
 <tr><td title="TILDECOMMA">~,</td><td>COLON</td><td></td><td></td><td>core/words/flash.s:66<td></tr>

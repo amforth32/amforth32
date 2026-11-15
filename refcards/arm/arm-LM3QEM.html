@@ -22,7 +22,7 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 </head>
 <body>
 <h1>AmForth32 Reference Card</h1>
-<h2>CORTEX-M4 / LM4F120XL main@698900b 2026-11-10T20:58:39+00:00</h2>
+<h2>CORTEX-M4 / LM4F120XL main@389cd40 2026-11-15T13:39:48+00:00</h2>
 <p>
 <a href="#STACK">STACK</a> | <a href="#COMPARE">COMPARE</a> | <a href="#MATH">MATH</a> | <a href="#MIXED">MIXED</a> | <a href="#DOUBLE">DOUBLE</a> | <a href="#MEMORY">MEMORY</a> | <a href="#STRING">STRING</a> | <a href="#DICTIONARY">DICTIONARY</a> | <a href="#WORDLIST">WORDLIST</a> | <a href="#COMPILER">COMPILER</a> | <a href="#FLOW">FLOW</a> | <a href="#IO">IO</a> | <a href="#OUTPUT">OUTPUT</a> | <a href="#SYSTEM">SYSTEM</a> | <a href="#TOOLS">TOOLS</a> | <a href="#FLASH">FLASH</a> | <a href="#OTHER">OTHER</a> | <a href="#SYSTICK">SYSTICK</a> | <a href="#MCU">MCU</a> | <a href="#UNCATEGORIZED">UNCATEGORIZED</a> | <a href="#LEGEND">LEGEND</a>
 </p>
@@ -483,7 +483,7 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 <tr><td title="QUIT">quit</td><td>COLON</td><td>( -- )</td><td>top level frame of the VM, endless loop</td><td>core/words/quit.s:2<td></tr>
 <tr><td title="PAUSE">pause</td><td>DEFER</td><td>( -- )</td><td>multitasking: task switch point</td><td>core/words/pause.s:2<td></tr>
 <tr><td title="INTERPRET">interpret</td><td>COLON</td><td>( i*x -- j*x )</td><td>interpret SOURCE word by word</td><td>core/words/interpret.s:3<td></tr>
-<tr><td title="MS">ms</td><td>COLON</td><td></td><td></td><td>arm/mcu/lm4f120/words/ms.s:35<td></tr>
+<tr><td title="MS">ms</td><td>COLON</td><td></td><td></td><td>arm/words/ms.s:55<td></tr>
 <tr><td title="DOT_VER">.ver</td><td>COLON</td><td>( -- )</td><td>show amforth version</td><td>core/words/ver.s:3<td></tr>
 <tr><td title="DOT_BUILD">.build</td><td>ENVIRONMENT</td><td>( -- )</td><td>show build information</td><td>arm/mcu/lm4f120/words/build-info.s:15<td></tr>
 <tr><td title="BUILD_REV">build.rev</td><td>ENVIRONMENT</td><td>( -- addr u )</td><td>string with build revision</td><td>arm/mcu/lm4f120/words/build-info.s:7<td></tr>
@@ -579,27 +579,22 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 <table>
 <tr><th>Word</th><th>Type</th><th>Stack Signature</th><th>Description</th><th>Location</th></tr>
 <tr><td>systick#</td></tr>
-<tr><td>-systick</td></tr>
-<tr><td>+systick</td></tr>
-<tr><td>systick@</td></tr>
-<tr><td>systick-</td></tr>
-<tr><td>systick!</td></tr>
-<tr><td>systick.init</td></tr>
+<tr><td title="MINUSSYSTICK">-systick</td><td>CODEWORD</td><td>( -- )</td><td>stop systick</td><td>arm/words/systick.s:82<td></tr>
+<tr><td title="PLUSSYSTICK">+systick</td><td>CODEWORD</td><td>( -- )</td><td>start systick</td><td>arm/words/systick.s:74<td></tr>
+<tr><td title="SYSTICK_FETCH">systick@</td><td>CODEWORD</td><td>( -- n )</td><td>read systick counter value</td><td>arm/words/systick.s:60<td></tr>
+<tr><td title="SYSTICKMINUS">systick-</td><td>CODEWORD</td><td>( -- )</td><td>clear systick interrupt flag</td><td>arm/words/systick.s:54<td></tr>
+<tr><td title="SYSTICK_STORE">systick!</td><td>CODEWORD</td><td>( n -- )</td><td>write max count</td><td>arm/words/systick.s:44<td></tr>
+<tr><td title="SYSTICK_INIT">systick.init</td><td>CODEWORD</td><td>( -- )</td><td>init with $00ffffff count (but do not start) systick</td><td>arm/words/systick.s:33<td></tr>
 </table>
 <h2 id="MCU">MCU</h2>
 <table>
 <tr><th>Word</th><th>Type</th><th>Stack Signature</th><th>Description</th><th>Location</th></tr>
 <tr><td title="STORE_FLASH">!flash</td><td>CODEWORD</td><td>( x Addr -- )</td><td></td><td>arm/mcu/lm4f120/words/flash.s:13<td></tr>
-<tr><td title="NVIC_ST_CTRL_R">NVIC_ST_CTRL_R</td><td>ARM_CONSTANT</td><td>0xE000E010</td><td></td><td>arm/mcu/lm4f120/words/ms.s:2<td></tr>
-<tr><td title="NVIC_ST_CURRENT_R">NVIC_ST_CURRENT_R</td><td>ARM_CONSTANT</td><td>0xE000E018</td><td></td><td>arm/mcu/lm4f120/words/ms.s:4<td></tr>
-<tr><td title="NVIC_ST_RELOAD_R">NVIC_ST_RELOAD_R</td><td>ARM_CONSTANT</td><td>0xE000E014</td><td></td><td>arm/mcu/lm4f120/words/ms.s:3<td></tr>
 <tr><td title="BLACK">black</td><td>CODEWORD</td><td></td><td></td><td>arm/mcu/lm4f120/words/led.s:84<td></tr>
 <tr><td title="BLUE">blue</td><td>CODEWORD</td><td></td><td></td><td>arm/mcu/lm4f120/words/led.s:48<td></tr>
 <tr><td title="CSTORE_FLASH">c!flash</td><td>CODEWORD</td><td>( x Addr -- )</td><td></td><td>arm/mcu/lm4f120/words/flash.s:102<td></tr>
 <tr><td title="CACHEFLUSH">cacheflush</td><td>COLON</td><td></td><td></td><td>arm/mcu/lm4f120/words/flash.s:169<td></tr>
 <tr><td title="CYAN">cyan</td><td>CODEWORD</td><td></td><td></td><td>arm/mcu/lm4f120/words/led.s:72<td></tr>
-<tr><td title="DELAY_INIT">delay-init</td><td>ARM_COLON</td><td></td><td></td><td>arm/mcu/lm4f120/words/ms.s:6<td></tr>
-<tr><td title="DELAY_TICKS">delay-ticks</td><td>ARM_COLON</td><td></td><td></td><td>arm/mcu/lm4f120/words/ms.s:20<td></tr>
 <tr><td title="FLASHPAGEERASE">flashpageerase</td><td>CODEWORD</td><td>( Addr -- )</td><td></td><td>arm/mcu/lm4f120/words/flash.s:144<td></tr>
 <tr><td title="GREEN">green</td><td>CODEWORD</td><td></td><td></td><td>arm/mcu/lm4f120/words/led.s:42<td></tr>
 <tr><td title="INFLASHQ">inflash?</td><td>COLON</td><td></td><td></td><td>arm/mcu/lm4f120/words/flash.s:165<td></tr>
@@ -607,7 +602,6 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 <tr><td title="MAGENTA">magenta</td><td>CODEWORD</td><td></td><td></td><td>arm/mcu/lm4f120/words/led.s:78<td></tr>
 <tr><td title="RED">red</td><td>CODEWORD</td><td></td><td></td><td>arm/mcu/lm4f120/words/led.s:54<td></tr>
 <tr><td title="UART_INIT">uart-init</td><td>CODEWORD</td><td></td><td></td><td>arm/mcu/lm4f120/words/usart.s:31<td></tr>
-<tr><td title="US">us</td><td>COLON</td><td></td><td></td><td>arm/mcu/lm4f120/words/ms.s:32<td></tr>
 <tr><td title="W_STORE_FLASH">w!flash</td><td>CODEWORD</td><td>( x Addr -- )</td><td></td><td>arm/mcu/lm4f120/words/flash.s:53<td></tr>
 <tr><td title="WHITE">white</td><td>CODEWORD</td><td></td><td></td><td>arm/mcu/lm4f120/words/led.s:60<td></tr>
 <tr><td title="YELLOW">yellow</td><td>CODEWORD</td><td></td><td></td><td>arm/mcu/lm4f120/words/led.s:66<td></tr>
@@ -663,6 +657,7 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
 <tr><td title="SHOWDOTUA">show.ua</td><td>COLON</td><td></td><td></td><td>core/words/mtask-common.s:550<td></tr>
 <tr><td title="SINGLE">single</td><td>COLON</td><td>( -- )</td><td>disable task switching</td><td>core/words/mtask-common.s:469<td></tr>
 <tr><td title="SYNONYM">synonym</td><td>COLON</td><td>( &quot;&lt;spaces&gt;new-name&quot; &quot;name&quot; -- )</td><td>create alias of existing word</td><td>core/words/synonym.s:19<td></tr>
+<tr><td title="SYSCSR_FETCH">syscsr@</td><td>CODEWORD</td><td></td><td></td><td>arm/words/systick.s:67<td></tr>
 <tr><td title="TASKBANG">task!</td><td>COLON</td><td>( xt n -- )</td><td>write task to slot n</td><td>core/words/mtask-common.s:335<td></tr>
 <tr><td title="TASK_BLOCK">task-block</td><td>CONSTANT</td><td>TASK_BLOCK_SIZE</td><td></td><td>arm/words/mtpause.s:5<td></tr>
 <tr><td title="TASKDOTWARM">task.warm</td><td>COLON</td><td>( n -- )</td><td>reset task n</td><td>core/words/mtask-common.s:364<td></tr>
