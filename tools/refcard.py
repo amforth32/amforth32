@@ -307,7 +307,7 @@ def generate_html_refcard(categories_file, toc_file):
         anchor = html.escape(cat_name)
         links.append(f'<a href="#{anchor}">{anchor}</a>')
     links.append(f'<a href="#LEGEND">LEGEND</a>')
-    page_parts.append("<p>" + " | ".join(links) + "</p>")
+    page_parts.append("<p>" + " - ".join(links) + "</p>")
 
     for cat_name, word_list in categories:
         table = [f'<h2 id="{html.escape(cat_name)}">{html.escape(cat_name)}</h2>', "<table>"]
