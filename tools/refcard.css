@@ -1,13 +1,63 @@
 
-body { font-family: sans-serif; }
+:root {
+  color-scheme: light dark;
+  --page-background: #fff;
+  --page-foreground: #222;
+  --tooltip-border: #888;
+}
+body { font-family: sans-serif; background-color: var(--page-background); color: var(--page-foreground); }
 table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
 th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
 th { background-color: #f2f2f2; }
 h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
+.location { cursor: copy; }
+.location[data-copy-status]::after {
+  content: " " attr(data-copy-status);
+  color: #287a37;
+  font-size: 0.85em;
+}
+.long-description { position: relative; display: inline-block; }
+.long-description-toggle {
+  padding: 0 0.15em;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.long-description-tooltip {
+  position: fixed;
+  z-index: 2;
+  left: 0;
+  top: 0;
+  display: block;
+  visibility: hidden;
+  width: max-content;
+  max-width: min(45em, calc(100vw - 16px));
+  max-height: 90vh;
+  overflow: auto;
+  box-sizing: border-box;
+  padding: 0.6em 0.75em;
+  border: 1px solid var(--tooltip-border);
+  border-radius: 4px;
+  background: var(--page-background);
+  color: var(--page-foreground);
+  box-shadow: 0 2px 8px #0003;
+  white-space: pre-line;
+  cursor: auto;
+}
+.long-description:hover .long-description-tooltip,
+.long-description:focus-within .long-description-tooltip,
+.long-description.is-open .long-description-tooltip { visibility: visible; }
 
 /* Dark mode */
 @media (prefers-color-scheme: dark) {
-  body { background-color: #222222; color: #cccccc; }
+  :root {
+    --page-background: #222222;
+    --page-foreground: #cccccc;
+    --tooltip-border: #666;
+  }
+  body { background-color: var(--page-background); color: var(--page-foreground); }
   a { color: #8ab4f8; }
   th, td { border-color: #444; }
   th { background-color: #333333; }

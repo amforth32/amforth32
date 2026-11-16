@@ -118,6 +118,49 @@ def parse_categories(filepath):
 
     return categories
 
+def read_header_comment(location):
+    """Return a multiline block comment immediately after a word header."""
+    source, separator, line_number = location.rpartition(':')
+    if not separator or not line_number.isdigit():
+        return ''
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    candidates = [source] if os.path.isabs(source) else [
+        source,
+        os.path.join(script_dir, '..', source),
+    ]
+    source_path = next((path for path in candidates if os.path.isfile(path)), None)
+    if source_path is None:
+        return ''
+
+    try:
+        with open(source_path, 'r') as source_file:
+            lines = source_file.readlines()
+    except OSError:
+        return ''
+
+    next_line = int(line_number)
+    if next_line >= len(lines):
+        return ''
+    following = lines[next_line]
+    if not following.lstrip().startswith('/*'):
+        return ''
+
+    comment_match = re.match(r'^\s*/\*(.*?)\*/', following + ''.join(lines[next_line + 1:]), re.DOTALL)
+    if not comment_match:
+        return ''
+    comment = comment_match.group(1)
+    if '\n' not in comment and '\r' not in comment:
+        return ''
+
+    cleaned_lines = []
+    for line in comment.splitlines():
+        line = line.strip()
+        if line.startswith('*'):
+            line = line[1:].lstrip()
+        cleaned_lines.append(line)
+    return '\n'.join(cleaned_lines).strip()
+
 def parse_toc(filepath, categories):
     """
     Parses the amforth.toc file.
@@ -183,7 +226,8 @@ def parse_toc(filepath, categories):
                     'parameter': parameter if parameter else '',
                     'signature': signature,
                     'description': description,
-                    'location': location
+                    'location': location,
+                    'header_comment': read_header_comment(location),
                 }
                 
                 
@@ -252,33 +296,22 @@ def generate_html_refcard(categories_file, toc_file):
     if not categories or not words_db:
         return
 
-    print("<!DOCTYPE html>")
-    print("<html>")
-    print("<head>")
-    print("<title>AmForth32 Reference Card</title>")
-    print("<style>")
     css_path = os.path.join(script_dir, 'refcard.css')
     with open(css_path, 'r') as f:
-        print(f.read())
-    print("</style>")
-    print("</head>")
-    print("<body>")
-    print("<h1>AmForth32 Reference Card</h1>")
-    print(f'<h2>{build_info}</h2>')
+        styles = f"<style>\n{f.read()}\n</style>"
 
-    print("<p>")
+    page_parts = []
+
     links = []
     for cat_name, _ in categories:
         anchor = html.escape(cat_name)
         links.append(f'<a href="#{anchor}">{anchor}</a>')
     links.append(f'<a href="#LEGEND">LEGEND</a>')
-    print(" | ".join(links))
-    print("</p>")
+    page_parts.append("<p>" + " | ".join(links) + "</p>")
 
     for cat_name, word_list in categories:
-        print(f'<h2 id="{html.escape(cat_name)}">{html.escape(cat_name)}</h2>')
-        print("<table>")
-        print("<tr><th>Word</th><th>Type</th><th>Stack Signature</th><th>Description</th><th>Location</th></tr>")
+        table = [f'<h2 id="{html.escape(cat_name)}">{html.escape(cat_name)}</h2>', "<table>"]
+        table.append("<tr><th>Word</th><th>Type</th><th>Stack Signature</th><th>Description</th><th>Location</th></tr>")
         
         for word in word_list:
             data = words_db.get(word)
@@ -292,25 +325,42 @@ def generate_html_refcard(categories_file, toc_file):
                     sig = html.escape(data['parameter'])
                 desc = html.escape(data['description'])
                 loc = html.escape(data['location'])
+                long_description = ''
+                if data['header_comment']:
+                    comment = html.escape(data['header_comment'])
+                    long_description = (
+                        ' <span class="long-description">'
+                        '<button type="button" class="long-description-toggle" '
+                        'aria-expanded="false" aria-label="Show long description">…</button>'
+                        f'<span class="long-description-tooltip" role="tooltip">{comment}</span>'
+                        '</span>'
+                    )
                 if not type in ['HEADLESS', 'NONAME']:
-                    print(f"<tr><td title=\"{symbol}\">{name}</td><td>{type}</td><td>{sig}</td><td>{desc}</td><td>{loc}<td></tr>")
+                    table.append(f'<tr><td title="{symbol}">{name}</td><td>{type}</td><td>{sig}</td><td>{desc}{long_description}</td><td class="location" data-copy-path="{loc}" tabindex="0" role="button" aria-label="Copy location {loc}" title="Click to copy">{loc}</td></tr>')
             else:
                 name = html.escape(word)
-                print(f"<tr><td>{name}</td></tr>")
-        print("</table>")
+                table.append(f"<tr><td>{name}</td></tr>")
+        table.append("</table>")
+        page_parts.append("\n".join(table))
 
     # Add Legend section from parsed legend data
-    print('<h2 id="LEGEND">LEGEND</h2>')
+    legend_parts = ['<h2 id="LEGEND">LEGEND</h2>']
     for section_name, table_rows in legend.items():
-        print(f'<h3>{html.escape(section_name)}</h3>')
-        print('<table>')
-        print('<tr>' + ''.join(f'<th>{html.escape(h)}</th>' for h in table_rows[0]) + '</tr>')
+        legend_parts.append(f'<h3>{html.escape(section_name)}</h3>')
+        legend_parts.append('<table>')
+        legend_parts.append('<tr>' + ''.join(f'<th>{html.escape(h)}</th>' for h in table_rows[0]) + '</tr>')
         for row in table_rows[1:]:
-            print('<tr>' + ''.join(f'<td>{html.escape(col)}</td>' for col in row) + '</tr>')
-        print('</table>')
+            legend_parts.append('<tr>' + ''.join(f'<td>{html.escape(col)}</td>' for col in row) + '</tr>')
+        legend_parts.append('</table>')
+    page_parts.extend(legend_parts)
 
-    print("</body>")
-    print("</html>")
+    template_path = os.path.join(script_dir, 'refcard.html')
+    with open(template_path, 'r') as f:
+        template = f.read()
+    page = (template.replace("{{STYLES}}", styles)
+                    .replace("{{BUILD_INFO}}", html.escape(build_info))
+                    .replace("{{CONTENT}}", "\n".join(page_parts)))
+    print(page, end="")
 
 if __name__ == "__main__":
     # Default paths based on description
