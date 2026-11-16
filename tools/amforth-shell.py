@@ -1176,9 +1176,9 @@ additional definitions (e.g. register names)
             lines = response.splitlines()
             response = []
             for line in lines:
-                if line.startswith("|D PS: "):
+                if line.startswith("|D DS: "):
                     ps = line[7:].strip().split()
-                    response.append("PS("+ps[0]+"): "+" ".join(ps[1:11])+(" ... " if len(ps) > 11 else ""))
+                    response.append("DS("+ps[0]+"): "+" ".join(ps[1:11])+(" ... " if len(ps) > 11 else ""))
                     continue
                 if line.startswith("|D RS: "):
                     rs = line[7:].strip().split()

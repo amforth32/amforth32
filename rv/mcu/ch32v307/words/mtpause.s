@@ -1,4 +1,4 @@
-CODEWORD "mtpause", MTPAUSE
+HEADLESS "mtpause", MTPAUSE
 
     /* Skip if in interrupt (using software flag) */
 

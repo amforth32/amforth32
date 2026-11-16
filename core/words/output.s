@@ -22,7 +22,7 @@ COLON "dec.", DECDOT /* ( n -- ) print n in base 10 */
 	.word XT_EXIT
 END DECDOT
 # ----------------------------------------------------------------------
-NONAME "uhex.", UHEXDOT /* ( u -- ) print u in base 16 */
+COLON "uhex.", UHEXDOT /* ( u -- ) print u in base 16 */
 	.word XT_BASE
 	.word XT_FETCH
 	.word XT_SWAP

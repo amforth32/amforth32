@@ -210,6 +210,8 @@
 .include "words/tpile.s"
 .endif
 
+.include "words/backtrace.s"
+
 .if WANT_DEBUGGER == YES
 .include "words/debugger.s"
 .include "words/debugger2.s"
