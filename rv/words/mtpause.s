@@ -1,13 +1,12 @@
 CODEWORD "mtpause", MTPAUSE
 
-    /* Skip if in interrupt (using software flag) */
-    /*
-    la      t0, in_isr_flag
+    /* Skip if in a Forth interrupt handler (in-isr? is a count) */
+
+    la      t0, IN_ISRQ_ram
     lw      t1, 0(t0)
     bnez    t1, MTPAUSE_done
-    */
-    
-    csrci   mstatus, 0x8        
+
+    csrrci  t1, mstatus, 0x8     /* save interrupt state and disable */
 
     sw      s4, USER_SP(s6)
     sw      s5, USER_RP(s6)
@@ -16,7 +15,7 @@ CODEWORD "mtpause", MTPAUSE
 
     /* Find next awake task */
 MTPAUSE_loop:
-    lw      s6, USER_LINK(s6)   
+    lw      s6, USER_LINK(s6)
     lw      t0, USER_STATUS(s6)
     beqz    t0, MTPAUSE_loop
 
@@ -26,7 +25,8 @@ MTPAUSE_loop:
     lw      s2, USER_IP(s6)
     lw      s3, USER_TOS(s6)
 
-    csrsi   mstatus, 0x8       
+    andi    t1, t1, 0x8          /* restore interrupt state:     */
+    csrs    mstatus, t1          /* re-enable only if it was on  */
 
 MTPAUSE_done:
     NEXT

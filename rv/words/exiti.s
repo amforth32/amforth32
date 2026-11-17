@@ -2,10 +2,8 @@
 
 HEADLESS "(exiti)", EXITI /* return from interrupt handler; compiled by ;i. */
 
-     # context restore for regs not included in HPE 
+     # context restore for regs not included in HPE
 
-     addi s11, s11, -40
-            
      lw s1,   0(s11)
      lw s2,   4(s11)
      lw s3,   8(s11)
@@ -17,10 +15,19 @@ HEADLESS "(exiti)", EXITI /* return from interrupt handler; compiled by ;i. */
      lw s9,  32(s11)
      lw s10, 36(s11)
 
-     /* clear in isr software flag */
-     
-     la      t0, IN_ISRQ_ram
-     sw      zero, 0(t0)
+     /* one less Forth handler running (in-isr? is a count) */
 
-     mret 
+     la      t0, IN_ISRQ_ram
+     lw      t1, 0(t0)
+     addi    t1, t1, -1
+     sw      t1, 0(t0)
+
+     /*
+        the s11 stack grows down: release the frame last, so a
+        nested interrupt can never overwrite it before it is reloaded
+     */
+
+     addi s11, s11, 40
+
+     mret
 END EXITI

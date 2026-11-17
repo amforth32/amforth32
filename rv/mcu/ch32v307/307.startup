@@ -398,14 +398,17 @@ handle_reset:
 # Tue 16 Dec 25 14:30:10
 #.equ    ram_vector_base , reg_shadow - 0x100 * cellsize
 
-    la t0 , ram_vector_base
-    la t1 , reg_shadow 
+    # clear the trap! table by its own bounds; it is no longer
+    # directly below reg_shadow (see the line commented out above)
+
+    la t0 , RAM_lower_forthvector
+    la t1 , RAM_upper_forthvector
 
 3:  sw zero, (t0)
     addi t0, t0, cellsize
     bltu t0, t1, 3b 
 
-    la s11, reg_shadow
+    la s11, RAM_upper_reg_shadow  # s11 stack grows down from the top
 
 .ifnb
     la a0,__libc_fini_array
@@ -438,11 +441,11 @@ _master_int:   # interrupt entry
      # if non-zero trap in RAM then assume colon word and use
      # else look in C _vector_base and use
 
-     la      t0, IN_ISRQ_ram # set in-isr? software flag
-     li      t1, -1          # 0 is NOT in isr and -1 is
-     sw      t1, 0(t0)       # in (any) isr 
+     # in-isr? counts the Forth handlers that are running. It is
+     # incremented on the Forth path below and decremented in exiti.
+     # Flash/C handlers end in their own mret and do not touch it.
 
-     csrr t0, mcause         # what caused the trap 
+     csrr t0, mcause        # what caused the trap 
      li t1, 0x7FFFFFFF       # %0111111.....1111
      and t0,t0,t1            # t0 has interrupt number [0..255]
      sll t0,t0,2             # t0 has byte offset (num*cellsize)
@@ -453,9 +456,17 @@ _master_int:   # interrupt entry
 
      beq t2,zero,2f          # 0= then fall back on any C isr
 
-     /* push Forth VM registers to special stack */ 
+     /* push Forth VM registers to special stack */
 
-     sw s1,   0(s11)         # this where Forth context save   
+     /*
+        the s11 stack grows down: claim the frame with one
+        instruction before storing, so a nested interrupt
+        can never overwrite a frame that is being written
+     */
+
+     addi s11, s11, -40
+
+     sw s1,   0(s11)         # this where Forth context save
      sw s2,   4(s11)
      sw s3,   8(s11)
      sw s4,  12(s11)
@@ -466,7 +477,16 @@ _master_int:   # interrupt entry
      sw s9,  32(s11)
      sw s10, 36(s11)
 
-     addi s11, s11, 40 
+     /*
+        one more Forth handler running. A nested interrupt between
+        the lw and sw adds and removes its own 1 before returning,
+        so the count stays right
+     */
+
+     la      t0, IN_ISRQ_ram
+     lw      t1, 0(t0)
+     addi    t1, t1, 1
+     sw      t1, 0(t0)
 
      /*
         required so that isr has access for loops
