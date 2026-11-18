@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>AmForth32 Reference Card</title>
+{{STYLES}}
+<script>
+function copyLocation(cell) {
+    const path = cell.dataset.copyPath;
+    const fallbackCopy = () => {
+        const input = document.createElement('textarea');
+        input.value = path;
+        input.setAttribute('readonly', '');
+        input.style.position = 'fixed';
+        input.style.opacity = '0';
+        document.body.appendChild(input);
+        input.select();
+        const copied = document.execCommand('copy');
+        input.remove();
+        return copied ? Promise.resolve() : Promise.reject();
+    };
+    const copy = navigator.clipboard
+        ? navigator.clipboard.writeText(path).catch(fallbackCopy)
+        : fallbackCopy();
+    copy.then(() => {
+        cell.dataset.copyStatus = 'Copied';
+        window.setTimeout(() => delete cell.dataset.copyStatus, 1200);
+    }).catch(() => {
+        cell.dataset.copyStatus = 'Copy failed';
+        window.setTimeout(() => delete cell.dataset.copyStatus, 1200);
+    });
+}
+document.addEventListener('click', event => {
+    const cell = event.target.closest('td[data-copy-path]');
+    if (cell) copyLocation(cell);
+});
+document.addEventListener('keydown', event => {
+    const cell = event.target.closest('td[data-copy-path]');
+    if (cell && (event.key === 'Enter' || event.key === ' ')) {
+        event.preventDefault();
+        copyLocation(cell);
+    }
+});
+function positionLongDescription(button) {
+    const tooltip = button.parentElement.querySelector('.long-description-tooltip');
+    const anchor = button.getBoundingClientRect();
+    const bounds = tooltip.getBoundingClientRect();
+    const margin = 8;
+    const left = Math.max(margin, Math.min(anchor.left, window.innerWidth - bounds.width - margin));
+    const above = anchor.top - bounds.height - margin;
+    const top = above >= margin
+        ? above
+        : Math.min(anchor.bottom + margin, window.innerHeight - bounds.height - margin);
+    tooltip.style.left = `${left}px`;
+    tooltip.style.top = `${Math.max(margin, top)}px`;
+}
+document.addEventListener('pointerover', event => {
+    const button = event.target.closest('.long-description-toggle');
+    if (button) positionLongDescription(button);
+});
+document.addEventListener('focusin', event => {
+    const button = event.target.closest('.long-description-toggle');
+    if (button) positionLongDescription(button);
+});
+document.addEventListener('click', event => {
+    const button = event.target.closest('.long-description-toggle');
+    document.querySelectorAll('.long-description-toggle[aria-expanded="true"]').forEach(openButton => {
+        if (openButton !== button) {
+            openButton.setAttribute('aria-expanded', 'false');
+            openButton.parentElement.classList.remove('is-open');
+        }
+    });
+    if (button) {
+        const isOpen = button.getAttribute('aria-expanded') === 'true';
+        button.setAttribute('aria-expanded', String(!isOpen));
+        button.parentElement.classList.toggle('is-open', !isOpen);
+        if (!isOpen) positionLongDescription(button);
+    }
+});
+document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+        document.querySelectorAll('.long-description-toggle[aria-expanded="true"]').forEach(button => {
+            button.setAttribute('aria-expanded', 'false');
+            button.parentElement.classList.remove('is-open');
+        });
+    }
+});
+</script>
+</head>
+<body>
+<h1>AmForth32 Reference Card</h1>
+<h2>{{BUILD_INFO}}</h2>
+{{CONTENT}}
+</body>
+</html>

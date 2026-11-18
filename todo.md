@@ -11,7 +11,6 @@ Also look for TODO: in source files
 * xxx_ram symbols => RAM_xxx symbols (otherwise should be underscore prefixed)
 * all words should use the END macro to be proper function blocks (debug_info)
 * proper, and extractable comments for all words
-* add long word description to the html refcard as title attribute, so that it shows on hover
 
 * exception propagation from ISR handlers (maybe even fault handlers?)
 * leave stack vs interrupts

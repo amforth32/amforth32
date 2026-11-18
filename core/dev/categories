@@ -4,7 +4,7 @@ STACK:
     2dup  2swap 2over 2drop 2rot 2nip 
     depth ?stack sp0 sp sp! sp@
     rdrop rdepth rp rp! rp@ r@ r> >r nr> n>r 2r> 2>r 2r@
-    ldrop ldepth l@ l> >l 2l@ 2l> 2>l lp lp0
+    ldrop ldepth l@ l> >l 2l@ 2l> 2>l lp lp@ lp0
 COMPARE:
     umin umax max min = <> > < <= >= 0< 0<> 0= 0> within
     u> u< u<= u>=
@@ -33,12 +33,12 @@ STRING:
     cfg-recognizer forth-recognizer split rectype-split rec-split rec-num rectype-dnum rectype-num rectype-xt rec-find rectype-null recognize
 DICTIONARY:
     ' c, , h, (c,) (,) s, chkdalign reveal newest latest 
-    value to (to) is variable constant :noname header
+    value to (to) is variable constant :noname :immed header nvariable synonym
     find find-xt forget words execute evaluate
     nfa>string nfa>xt lfa>ffa ffa>nfa xt>string >body ffa>string ffa2cfa ffa>lfa xt>ffa xt>nfa xt>lfa
     ?ip ?nfa anybranch? branch? colon? codeword? compile? condbranch? exit? literal? loop? sliteral? value? variable? xliteral?
     ip2name ip2xt
-    flag.table flag.init flag.defer flag.value flag.pvalue flag.immed flag.con flag.colon flag.dvar flag.var flag.code flag.child flag.header
+    flag.table flag.init flag.defer flag.value flag.pvalue flag.immed flag.con flag.colon flag.dvar flag.var flag.code flag.child flag.header flag.alias
 WORDLIST:
     empty.flash empty.ram
     wordlist forth-wordlist ram-wordlist core-wordlist environment arch-wordlist
@@ -46,7 +46,7 @@ WORDLIST:
     order cfg-order only core forth order.forth order.core order.only 
     previous set-order get-order order.table  top> >top top
 COMPILER:
-    : ; ;i ( \# \ recurse postpone immediate state
+    : ; ( \# \ recurse postpone immediate state
     create <builds builds> does> char [ ] ['] [compile] [char] 
     compile xliteral literal 2literal sliteral
     Udefer! Udefer@ defer! defer@ defer
@@ -63,14 +63,19 @@ OUTPUT:
     r. r.. hex. 8x. 2x. x. .8hex
     spaces space bl cr type itype
     base binary hex decimal 
-    <# sign #s # hold #> hld pad 
+    <# sign #s # hold #> hld pad
+TASKS:
+    single multi +task -task task! task@ taskn task-block task.warm task.warm-all release reserve vacant
+INTERRUPTS:
+    +int -int trap@ ;i in-isr?
 SYSTEM:
     cold warm turnkey appl-turnkey quit pause interpret
     ms .ver .build build.rev build.time build.config arch cpu board version name /user
     set-base bases .ready .ok .input .error
     first-boot.done ?first-boot first-boot.marker first-boot.start
 TOOLS:
-    .s .k .rs .bt .itc dump ?ascii vdump break debug+ debug- || show
+    .s .k .rs .bt .itc dump ?ascii vdump break debug+ debug- || see 
+    show show.flash show.page show.ram show.tasks show.ua
 FLASH:
     flash.cell flash.page flash.erased flash.start flash.low flash.max flash.erase flush naligned !i
     pv.do pv.init vaddr pv.store pvp pv.reset-hard 2!pvf
@@ -82,4 +87,4 @@ OTHER:
     forget.prior 
     m4fix mtog mclr mset
 SYSTICK:
-    systick# -systick +systick systick@  systick- systick! systick.init
+    systick# -systick +systick systick@  systick- systick! systick.max systick.ms systick.init syscsr@ 
