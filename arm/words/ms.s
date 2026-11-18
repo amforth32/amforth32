@@ -19,7 +19,7 @@ Found 3 name(s) that resolve to multiple XT symbols:
 # \
 # \ SYSTICK_TICKS_PER_MS is supplied by the MCU configuration and must match
 # \ the clock selected by systick.init.
-# : ms ( n -- ) \ delay n milliseconds, calling PAUSE
+# : ms \# ( n -- ) delay n milliseconds, calling PAUSE
 #     systick@
 #     begin
 #         \ ( n start )
@@ -52,7 +52,7 @@ Found 3 name(s) that resolve to multiple XT symbols:
 # comment \ hanging on its own 0
 # comment \ hanging on its own 3
 # ----------------------------------------------------------------------
-COLON "ms", MS 
+COLON "ms", MS /* ( n -- ) delay n milliseconds, calling PAUSE */
 	.word XT_SYSTICK_FETCH
 MS_0001: /* begin */
 	.word XT_OVER

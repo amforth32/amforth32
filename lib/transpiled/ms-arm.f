@@ -4,7 +4,7 @@
 \
 \ SYSTICK_TICKS_PER_MS is supplied by the MCU configuration and must match
 \ the clock selected by systick.init.
-: ms ( n -- ) \ delay n milliseconds, calling PAUSE
+: ms \# ( n -- ) delay n milliseconds, calling PAUSE
     systick@
     begin
         \ ( n start )

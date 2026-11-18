@@ -51,7 +51,7 @@ COMPILER:
     compile xliteral literal 2literal sliteral
     Udefer! Udefer@ defer! defer@ defer
 FLOW:
-    ?abort abort" abort trap.base trap! throw catch handler exit
+    ?abort abort" abort trap.base trap! throw catch handler exit err? err-wordlist
     ahead if else then begin until again while repeat 
     do ?do i j unloop leave loop +loop endloop
     match act end endmatch case of endof endcase
@@ -60,12 +60,13 @@ IO:
     tib #tib >in source-tib source accept refill-tib refill refill-buf-size ?crlf bs
 OUTPUT:
     . u. u.r d. d.r ud. ud.r
-    r. r.. hex. 8x. 2x. x. .8hex
+    r. r.. hex. dec. uhex. 8x. 2x. x. .8hex
     spaces space bl cr type itype
     base binary hex decimal 
     <# sign #s # hold #> hld pad
 TASKS:
     single multi +task -task task! task@ taskn task-block task.warm task.warm-all release reserve vacant
+    task.ds task.rs task.bt task.ua
 INTERRUPTS:
     +int -int trap@ ;i in-isr?
 SYSTEM:
@@ -74,7 +75,7 @@ SYSTEM:
     set-base bases .ready .ok .input .error
     first-boot.done ?first-boot first-boot.marker first-boot.start
 TOOLS:
-    .s .k .rs .bt .itc dump ?ascii vdump break debug+ debug- || see 
+    .s .k .rs .bt .itc .ip dump ?ascii vdump break debug+ debug- || see 
     show show.flash show.page show.ram show.tasks show.ua
 FLASH:
     flash.cell flash.page flash.erased flash.start flash.low flash.max flash.erase flush naligned !i
