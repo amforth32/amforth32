@@ -58,12 +58,12 @@
         then 
     loop
     
-    \ close the task ring (exclude the ISR task)
-    up@ taskn 2- task@ symbol USER_LINK + !
+    \ close the task ring
+    up@ taskn 1- task@ symbol USER_LINK + !
 ;
 
 : task! \# ( xt n -- ) write task to slot n
-    dup 1 taskn 1- within not if symbol ENTASK throw then
+    dup 1 taskn within not if symbol ENTASK throw then
     task@ >r
     dup   r@ symbol USER_XT + !
     >body r> symbol USER_IP + !
@@ -89,12 +89,12 @@
 ;
 
 : +task \# ( n -- ) make task n active
-    dup 1 taskn 1- within not if symbol ENTASK throw then
+    dup 1 taskn within not if symbol ENTASK throw then
     task@ symbol USER_STATUS + true swap !
 ;
 
 : -task \# ( n -- ) make task n inactive (sleep)
-    dup 1 taskn 1- within not if symbol ENTASK throw then
+    dup 1 taskn within not if symbol ENTASK throw then
     task@ symbol USER_STATUS + false swap !
 ;
 
@@ -106,27 +106,40 @@
     ['] mtpause is pause
 ;
 
-: show.tasks \# ( -- ) show tasks
-    \ need single or multi
-    symbol XT_PAUSE defer@ symbol XT_NOP = if
-        s" single"
-    else
-        s" multi"
-    then type cr
-    s" # UP...... ? LINK.... NAME...." type cr
-    taskn 0 ?do
-        i .
-        i task@
-        dup hex.
-        dup symbol USER_STATUS + @ if
-            [char] A emit else [char] S emit then space
-        dup symbol USER_LINK   + @ hex.
-            symbol USER_XT + @ xt>string type
-        cr
-    loop
-; 
+: task.ds \# ( n -- ) show datastack of task n (when dormant)
+    dup 0 taskn within not if symbol ENTASK throw then
+    task@ dup up@ = if drop s" EXECUTING" type cr exit then
+    dup symbol USER_SP0 + swap symbol USER_SP + @     \# ( sp0 sp ) 
+    over over - 2 rshift s" DS(" type dec. s" ): " type
+    ?do i @ . cell +loop
+    cr
+;
 
-: show.ua ( n -- ) \ show user area of task n
+: task.rs \# ( n -- ) show datastack of task n (when dormant)
+    dup 0 taskn within not if symbol ENTASK throw then
+    task@ dup up@ = if drop s" EXECUTING" type cr exit then
+    dup symbol USER_RP0 + swap symbol USER_RP + @     \# ( sp0 sp ) 
+    over over - 2 rshift s" RS(" type dec. s" ): " type
+    ?do i @ . cell +loop
+    cr
+;
+
+: task.bt \# ( n -- ) show datastack of task n (when dormant)
+    dup 0 taskn within not if symbol ENTASK throw then
+    task@ dup up@ = if drop s" EXECUTING" type cr exit then
+    s" BT: " type
+    dup symbol USER_RP0 + swap dup symbol USER_RP + @ swap   \# ( sp0 sp up )
+    symbol USER_IP + @ \# ( sp0 sp ip )
+    ?dup if
+        \ ip points to next word to be executed
+        dup cell- @ \# (sp0 sp ip wd) 
+        xt>string type space \# emit wd
+        .ip then \# emit ip
+    ?do i @ .ip cell +loop
+    cr
+;
+
+: task.ua \# ( n -- ) show user area of task n
     \ drop
     s" OFF A....... [A]..... Desc............ OFF A....... [A]..... Desc............"
     type cr
@@ -158,3 +171,26 @@
     loop
     drop
 ;
+
+: show.tasks \# ( -- ) show all tasks
+    \ need single or multi
+    symbol XT_PAUSE defer@ symbol XT_NOP = if
+        s" single"
+    else
+        s" multi"
+    then type cr
+    s" # UP...... ? LINK.... .DS .RS .LS NAME...." type cr
+    taskn 0 ?do
+        i .
+        i task@
+        dup hex.
+        dup symbol USER_STATUS + @ if
+            [char] A emit else [char] S emit then space
+        dup symbol USER_LINK   + @ hex.
+        dup dup symbol USER_SP0 + swap symbol USER_SP + @ - 2 rshift 3 u.r space
+        dup dup symbol USER_RP0 + swap symbol USER_RP + @ - 2 rshift 3 u.r space
+        dup dup symbol USER_LP0 + swap symbol USER_LP + @ - 2 rshift 3 u.r space
+        symbol USER_XT + @ xt>string type
+        cr
+    loop
+; 

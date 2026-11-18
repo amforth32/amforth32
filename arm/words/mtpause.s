@@ -6,7 +6,7 @@ CONSTANT "task-block" , TASK_BLOCK, TASK_BLOCK_SIZE
 END TASK_BLOCK
 */
 
-CODEWORD "mtpause", MTPAUSE
+HEADLESS "mtpause", MTPAUSE
 
 .if CORTEXM == YES
     mrs     r0, ipsr
