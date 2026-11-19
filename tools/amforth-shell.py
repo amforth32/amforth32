@@ -189,6 +189,15 @@
 #       option when starting the program or through the EDITOR
 #       environment variable.
 #
+#   #transpile <filename>
+#       Transpile a Forth source file (.f, .frt, .fr, .fs, or .fth), or
+#       pass an assembler target file (.s or .S) from a words directory
+#       to transpile the source named by its provenance header.  A ~/ prefix
+#       on the filename path is relative to the AmForth root; other relative
+#       filenames are relative to the current working directory.
+#       A simple filename without an extension is matched against both
+#       source and target indexes; multiple matches prompt for a selection.
+#
 #   #update-words
 #       This directive is only available in an interactive session.
 #       It cause the interaction code to reload the list of words used
@@ -260,6 +269,8 @@ import argparse
 import atexit
 import bisect
 import copy
+from contextlib import redirect_stdout
+from datetime import datetime
 import glob
 import os
 import re
@@ -511,6 +522,7 @@ class AMForth(object):
         self._readline_initialized = False
         self._amforth_dp = None
         self._filedirs = {}
+        self._word_files = {}
         self._search_path = []
         self._uploaded = set()
         self._update_uploaded = False
@@ -524,6 +536,7 @@ class AMForth(object):
         self._last_error = ()
         self._last_edited_file = None
         self._config = BehaviorManager()
+        self._amforth_root = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
         if "AMFORTH_LIB" in os.environ:
             self._search_list = os.environ["AMFORTH_LIB"].split(":")
         else:
@@ -779,7 +792,97 @@ additional definitions (e.g. register names)
 
     amforth_error_re = re.compile(r" \?\? -\d+ \d+\s*$")
 
+    def _argument_path(self, filename):
+        if filename.startswith("~/"):
+            return os.path.abspath(os.path.join(self._amforth_root, filename[2:]))
+        if not os.path.dirname(filename):
+            return self.resolve_file_path(filename)
+        return os.path.abspath(filename)
+
+    def _resolve_word_target(self, filename):
+        if filename.startswith("~/"):
+            return os.path.abspath(os.path.join(self._amforth_root, filename[2:]))
+        if os.path.dirname(filename):
+            path = os.path.abspath(filename)
+            if not os.path.isfile(path) or os.path.basename(os.path.dirname(path)) != "words":
+                raise AMForthException("Target file must be in a words directory: " + path)
+            return path
+
+        matches = self._word_files.get(filename, [])
+        if not matches:
+            raise AMForthException("Target file " + filename + " not found in a words directory")
+        if len(matches) == 1:
+            return matches[0]
+
+        return self._select_indexed_path("target files matching " + filename, matches)
+
+    def _select_indexed_path(self, description, matches):
+        print("Multiple " + description + ":")
+        for index, match in enumerate(matches, 1):
+            print(f"  {index}: ~/{os.path.relpath(match, self._amforth_root)}")
+        while True:
+            try:
+                choice = input(f"Select file [1-{len(matches)}]: ").strip()
+            except (EOFError, KeyboardInterrupt):
+                raise AMForthException("File selection cancelled")
+            try:
+                selected = int(choice)
+            except ValueError:
+                selected = 0
+            if 1 <= selected <= len(matches):
+                return matches[selected - 1]
+            print(f"Enter a number from 1 to {len(matches)}")
+
+    def _source_from_target(self, target_path):
+        provenance_re = re.compile(
+            r"^\s*#\s*transpiling\s+(.+?)\s+on\s+\d{4}/\d{2}/\d{2}\s+\d{2}:\d{2}:\d{2}\s*$"
+        )
+        try:
+            with open(target_path, "r", encoding=self._encoding) as target:
+                for line in target:
+                    match = provenance_re.match(line)
+                    if match:
+                        relative_source = match.group(1)
+                        if os.path.isabs(relative_source):
+                            raise AMForthException("Provenance source path must be relative to the AmForth root")
+                        source_path = os.path.abspath(os.path.join(self._amforth_root, relative_source))
+                        if os.path.isfile(source_path):
+                            return source_path
+                        raise AMForthException("Provenance source file not found: " + source_path)
+        except OSError as e:
+            raise AMForthException("Unable to read target file " + target_path + ": " + str(e))
+        raise AMForthException("No valid transpiling provenance header in " + target_path)
+
     def transpile_file(self, filename, install=False):
+        ext = os.path.splitext(filename)[1]
+        source_extensions = (".f", ".frt", ".fr", ".fs", ".fth")
+        target_path = None
+        if not ext and os.path.basename(filename) == filename:
+            stem = filename
+            matches = []
+            for indexed_name, directories in self._filedirs.items():
+                if os.path.splitext(indexed_name)[1] not in source_extensions or os.path.splitext(indexed_name)[0] != stem:
+                    continue
+                matches.extend(os.path.realpath(os.path.join(directory, indexed_name)) for directory in directories)
+            for indexed_name, paths in self._word_files.items():
+                if os.path.splitext(indexed_name)[0] == stem:
+                    matches.extend(paths)
+            matches = sorted(set(matches))
+            if not matches:
+                raise AMForthException("No source or target file matches " + filename)
+            filename = matches[0] if len(matches) == 1 else self._select_indexed_path("source or target files matching " + filename, matches)
+            ext = os.path.splitext(filename)[1]
+
+        if ext in source_extensions:
+            source_path = self._argument_path(filename)
+            if not os.path.isfile(source_path):
+                raise AMForthException("Source file not found: " + source_path)
+        elif ext in (".s", ".S"):
+            target_path = filename if os.path.dirname(filename) else self._resolve_word_target(filename)
+            source_path = self._source_from_target(target_path)
+        else:
+            raise AMForthException("Unsupported #transpile filename extension: " + ext)
+
         self.send_line("tpile+\n")
         response = self.read_response()
         if self.amforth_error_re.search(response):
@@ -788,32 +891,44 @@ additional definitions (e.g. register names)
         self._transpiling = True
         self._transpiled_lines = []
         try:
-            self.upload_file(filename, install)
+            self.upload_file(filename, install or target_path is not None, source_path)
         finally:
             self._transpiling = False
             self.send_line("tpile-\n")
             self.read_response()
-        self.process_transpiled_lines(self._transpiled_lines)
+        if target_path is None:
+            self.process_transpiled_lines(self._transpiled_lines, source_path)
+        else:
+            output = StringIO()
+            with redirect_stdout(output):
+                self.process_transpiled_lines(self._transpiled_lines, source_path)
+            with open(target_path, "w", encoding=self._encoding) as target:
+                target.write(output.getvalue())
+            self.progress_callback("Information", None, f"Updated ~/{os.path.relpath(target_path, self._amforth_root)}")
 
-    def upload_file(self, filename, install=False):
+    def resolve_file_path(self, filename):
+        if os.path.dirname(filename):
+            fpath = filename
+            self.progress_callback("Information", None, "using " + filename + " verbatim")
+        else:
+            if filename not in self._filedirs:
+                self.progress_callback("Error", None, "file " + filename + " not found in search path")
+                raise AMForthException("file " + filename + " not found in search path")
+            if len(self._filedirs[filename]) != 1:
+                self.progress_callback("Error", None, "Wrong # of file " + filename + " found in search path")
+                raise AMForthException("Wrong # of file occurances: " + filename + " (" + str(len(self._filedirs[filename])) + ")\n\t" + "\n\t".join(self._filedirs[filename]))
+            self.progress_callback("Information", None, "using " + filename + " from" + self._filedirs[filename][0])
+            fpath = os.path.join(self._filedirs[filename][0], filename)
+        return fpath
+
+    def upload_file(self, filename, install=False, fpath=None):
         if not install and filename in self._uploaded:
             return False
         else:
             self._uploaded.add(filename)
         self._update_files()
-        if os.path.dirname(filename):
-          fpath=filename
-          self.progress_callback("Information", None,  "using "+ filename+" verbatim")
-        else:
-          if not filename in self._filedirs:
-            self.progress_callback("Error", None,  "file "+ filename+" not found in search path")
-            raise AMForthException("file " + filename + " not found in search path")
-          if len(self._filedirs[filename])!=1:
-            # oops, too many files or no one at all found?
-            self.progress_callback("Error", None,  "Wrong # of file " + filename + " found in search path") # add this line above the one below
-            raise AMForthException("Wrong # of file occurances: " + filename + " ("+str(len(self._filedirs[filename]))+")\n\t"+"\n\t".join(self._filedirs[filename]))
-          self.progress_callback("Information", None,  "using "+ filename+" from"+ self._filedirs[filename][0])
-          fpath = os.path.join(self._filedirs[filename][0], filename)
+        if fpath is None:
+            fpath = self.resolve_file_path(filename)
         self._config.push_file(fpath)
         fdir=os.path.dirname(fpath)
         print ("**** " + self._config.current_behavior.working_directory)
@@ -1324,7 +1439,9 @@ additional definitions (e.g. register names)
         return None
 
     _word_comment_re = re.compile(r"(\(.*--.*\))\s*\\\s*(.*)$")
-    def process_transpiled_lines(self, lines):
+    def process_transpiled_lines(self, lines, filename):
+        source_path = os.path.relpath(filename, self._amforth_root)
+        print(f"# transpiling {source_path} on {datetime.now():%Y/%m/%d %H:%M:%S}")
         xt_dosliteral = f"X{self._xt_addresses[self._xt_symbols.index("XT_DOSLITERAL")]:X}"
         labels = {}
         for line, response, comment in lines:
@@ -1628,6 +1745,7 @@ additional definitions (e.g. register names)
     def _update_files(self):
       self.progress_callback("Information", None, "getting filenames on the host")
       self._filedirs = {}
+      self._word_files = {}
       for p in self._search_list:
         self.progress_callback("Information", None, "  Reading "+p)
         for root, dirs, files in os.walk(p):
@@ -1643,6 +1761,19 @@ additional definitions (e.g. register names)
               if fpath: self._filedirs[f].append(fpathdir)
             else:
               self._filedirs[f]=[fpathdir]
+
+      for root, dirs, files in os.walk(self._amforth_root):
+        dirs[:] = [d for d in dirs if d not in (".git", "build")]
+        if os.path.basename(root) != "words":
+          continue
+        self.progress_callback("Information", None, "  Reading "+root)
+        for f in files:
+          if os.path.splitext(f)[1] not in (".s", ".S"):
+            continue
+          fpath = os.path.realpath(os.path.join(root, f))
+          self._word_files.setdefault(f, []).append(fpath)
+      for paths in self._word_files.values():
+        paths.sort()
 
     def _update_uploaded_files(self):
        self.progress_callback("Information", None, "getting filenames from the controller")
