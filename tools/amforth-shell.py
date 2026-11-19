@@ -189,6 +189,20 @@
 #       option when starting the program or through the EDITOR
 #       environment variable.
 #
+#   #transpile <filename>
+#       Transpile a Forth source file (.f, .frt, .fr, .fs, or .fth), or
+#       pass an assembler target file (.s or .S) from a words directory
+#       to transpile the source named by its provenance header.  A ~/ prefix
+#       on the filename path is relative to the AmForth root; other relative
+#       filenames are relative to the current working directory.
+#       A simple filename without an extension is matched against both
+#       source and target indexes; multiple matches prompt for a selection.
+#       During transpilation, a line beginning with { starts pass-through
+#       output and a line ending with } ends it; the markers and common
+#       leading indentation are omitted. Delimiter-only lines are retained
+#       as blank lines to preserve the source line count.
+#       Pass-through content is not sent to amforth but included in transpiled output.
+#
 #   #update-words
 #       This directive is only available in an interactive session.
 #       It cause the interaction code to reload the list of words used
@@ -260,6 +274,8 @@ import argparse
 import atexit
 import bisect
 import copy
+from contextlib import redirect_stdout
+from datetime import datetime
 import glob
 import os
 import re
@@ -268,6 +284,7 @@ import serial
 from io import StringIO
 import subprocess
 import sys
+import textwrap
 import traceback
 import platform
 
@@ -511,6 +528,7 @@ class AMForth(object):
         self._readline_initialized = False
         self._amforth_dp = None
         self._filedirs = {}
+        self._word_files = {}
         self._search_path = []
         self._uploaded = set()
         self._update_uploaded = False
@@ -524,6 +542,7 @@ class AMForth(object):
         self._last_error = ()
         self._last_edited_file = None
         self._config = BehaviorManager()
+        self._amforth_root = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
         if "AMFORTH_LIB" in os.environ:
             self._search_list = os.environ["AMFORTH_LIB"].split(":")
         else:
@@ -779,7 +798,100 @@ additional definitions (e.g. register names)
 
     amforth_error_re = re.compile(r" \?\? -\d+ \d+\s*$")
 
+    def _argument_path(self, filename):
+        if filename.startswith("~/"):
+            return os.path.abspath(os.path.join(self._amforth_root, filename[2:]))
+        if not os.path.dirname(filename):
+            return self.resolve_file_path(filename)
+        return os.path.abspath(filename)
+
+    def _resolve_word_target(self, filename):
+        if filename.startswith("~/"):
+            path = os.path.abspath(os.path.join(self._amforth_root, filename[2:]))
+        elif os.path.dirname(filename):
+            path = os.path.abspath(filename)
+        else:
+            path = None
+        if path is not None:
+            if not os.path.isfile(path) or os.path.basename(os.path.dirname(path)) != "words":
+                raise AMForthException("Target file must be in a words directory: " + path)
+            return path
+
+        matches = self._word_files.get(filename, [])
+        if not matches:
+            raise AMForthException("Target file " + filename + " not found in a words directory")
+        if len(matches) == 1:
+            return matches[0]
+
+        return self._select_indexed_path("target files matching " + filename, matches)
+
+    def _select_indexed_path(self, description, matches):
+        print("Multiple " + description + ":")
+        for index, match in enumerate(matches, 1):
+            print(f"  {index}: ~/{os.path.relpath(match, self._amforth_root)}")
+        while True:
+            try:
+                choice = input(f"Select file [1-{len(matches)}]: ").strip()
+            except (EOFError, KeyboardInterrupt):
+                raise AMForthException("File selection cancelled")
+            try:
+                selected = int(choice)
+            except ValueError:
+                selected = 0
+            if 1 <= selected <= len(matches):
+                return matches[selected - 1]
+            print(f"Enter a number from 1 to {len(matches)}")
+
+    def _source_from_target(self, target_path):
+        provenance_re = re.compile(
+            r"^\s*#\s*transpiling\s+(.+?)\s+on\s+\d{4}/\d{2}/\d{2}\s+\d{2}:\d{2}:\d{2}\s*$"
+        )
+        try:
+            with open(target_path, "r", encoding=self._encoding) as target:
+                for line in target:
+                    match = provenance_re.match(line)
+                    if match:
+                        relative_source = match.group(1)
+                        if os.path.isabs(relative_source):
+                            raise AMForthException("Provenance source path must be relative to the AmForth root")
+                        source_path = os.path.abspath(os.path.join(self._amforth_root, relative_source))
+                        if os.path.isfile(source_path):
+                            return source_path
+                        raise AMForthException("Provenance source file not found: " + source_path)
+        except OSError as e:
+            raise AMForthException("Unable to read target file " + target_path + ": " + str(e))
+        raise AMForthException("No valid transpiling provenance header in " + target_path)
+
     def transpile_file(self, filename, install=False):
+        ext = os.path.splitext(filename)[1]
+        source_extensions = (".f", ".frt", ".fr", ".fs", ".fth")
+        target_path = None
+        if not ext and os.path.basename(filename) == filename:
+            stem = filename
+            matches = []
+            for indexed_name, directories in self._filedirs.items():
+                if os.path.splitext(indexed_name)[1] not in source_extensions or os.path.splitext(indexed_name)[0] != stem:
+                    continue
+                matches.extend(os.path.realpath(os.path.join(directory, indexed_name)) for directory in directories)
+            for indexed_name, paths in self._word_files.items():
+                if os.path.splitext(indexed_name)[0] == stem:
+                    matches.extend(paths)
+            matches = sorted(set(matches))
+            if not matches:
+                raise AMForthException("No source or target file matches " + filename)
+            filename = matches[0] if len(matches) == 1 else self._select_indexed_path("source or target files matching " + filename, matches)
+            ext = os.path.splitext(filename)[1]
+
+        if ext in source_extensions:
+            source_path = self._argument_path(filename)
+            if not os.path.isfile(source_path):
+                raise AMForthException("Source file not found: " + source_path)
+        elif ext in (".s", ".S"):
+            target_path = self._resolve_word_target(filename)
+            source_path = self._source_from_target(target_path)
+        else:
+            raise AMForthException("Unsupported #transpile filename extension: " + ext)
+
         self.send_line("tpile+\n")
         response = self.read_response()
         if self.amforth_error_re.search(response):
@@ -788,32 +900,44 @@ additional definitions (e.g. register names)
         self._transpiling = True
         self._transpiled_lines = []
         try:
-            self.upload_file(filename, install)
+            self.upload_file(filename, install or target_path is not None, source_path)
         finally:
             self._transpiling = False
             self.send_line("tpile-\n")
             self.read_response()
-        self.process_transpiled_lines(self._transpiled_lines)
+        if target_path is None:
+            self.process_transpiled_lines(self._transpiled_lines, source_path)
+        else:
+            output = StringIO()
+            with redirect_stdout(output):
+                self.process_transpiled_lines(self._transpiled_lines, source_path)
+            with open(target_path, "w", encoding=self._encoding) as target:
+                target.write(output.getvalue())
+            self.progress_callback("Information", None, f"Updated ~/{os.path.relpath(target_path, self._amforth_root)}")
 
-    def upload_file(self, filename, install=False):
+    def resolve_file_path(self, filename):
+        if os.path.dirname(filename):
+            fpath = filename
+            self.progress_callback("Information", None, "using " + filename + " verbatim")
+        else:
+            if filename not in self._filedirs:
+                self.progress_callback("Error", None, "file " + filename + " not found in search path")
+                raise AMForthException("file " + filename + " not found in search path")
+            if len(self._filedirs[filename]) != 1:
+                self.progress_callback("Error", None, "Wrong # of file " + filename + " found in search path")
+                raise AMForthException("Wrong # of file occurances: " + filename + " (" + str(len(self._filedirs[filename])) + ")\n\t" + "\n\t".join(self._filedirs[filename]))
+            self.progress_callback("Information", None, "using " + filename + " from" + self._filedirs[filename][0])
+            fpath = os.path.join(self._filedirs[filename][0], filename)
+        return fpath
+
+    def upload_file(self, filename, install=False, fpath=None):
         if not install and filename in self._uploaded:
             return False
         else:
             self._uploaded.add(filename)
         self._update_files()
-        if os.path.dirname(filename):
-          fpath=filename
-          self.progress_callback("Information", None,  "using "+ filename+" verbatim")
-        else:
-          if not filename in self._filedirs:
-            self.progress_callback("Error", None,  "file "+ filename+" not found in search path")
-            raise AMForthException("file " + filename + " not found in search path")
-          if len(self._filedirs[filename])!=1:
-            # oops, too many files or no one at all found?
-            self.progress_callback("Error", None,  "Wrong # of file " + filename + " found in search path") # add this line above the one below
-            raise AMForthException("Wrong # of file occurances: " + filename + " ("+str(len(self._filedirs[filename]))+")\n\t"+"\n\t".join(self._filedirs[filename]))
-          self.progress_callback("Information", None,  "using "+ filename+" from"+ self._filedirs[filename][0])
-          fpath = os.path.join(self._filedirs[filename][0], filename)
+        if fpath is None:
+            fpath = self.resolve_file_path(filename)
         self._config.push_file(fpath)
         fdir=os.path.dirname(fpath)
         print ("**** " + self._config.current_behavior.working_directory)
@@ -862,6 +986,7 @@ additional definitions (e.g. register names)
         in_comment = False
         lineno = 0
         comment = []
+        pass_through = None
         for full_line in f:
             self._config.advance_line()
             self._serialconn.timeout = self._config.current_behavior.timeout
@@ -874,10 +999,44 @@ additional definitions (e.g. register names)
                 self.progress_callback("Error", None, errmsg)
                 raise AMForthException(errmsg)
             lineno += 1
+            line_ending = "\n" if full_line.endswith("\n") else ""
             if full_line and full_line[-1] == "\n":
                 full_line = full_line[:-1]
             if full_line and full_line[-1] == "\r":
                 full_line = full_line[:-1]
+
+            if self._transpiling:
+                if pass_through is None:
+                    if full_line.startswith("{"):
+                        content = full_line[1:]
+                        if content.endswith("}"):
+                            content = content[:-1]
+                            if content:
+                                content += line_ending
+                            else:
+                                content = line_ending or "\n"
+                            self._transpiled_lines.append((None, textwrap.dedent(content), None))
+                        else:
+                            pass_through = []
+                            if content:
+                                pass_through.append(content + line_ending)
+                            else:
+                                pass_through.append(line_ending or "\n")
+                        continue
+                else:
+                    if full_line.endswith("}"):
+                        content = full_line[:-1]
+                        if content:
+                            pass_through.append(content + line_ending)
+                        else:
+                            pass_through.append(line_ending or "\n")
+                        content = textwrap.dedent("".join(pass_through))
+                        self._transpiled_lines.append((None, content, None))
+                        pass_through = None
+                    else:
+                        pass_through.append(full_line + line_ending)
+                    continue
+
             line = full_line.strip()
             if len(line) == 0:
                 if in_comment:
@@ -888,6 +1047,7 @@ additional definitions (e.g. register names)
                     self.progress_callback("Whitespace", lineno, full_line)
                     if self._transpiling:
                         comment = []
+                        self._transpiled_lines.append((None, line_ending or "\n", "source-blank"))
                 continue
             try:
                 (line, in_comment,
@@ -950,6 +1110,8 @@ additional definitions (e.g. register names)
                 if not self._config.current_behavior.ignore_errors:
                     self._record_error(lineno)
                     raise AMForthException("Error in line sent")
+        if pass_through is not None:
+            raise AMForthException("Unclosed pass-through block at end of file")
 
     def preprocess_line(self, line, in_delim_comment=False, directives=[]):
         # Compresses whitespace, including comments so send minimum
@@ -1323,21 +1485,48 @@ additional definitions (e.g. register names)
                 return name+suffix
         return None
 
-    _word_comment_re = re.compile(r"(\(.*--.*\))\s*\\\s*(.*)$")
-    def process_transpiled_lines(self, lines):
-        xt_dosliteral = f"X{self._xt_addresses[self._xt_symbols.index("XT_DOSLITERAL")]:X}"
+    _word_comment_re = re.compile(r"(\(.*--.*\))\s*\\{1,2}#?\s*(.*)$")
+    _word_comment_hash_re = re.compile(r"\\{1,2}#\s*(\(.*--.*\))\s*(.*)$")
+    def process_transpiled_lines(self, lines, filename):
+        source_path = os.path.relpath(filename, self._amforth_root)
+        print(f"# transpiling {source_path} on {datetime.now():%Y/%m/%d %H:%M:%S}\n")
+        xt_dosliteral = self._xt_addresses[self._xt_symbols.index("XT_DOSLITERAL")]
         labels = {}
+        output_line_open = False
+        output_line_prefix_len = 0
+        last_output_was_label = False
+        in_word = False
+        emitted_word = False
         for line, response, comment in lines:
+            if line is None:
+                if comment == "source-blank" and last_output_was_label:
+                    last_output_was_label = False
+                    continue
+                print(response, end="")
+                if response:
+                    output_line_open = not response.endswith("\n")
+                    output_line_prefix_len = 0
+                    if comment != "source-blank":
+                        last_output_was_label = False
+                continue
             # offset is the line offset to use for ouput
             # it is dictated by the formatting of the source file
             offset = len(line) - len(line.lstrip())
-            offset = max(offset, 3)
+            if in_word:
+                offset = max(offset, 4)
             line = line.strip()
             tokens = response.split()
             # assuming that any word definition always starts on its own line
             if len(tokens) > 0 and tokens[0][0] == 'W':
                 # starting a new word
+                if emitted_word:
+                    print("#======================================================================")
+                emitted_word = True
+                in_word = True
                 print(f"# {line}")
+                output_line_open = False
+                output_line_prefix_len = 0
+                last_output_was_label = False
                 token = tokens[0]
                 type = token[1]
                 name = bytes.fromhex(token[2:]).decode(self._encoding)
@@ -1354,6 +1543,8 @@ additional definitions (e.g. register names)
                         print(f'VALUE "{name}"', end="")
                     case 'D':
                         print(f'DEFER "{name}"', end="")
+                    case 'N':
+                        print(f'NONAME "{name}"', end="")                    
                     case _:
                         msg = f'Unrecognized word type {type}, word "{name}"'
                         self.progress_callback("Error", None,  msg)
@@ -1378,62 +1569,104 @@ additional definitions (e.g. register names)
                 else:
                     # drop the XT value
                     tokens = tokens[3:]
-                sig = self._word_comment_re.search(line)
+                sig = (self._word_comment_re.search(line)
+                       or self._word_comment_hash_re.search(line))
                 if sig:
                     print(f" /* {sig.group(1)} {sig.group(2)} */")
                 else:
                     print()
                 if len(comment) > 0:
-                    print("/* "+"\n   ".join([ l.lstrip("\\ ") for l in comment])+" */")
+                    print("/*"+"\n   ".join([ l.lstrip("\\ ") for l in comment])+"\n*/")
+                    output_line_open = False
             else:
-                sep = " " * offset + "# "
+                comment_offset = offset
+                if output_line_open:
+                    comment_offset = max(0, offset - output_line_prefix_len)
+                sep = " " * comment_offset + "# "
                 if len(comment) > 0:
                     print(sep + ("\n"+sep).join(comment))
                 print(sep + line)
+                output_line_open = False
+                output_line_prefix_len = 0
+                last_output_was_label = False
             separator = " " * offset + ".word "
             for i, token in enumerate(tokens):
-                if not (token[0] == 'L' or token[0] == 'E' or token == xt_dosliteral and tokens[i+1][0] == 'S'):
+                is_string_literal = (
+                    token[0] == 'X'
+                    and int(token[1:], 16) == xt_dosliteral
+                    and i + 1 < len(tokens)
+                    and tokens[i+1][0] == 'S'
+                )
+                if token[0] not in ('L', 'E', 'S') and not is_string_literal:
                     print(separator, end="")
+                    if separator:
+                        output_line_open = True
                 match token[0]:
                     case 'X':
                         # >mark compiles XT 0 to create space for >resolve to write the address to, skip it
                         # also skip DOSLITERAL if it's followed by string token, the STRING macro includes it.
-                        if token == "X00000000" or token == xt_dosliteral and tokens[i+1][0] == 'S':
+                        if token == "X00000000" or is_string_literal:
                             separator = ""
                         else:
                             xt = self._translate_address(token[1:])
                             print(f"{xt}", end="")
+                            output_line_open = True
                             separator = ", "
+                            last_output_was_label = False
                     case '$':
                         print(f"0x{token[1:]}", end="")
+                        output_line_open = True
                         separator = ", "
+                        last_output_was_label = False
                     case '^':
                         print(f"{token[1:]}", end="")
+                        output_line_open = True
                         separator = ", "
+                        last_output_was_label = False
                     case 'S':
                         s = bytes.fromhex(token[1:]).decode(self._encoding)
-                        if i > 1:
+                        if output_line_open:
                             print()
-                        print(" " * offset + f'STRING "{s}" ', end="")
-                        separator = "\n"+ " " * offset + ".word "
+                            output_line_open = False
+                            output_line_prefix_len = 0
+                        print(" " * offset + f'STRING "{s}"')
+                        separator = " " * offset + ".word "
+                        last_output_was_label = False
                     case 'F':
                         print(f"{getLabel(token[1:],labels)}f", end="")
+                        output_line_open = True
                         separator = ", "
+                        last_output_was_label = False
                     case 'B':
                         print(f"{getLabel(token[1:],labels)}b", end="")
+                        output_line_open = True
                         separator = ", "
+                        last_output_was_label = False
                     case 'L':
-                        if i > 0:
+                        if output_line_open:
                             print()
+                            output_line_open = False
+                            output_line_prefix_len = 0
                         l = f"{getLabel(token[1:],labels)}: "
                         print(l, end="")
+                        output_line_open = True
+                        output_line_prefix_len = len(l)
                         separator = " " * (offset - len(l)) + ".word "
+                        last_output_was_label = True
                     case 'E':
-                        print(f"\nEND {symbol}")
+                        if output_line_open:
+                            print()
+                        print(f"END {symbol}")
+                        output_line_open = False
+                        output_line_prefix_len = 0
                         separator = ""
                         labels = {}
-            if len(tokens) > 1 or len(tokens) == 1 and tokens[0][0] != 'L':
+                        last_output_was_label = False
+                        in_word = False
+            if output_line_open and (len(tokens) > 1 or len(tokens) == 1 and tokens[0][0] != 'L'):
                 print()
+                output_line_open = False
+                output_line_prefix_len = 0
 
     def print_progress(self, type, lineno, info):
         if not lineno:
@@ -1628,6 +1861,7 @@ additional definitions (e.g. register names)
     def _update_files(self):
       self.progress_callback("Information", None, "getting filenames on the host")
       self._filedirs = {}
+      self._word_files = {}
       for p in self._search_list:
         self.progress_callback("Information", None, "  Reading "+p)
         for root, dirs, files in os.walk(p):
@@ -1643,6 +1877,19 @@ additional definitions (e.g. register names)
               if fpath: self._filedirs[f].append(fpathdir)
             else:
               self._filedirs[f]=[fpathdir]
+
+      for root, dirs, files in os.walk(self._amforth_root):
+        dirs[:] = [d for d in dirs if d not in (".git", "build")]
+        if os.path.basename(root) != "words":
+          continue
+        self.progress_callback("Information", None, "  Reading "+root)
+        for f in files:
+          if os.path.splitext(f)[1] not in (".s", ".S"):
+            continue
+          fpath = os.path.realpath(os.path.join(root, f))
+          self._word_files.setdefault(f, []).append(fpath)
+      for paths in self._word_files.values():
+        paths.sort()
 
     def _update_uploaded_files(self):
        self.progress_callback("Information", None, "getting filenames from the controller")
