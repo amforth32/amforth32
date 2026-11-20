@@ -57,7 +57,7 @@ variable irq_loop_count
 \ run a slow loop on the main task ~25ms
 : sum 0 5 0 do 5 ms i + loop ;
 \ check that the loop worked on the main task while being interrupted
-T { sum -> 10 }
+T{ sum -> 10 }T
 
 \ check that ISR was invoked
 T{ irq_loop_count @ 0 > -> true }T
