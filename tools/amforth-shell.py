@@ -1474,10 +1474,11 @@ additional definitions (e.g. register names)
                 return name+suffix
         return None
 
-    _word_comment_re = re.compile(r"(\(.*--.*\))\s*\\\s*(.*)$")
+    _word_comment_re = re.compile(r"(\(.*--.*\))\s*\\{1,2}#?\s*(.*)$")
+    _word_comment_hash_re = re.compile(r"\\{1,2}#\s*(\(.*--.*\))\s*(.*)$")
     def process_transpiled_lines(self, lines, filename):
         source_path = os.path.relpath(filename, self._amforth_root)
-        print(f"# transpiling {source_path} on {datetime.now():%Y/%m/%d %H:%M:%S}")
+        print(f"# transpiling {source_path} on {datetime.now():%Y/%m/%d %H:%M:%S}\n")
         xt_dosliteral = f"X{self._xt_addresses[self._xt_symbols.index("XT_DOSLITERAL")]:X}"
         labels = {}
         for line, response, comment in lines:
@@ -1534,13 +1535,14 @@ additional definitions (e.g. register names)
                 else:
                     # drop the XT value
                     tokens = tokens[3:]
-                sig = self._word_comment_re.search(line)
+                sig = (self._word_comment_re.search(line)
+                       or self._word_comment_hash_re.search(line))
                 if sig:
                     print(f" /* {sig.group(1)} {sig.group(2)} */")
                 else:
                     print()
                 if len(comment) > 0:
-                    print("/* "+"\n   ".join([ l.lstrip("\\ ") for l in comment])+" */")
+                    print("/*"+"\n   ".join([ l.lstrip("\\ ") for l in comment])+"\n*/")
             else:
                 sep = " " * offset + "# "
                 if len(comment) > 0:
