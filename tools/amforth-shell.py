@@ -197,6 +197,9 @@
 #       filenames are relative to the current working directory.
 #       A simple filename without an extension is matched against both
 #       source and target indexes; multiple matches prompt for a selection.
+#       During transpilation, a line beginning with { starts pass-through
+#       output and a line ending with } ends it; the markers are omitted.
+#       Pass-through content is not sent to amforth but included in transpiled output.
 #
 #   #update-words
 #       This directive is only available in an interactive session.
@@ -801,9 +804,12 @@ additional definitions (e.g. register names)
 
     def _resolve_word_target(self, filename):
         if filename.startswith("~/"):
-            return os.path.abspath(os.path.join(self._amforth_root, filename[2:]))
-        if os.path.dirname(filename):
+            path = os.path.abspath(os.path.join(self._amforth_root, filename[2:]))
+        elif os.path.dirname(filename):
             path = os.path.abspath(filename)
+        else:
+            path = None
+        if path is not None:
             if not os.path.isfile(path) or os.path.basename(os.path.dirname(path)) != "words":
                 raise AMForthException("Target file must be in a words directory: " + path)
             return path
@@ -878,7 +884,7 @@ additional definitions (e.g. register names)
             if not os.path.isfile(source_path):
                 raise AMForthException("Source file not found: " + source_path)
         elif ext in (".s", ".S"):
-            target_path = filename if os.path.dirname(filename) else self._resolve_word_target(filename)
+            target_path = self._resolve_word_target(filename)
             source_path = self._source_from_target(target_path)
         else:
             raise AMForthException("Unsupported #transpile filename extension: " + ext)
@@ -977,6 +983,7 @@ additional definitions (e.g. register names)
         in_comment = False
         lineno = 0
         comment = []
+        pass_through = None
         for full_line in f:
             self._config.advance_line()
             self._serialconn.timeout = self._config.current_behavior.timeout
@@ -989,10 +996,37 @@ additional definitions (e.g. register names)
                 self.progress_callback("Error", None, errmsg)
                 raise AMForthException(errmsg)
             lineno += 1
+            line_ending = "\n" if full_line.endswith("\n") else ""
             if full_line and full_line[-1] == "\n":
                 full_line = full_line[:-1]
             if full_line and full_line[-1] == "\r":
                 full_line = full_line[:-1]
+
+            if self._transpiling:
+                if pass_through is None:
+                    if full_line.startswith("{"):
+                        content = full_line[1:]
+                        if content.endswith("}"):
+                            content = content[:-1]
+                            if content:
+                                content += line_ending
+                            self._transpiled_lines.append((None, content, None))
+                        else:
+                            pass_through = []
+                            if content:
+                                pass_through.append(content + line_ending)
+                        continue
+                else:
+                    if full_line.endswith("}"):
+                        content = full_line[:-1]
+                        if content:
+                            pass_through.append(content + line_ending)
+                        self._transpiled_lines.append((None, "".join(pass_through), None))
+                        pass_through = None
+                    else:
+                        pass_through.append(full_line + line_ending)
+                    continue
+
             line = full_line.strip()
             if len(line) == 0:
                 if in_comment:
@@ -1065,6 +1099,8 @@ additional definitions (e.g. register names)
                 if not self._config.current_behavior.ignore_errors:
                     self._record_error(lineno)
                     raise AMForthException("Error in line sent")
+        if pass_through is not None:
+            raise AMForthException("Unclosed pass-through block at end of file")
 
     def preprocess_line(self, line, in_delim_comment=False, directives=[]):
         # Compresses whitespace, including comments so send minimum
@@ -1445,6 +1481,9 @@ additional definitions (e.g. register names)
         xt_dosliteral = f"X{self._xt_addresses[self._xt_symbols.index("XT_DOSLITERAL")]:X}"
         labels = {}
         for line, response, comment in lines:
+            if line is None:
+                print(response, end="")
+                continue
             # offset is the line offset to use for ouput
             # it is dictated by the formatting of the source file
             offset = len(line) - len(line.lstrip())
