@@ -1,15 +1,188 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
-.option norvc               # no opportunistic use of compressed ... 
-.option norelax             # instructions or other such optimisations 
+.option norvc               # no opportunistic use of compressed ...
+.option norelax             # instructions or other such optimisations
 
 .global PFA_COLD
-.global _start
+.global _start , _master_int , DO_EXECUTE , reg_shadow
+
+.equ reg_shadow , RAM_upper_reg_shadow   # s11 stack grows down from the top
+
+.equ PLIC_BASE      , 0x0C000000
+.equ PLIC_THRESHOLD , PLIC_BASE + 0x200000 # hart 0 M-mode context
+.equ PLIC_CLAIM     , PLIC_BASE + 0x200004 # read to claim, write to complete
+
+.equ MCAUSE_MEI     , 11                   # machine external interrupt
+.equ PLIC_SLOT_BASE , 16                   # slot = 16 + PLIC source id
+.equ TRAP_SLOTS     , 64                   # size of the trap tables
+
+# trap frame on the s11 shadow stack, in bytes
+#    0 .. 60  ra t0-t6 a0-a7
+#   64 .. 100 s1-s10
+#  104        PLIC claim id, 0 if none
+
+.equ TF_CLAIM , 104
+.equ TF_SIZE  , 108
 
 .section .init
 _start:
 	la gp, __global_pointer$
-	la sp, _eusrstack 
+	la sp, _eusrstack
 
-    j PFA_COLD
+	la s11, reg_shadow
 
+	la t0, RAM_lower_forthvector   # clear the trap! table
+	la t1, RAM_upper_forthvector
+1:	sw zero, 0(t0)
+	addi t0, t0, cellsize
+	bltu t0, t1, 1b
+
+	la t0, IN_ISRQ_ram             # not in any isr
+	sw zero, 0(t0)
+
+	li t0, PLIC_THRESHOLD          # let any enabled PLIC source through
+	sw zero, 0(t0)
+
+	csrw mie, zero                 # sources stay off until enabled
+
+	la t0, _master_int             # direct mode, all traps enter here
+	csrw mtvec, t0
+
+	csrsi mstatus, 0x8             # global enable, as on the 307
+
+	j PFA_COLD
+
+#----------------------------------------------------------------------
+# flash trap table, used when the trap! slot in RAM is zero
+#
+# Unlike the 307 table this is read by _master_int, not by the hardware.
+# Handlers are normal ABI functions: they end in ret, not mret.
+#----------------------------------------------------------------------
+
+.section .vector,"a"
+.p2align 2
+_vector_base:
+	.rept 3
+	.word Default_Handler      # 0-2
+	.endr
+	.word MSI_Handler          # 3   machine software
+	.rept 3
+	.word Default_Handler      # 4-6
+	.endr
+	.word MTI_Handler          # 7   machine timer
+	.rept 8
+	.word Default_Handler      # 8-15, 11 goes through the PLIC
+	.endr
+	.rept 10
+	.word Default_Handler      # 16-25 PLIC sources 0-9
+	.endr
+	.word UART0_Handler        # 26  PLIC source 10
+	.word RTC_Handler          # 27  PLIC source 11
+	.rept 36
+	.word Default_Handler      # 28-63 PLIC sources 12-47
+	.endr
+
+#----------------------------------------------------------------------
+
+.section .text.vector_handler,"ax",@progbits
+.p2align 2
+
+.weak Default_Handler , MSI_Handler , MTI_Handler
+.weak UART0_Handler , RTC_Handler , _trap_exception
+
+Default_Handler:  1:  j 1b
+MSI_Handler:      1:  j 1b
+MTI_Handler:      1:  j 1b
+UART0_Handler:    1:  j 1b
+RTC_Handler:      1:  j 1b
+
+# Does not return. The trap frame, mcause, mepc and mtval are left for GDB.
+_trap_exception:  1:  j 1b
+
+#----------------------------------------------------------------------
+
+.p2align 2
+_master_int:
+
+	# QEMU has no HPE so all of the context is saved here. s11 is
+	# reserved for this, so no scratch register is needed yet.
+	# The s11 stack grows down. The frame is claimed by the first
+	# instruction so a nested trap could not overwrite it.
+
+	addi s11, s11, -TF_SIZE
+
+	sw ra,    0(s11)
+	sw t0,    4(s11)
+	sw t1,    8(s11)
+	sw t2,   12(s11)
+	sw t3,   16(s11)
+	sw t4,   20(s11)
+	sw t5,   24(s11)
+	sw t6,   28(s11)
+	sw a0,   32(s11)
+	sw a1,   36(s11)
+	sw a2,   40(s11)
+	sw a3,   44(s11)
+	sw a4,   48(s11)
+	sw a5,   52(s11)
+	sw a6,   56(s11)
+	sw a7,   60(s11)
+	sw s1,   64(s11)
+	sw s2,   68(s11)
+	sw s3,   72(s11)
+	sw s4,   76(s11)
+	sw s5,   80(s11)
+	sw s6,   84(s11)
+	sw s7,   88(s11)
+	sw s8,   92(s11)
+	sw s9,   96(s11)
+	sw s10, 100(s11)
+	sw zero, TF_CLAIM(s11)
+
+	# in-isr? counts the Forth handlers that are running, as on the
+	# CH32. It is incremented on the Forth path below and decremented
+	# at the top of exiti. Other paths enter exiti at _trap_restore.
+
+	csrr t0, mcause               # exception codes overlap interrupt
+	bltz t0, 1f                    # codes so they cannot share slots
+	j _trap_exception
+
+1:	slli t0, t0, 1                 # drop the interrupt bit
+	srli t0, t0, 1                 # t0 has the interrupt code
+
+	li t1, MCAUSE_MEI
+	bne t0, t1, 2f
+
+	li t1, PLIC_CLAIM              # external: the PLIC has the source
+	lw t0, 0(t1)
+	beqz t0, _trap_return          # spurious, nothing to complete
+	sw t0, TF_CLAIM(s11)
+	addi t0, t0, PLIC_SLOT_BASE
+
+2:	li t1, TRAP_SLOTS
+	bgeu t0, t1, _trap_return
+
+	slli t0, t0, 2                 # t0 has byte offset into the tables
+
+	la t1, RAM_lower_forthvector   # check RAM trap table first
+	add t1, t1, t0
+	lw t2, 0(t1)
+	beqz t2, 3f
+
+	la t0, IN_ISRQ_ram             # one more Forth handler running
+	lw t1, 0(t0)
+	addi t1, t1, 1
+	sw t1, 0(t0)
+
+	mv s1, t2                      # XT of the Forth handler
+	la s6, RAM_ISR_UP             # handler needs its own user area
+	mv s7, zero                    # keep the debugger out of the handler
+	j DO_EXECUTE                   # ;i compiles the return (exiti)
+
+3:	la t1, _vector_base            # no RAM trap so use the flash table
+	add t1, t1, t0
+	lw t2, 0(t1)
+	jalr t2
+
+_trap_return:                          # the context restore is in exiti;
+	j _trap_restore                # enter after the in-isr? decrement

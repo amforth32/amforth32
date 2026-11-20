@@ -4,5 +4,5 @@
 .include "words/applturnkey.s"
 .include "words/type0.s" # not sure 
 .include "words/wordswap.s"
-
+.include "words/irq.s"
 
