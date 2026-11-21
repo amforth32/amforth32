@@ -1479,11 +1479,14 @@ additional definitions (e.g. register names)
     def process_transpiled_lines(self, lines, filename):
         source_path = os.path.relpath(filename, self._amforth_root)
         print(f"# transpiling {source_path} on {datetime.now():%Y/%m/%d %H:%M:%S}\n")
-        xt_dosliteral = f"X{self._xt_addresses[self._xt_symbols.index("XT_DOSLITERAL")]:X}"
+        xt_dosliteral = self._xt_addresses[self._xt_symbols.index("XT_DOSLITERAL")]
         labels = {}
+        output_line_open = False
         for line, response, comment in lines:
             if line is None:
                 print(response, end="")
+                if response:
+                    output_line_open = not response.endswith("\n")
                 continue
             # offset is the line offset to use for ouput
             # it is dictated by the formatting of the source file
@@ -1495,6 +1498,7 @@ additional definitions (e.g. register names)
             if len(tokens) > 0 and tokens[0][0] == 'W':
                 # starting a new word
                 print(f"# {line}")
+                output_line_open = False
                 token = tokens[0]
                 type = token[1]
                 name = bytes.fromhex(token[2:]).decode(self._encoding)
@@ -1545,55 +1549,77 @@ additional definitions (e.g. register names)
                     print()
                 if len(comment) > 0:
                     print("/*"+"\n   ".join([ l.lstrip("\\ ") for l in comment])+"\n*/")
+                    output_line_open = False
             else:
                 sep = " " * offset + "# "
                 if len(comment) > 0:
                     print(sep + ("\n"+sep).join(comment))
                 print(sep + line)
+                output_line_open = False
             separator = " " * offset + ".word "
             for i, token in enumerate(tokens):
-                if not (token[0] == 'L' or token[0] == 'E' or token == xt_dosliteral and tokens[i+1][0] == 'S'):
+                is_string_literal = (
+                    token[0] == 'X'
+                    and int(token[1:], 16) == xt_dosliteral
+                    and i + 1 < len(tokens)
+                    and tokens[i+1][0] == 'S'
+                )
+                if token[0] not in ('L', 'E', 'S') and not is_string_literal:
                     print(separator, end="")
+                    if separator:
+                        output_line_open = True
                 match token[0]:
                     case 'X':
                         # >mark compiles XT 0 to create space for >resolve to write the address to, skip it
                         # also skip DOSLITERAL if it's followed by string token, the STRING macro includes it.
-                        if token == "X00000000" or token == xt_dosliteral and tokens[i+1][0] == 'S':
+                        if token == "X00000000" or is_string_literal:
                             separator = ""
                         else:
                             xt = self._translate_address(token[1:])
                             print(f"{xt}", end="")
+                            output_line_open = True
                             separator = ", "
                     case '$':
                         print(f"0x{token[1:]}", end="")
+                        output_line_open = True
                         separator = ", "
                     case '^':
                         print(f"{token[1:]}", end="")
+                        output_line_open = True
                         separator = ", "
                     case 'S':
                         s = bytes.fromhex(token[1:]).decode(self._encoding)
-                        if i > 1:
+                        if output_line_open:
                             print()
-                        print(" " * offset + f'STRING "{s}" ', end="")
-                        separator = "\n"+ " " * offset + ".word "
+                            output_line_open = False
+                        print(" " * offset + f'STRING "{s}"')
+                        separator = " " * offset + ".word "
                     case 'F':
                         print(f"{getLabel(token[1:],labels)}f", end="")
+                        output_line_open = True
                         separator = ", "
                     case 'B':
                         print(f"{getLabel(token[1:],labels)}b", end="")
+                        output_line_open = True
                         separator = ", "
                     case 'L':
-                        if i > 0:
+                        if output_line_open:
                             print()
+                            output_line_open = False
                         l = f"{getLabel(token[1:],labels)}: "
                         print(l, end="")
+                        output_line_open = True
                         separator = " " * (offset - len(l)) + ".word "
                     case 'E':
-                        print(f"\nEND {symbol}")
+                        if output_line_open:
+                            print()
+                        print(f"END {symbol}")
+                        output_line_open = False
                         separator = ""
                         labels = {}
-            if len(tokens) > 1 or len(tokens) == 1 and tokens[0][0] != 'L':
+            if output_line_open and (len(tokens) > 1 or len(tokens) == 1 and tokens[0][0] != 'L'):
                 print()
+                output_line_open = False
 
     def print_progress(self, type, lineno, info):
         if not lineno:
