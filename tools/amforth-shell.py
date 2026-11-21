@@ -1511,6 +1511,8 @@ additional definitions (e.g. register names)
                         print(f'VALUE "{name}"', end="")
                     case 'D':
                         print(f'DEFER "{name}"', end="")
+                    case 'N':
+                        print(f'NONAME "{name}"', end="")                    
                     case _:
                         msg = f'Unrecognized word type {type}, word "{name}"'
                         self.progress_callback("Error", None,  msg)

@@ -103,7 +103,7 @@
 ;
 
 : multi \# ( -- ) enable task switching
-    ['] mtpause is pause
+    symbol XT_MTPAUSE is pause
 ;
 
 : task.ds \# ( n -- ) show datastack of task n (when dormant)
