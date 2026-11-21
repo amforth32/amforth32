@@ -198,7 +198,9 @@
 #       A simple filename without an extension is matched against both
 #       source and target indexes; multiple matches prompt for a selection.
 #       During transpilation, a line beginning with { starts pass-through
-#       output and a line ending with } ends it; the markers are omitted.
+#       output and a line ending with } ends it; the markers and common
+#       leading indentation are omitted. Delimiter-only lines are retained
+#       as blank lines to preserve the source line count.
 #       Pass-through content is not sent to amforth but included in transpiled output.
 #
 #   #update-words
@@ -282,6 +284,7 @@ import serial
 from io import StringIO
 import subprocess
 import sys
+import textwrap
 import traceback
 import platform
 
@@ -1010,18 +1013,25 @@ additional definitions (e.g. register names)
                             content = content[:-1]
                             if content:
                                 content += line_ending
-                            self._transpiled_lines.append((None, content, None))
+                            else:
+                                content = line_ending or "\n"
+                            self._transpiled_lines.append((None, textwrap.dedent(content), None))
                         else:
                             pass_through = []
                             if content:
                                 pass_through.append(content + line_ending)
+                            else:
+                                pass_through.append(line_ending or "\n")
                         continue
                 else:
                     if full_line.endswith("}"):
                         content = full_line[:-1]
                         if content:
                             pass_through.append(content + line_ending)
-                        self._transpiled_lines.append((None, "".join(pass_through), None))
+                        else:
+                            pass_through.append(line_ending or "\n")
+                        content = textwrap.dedent("".join(pass_through))
+                        self._transpiled_lines.append((None, content, None))
                         pass_through = None
                     else:
                         pass_through.append(full_line + line_ending)
@@ -1037,6 +1047,7 @@ additional definitions (e.g. register names)
                     self.progress_callback("Whitespace", lineno, full_line)
                     if self._transpiling:
                         comment = []
+                        self._transpiled_lines.append((None, line_ending or "\n", "source-blank"))
                 continue
             try:
                 (line, in_comment,
@@ -1482,23 +1493,40 @@ additional definitions (e.g. register names)
         xt_dosliteral = self._xt_addresses[self._xt_symbols.index("XT_DOSLITERAL")]
         labels = {}
         output_line_open = False
+        output_line_prefix_len = 0
+        last_output_was_label = False
+        in_word = False
+        emitted_word = False
         for line, response, comment in lines:
             if line is None:
+                if comment == "source-blank" and last_output_was_label:
+                    last_output_was_label = False
+                    continue
                 print(response, end="")
                 if response:
                     output_line_open = not response.endswith("\n")
+                    output_line_prefix_len = 0
+                    if comment != "source-blank":
+                        last_output_was_label = False
                 continue
             # offset is the line offset to use for ouput
             # it is dictated by the formatting of the source file
             offset = len(line) - len(line.lstrip())
-            offset = max(offset, 3)
+            if in_word:
+                offset = max(offset, 4)
             line = line.strip()
             tokens = response.split()
             # assuming that any word definition always starts on its own line
             if len(tokens) > 0 and tokens[0][0] == 'W':
                 # starting a new word
+                if emitted_word:
+                    print("#======================================================================")
+                emitted_word = True
+                in_word = True
                 print(f"# {line}")
                 output_line_open = False
+                output_line_prefix_len = 0
+                last_output_was_label = False
                 token = tokens[0]
                 type = token[1]
                 name = bytes.fromhex(token[2:]).decode(self._encoding)
@@ -1551,11 +1579,16 @@ additional definitions (e.g. register names)
                     print("/*"+"\n   ".join([ l.lstrip("\\ ") for l in comment])+"\n*/")
                     output_line_open = False
             else:
-                sep = " " * offset + "# "
+                comment_offset = offset
+                if output_line_open:
+                    comment_offset = max(0, offset - output_line_prefix_len)
+                sep = " " * comment_offset + "# "
                 if len(comment) > 0:
                     print(sep + ("\n"+sep).join(comment))
                 print(sep + line)
                 output_line_open = False
+                output_line_prefix_len = 0
+                last_output_was_label = False
             separator = " " * offset + ".word "
             for i, token in enumerate(tokens):
                 is_string_literal = (
@@ -1579,47 +1612,61 @@ additional definitions (e.g. register names)
                             print(f"{xt}", end="")
                             output_line_open = True
                             separator = ", "
+                            last_output_was_label = False
                     case '$':
                         print(f"0x{token[1:]}", end="")
                         output_line_open = True
                         separator = ", "
+                        last_output_was_label = False
                     case '^':
                         print(f"{token[1:]}", end="")
                         output_line_open = True
                         separator = ", "
+                        last_output_was_label = False
                     case 'S':
                         s = bytes.fromhex(token[1:]).decode(self._encoding)
                         if output_line_open:
                             print()
                             output_line_open = False
+                            output_line_prefix_len = 0
                         print(" " * offset + f'STRING "{s}"')
                         separator = " " * offset + ".word "
+                        last_output_was_label = False
                     case 'F':
                         print(f"{getLabel(token[1:],labels)}f", end="")
                         output_line_open = True
                         separator = ", "
+                        last_output_was_label = False
                     case 'B':
                         print(f"{getLabel(token[1:],labels)}b", end="")
                         output_line_open = True
                         separator = ", "
+                        last_output_was_label = False
                     case 'L':
                         if output_line_open:
                             print()
                             output_line_open = False
+                            output_line_prefix_len = 0
                         l = f"{getLabel(token[1:],labels)}: "
                         print(l, end="")
                         output_line_open = True
+                        output_line_prefix_len = len(l)
                         separator = " " * (offset - len(l)) + ".word "
+                        last_output_was_label = True
                     case 'E':
                         if output_line_open:
                             print()
                         print(f"END {symbol}")
                         output_line_open = False
+                        output_line_prefix_len = 0
                         separator = ""
                         labels = {}
+                        last_output_was_label = False
+                        in_word = False
             if output_line_open and (len(tokens) > 1 or len(tokens) == 1 and tokens[0][0] != 'L'):
                 print()
                 output_line_open = False
+                output_line_prefix_len = 0
 
     def print_progress(self, type, lineno, info):
         if not lineno:
