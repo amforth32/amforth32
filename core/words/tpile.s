@@ -83,6 +83,13 @@ NONAME "tpile.name", TPILE_NAME /* ( s -- s ) called from header to append the w
 1:  .word XT_EXIT
 END TPILE_NAME
 
+NONAME "tpile.noname", TPILE_NONAME /* ( s -- ) emits noname word token followed by the name */
+    .word XT_TPILE, XT_FETCH, XT_DOCONDBRANCH, 1f
+        STRING "WN"
+        .word XT_TYPE, XT_TPILE_NAME
+1:   .word XT_EXIT
+END TPILE_NONAME
+
 NONAME "tpile.wxt", TPILE_WXT /* ( -- ) called after word token is emitted, emits XT token of current word */
     .word XT_TPILE, XT_FETCH, XT_DOCONDBRANCH, 1f
         .word XT_DOLITERAL, 88, XT_EMIT /* X */
