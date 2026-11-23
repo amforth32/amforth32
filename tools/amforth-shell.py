@@ -1006,9 +1006,10 @@ additional definitions (e.g. register names)
                 full_line = full_line[:-1]
 
             if self._transpiling:
+                right_trimmed_line = full_line.rstrip()
                 if pass_through is None:
                     if full_line.startswith("{"):
-                        content = full_line[1:]
+                        content = right_trimmed_line[1:]
                         if content.endswith("}"):
                             content = content[:-1]
                             if content:
@@ -1024,8 +1025,8 @@ additional definitions (e.g. register names)
                                 pass_through.append(line_ending or "\n")
                         continue
                 else:
-                    if full_line.endswith("}"):
-                        content = full_line[:-1]
+                    if right_trimmed_line.endswith("}"):
+                        content = right_trimmed_line[:-1]
                         if content:
                             pass_through.append(content + line_ending)
                         else:
@@ -1046,6 +1047,13 @@ additional definitions (e.g. register names)
                 else:
                     self.progress_callback("Whitespace", lineno, full_line)
                     if self._transpiling:
+                        if comment:
+                            comment_lines = [line.lstrip("\\ ") for line in comment]
+                            comment_output = "\n".join(
+                                item if item.startswith("#") else "# " + item
+                                for item in comment_lines
+                            ) + (line_ending or "\n")
+                            self._transpiled_lines.append((None, comment_output, None))
                         comment = []
                         self._transpiled_lines.append((None, line_ending or "\n", "source-blank"))
                 continue
@@ -1576,7 +1584,7 @@ additional definitions (e.g. register names)
                 else:
                     print()
                 if len(comment) > 0:
-                    print("/*"+"\n   ".join([ l.lstrip("\\ ") for l in comment])+"\n*/")
+                    print("/*\n   "+"\n   ".join([ l.lstrip("\\ ") for l in comment])+"\n*/")
                     output_line_open = False
             else:
                 comment_offset = offset
