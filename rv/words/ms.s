@@ -9,7 +9,7 @@ counter but only the low word is used. No init is required.
 CODEWORD "1ms", N1MS  /* ( -- ) busy-wait 1 millisecond */
     li      t0, MTIME_LO
     lw      t1, 0(t0)              /* t1 = start */
-    li      t2, 100000             /* ticks per ms */
+    li      t2, 10000              /* ticks per ms */
 1:
     lw      t3, 0(t0)              /* t3 = now */
     sub     t3, t3, t1             /* t3 = elapsed (wrap-safe) */

@@ -7,8 +7,8 @@ AMFORTH ?= $(shell git rev-parse --show-toplevel)
 QEMU_RV32 ?= qemu-system-riscv32 
 
 # Default target to build
-TARGET = QEM
-TARGETS = QEM
+TARGET = RVQEMU
+TARGETS = RVQEMU
 MCU_LD := ./qemu.ld
 DIST_TARGET ?= rv-qemu-virt
 

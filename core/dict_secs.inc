@@ -281,3 +281,5 @@
 
 .include "words/ms.s"
 .include "words/led-task.s"
+
+.include "words/isrnop.s"

@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # amforth.S 
 
-.globl PFA_COLD 
+.globl PFA_COLD , isrstub
 
 # startup ----------------------------------------------------------------------
 
@@ -25,9 +25,13 @@
 .include "rv/macros.inc"    # macros for everything
 .include "user.inc"         # user area configuration 
 
+.include "mcu/qemu/vectors.s"
+
 RAMALLOT reg_shadow, 256
 
 STARTDICT
+
+.include "isr.s"
 
 .include "dict_prims.inc" 
 .include "dict_secs.inc"

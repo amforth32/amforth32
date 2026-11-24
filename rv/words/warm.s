@@ -8,9 +8,15 @@ COLON "warm", WARM /* ( -- ) high level part of the boot sequence, VM is running
   MCUs may override this to inject additional initialization at specific points
 */
 
+  /* disable interrupts */
+  .word XT_MINUSINT
+
   /* initialize values and defers to their defaults */
   .word XT_INIT_RAM
 
+  /* initialize traps with isrnop XT */
+  .word XT_TRAP_INIT
+  
 .if WANT_DEBUGGER == YES
   /* initialize debugger to disabled state,
     needs UP initialized so after INIT_RAM! */
