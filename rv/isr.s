@@ -46,8 +46,8 @@ isrstub:
 	sw s10, 100(s11)
 	sw zero, TF_CLAIM(s11)
 
-	# in-isr? counts the Forth handlers that are running, as on the
-	# CH32. It is incremented on the Forth path below and decremented
+	# in-isr? counts the Forth handlers that are running (CH32 does
+	# the same in _master_int). It is incremented on the Forth path below and decremented
 	# at the top of exiti. Other paths enter exiti at _trap_restore.
 
 	csrr t0, mcause                # exception codes overlap interrupt

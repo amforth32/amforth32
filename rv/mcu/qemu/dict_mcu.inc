@@ -6,3 +6,4 @@
 .include "words/wordswap.s"
 .include "words/irq.s"
 
+.include "words/systick.s"   # faux SysTick (rv/words/systick.s), needs irq.s

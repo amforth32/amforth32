@@ -166,9 +166,9 @@ CODEWORD "cold", COLD /* ( i*x -- )(R: j*y -- ) assembler part of the boot seque
   .endif
 # END COM TW FIXME 
 
-  la t0, IN_ISRQ_ram # clear in-isr? software flag
-  mv t1, zero        # 0 is NOT 
-  sw t1, 0(t0)       # ... in any isr 
+  la t0, IN_ISRQ_ram # in-isr? = 0: no Forth handler running
+  mv t1, zero
+  sw t1, 0(t0)
 
   lui  s1,      %hi(XT_WARM)
   addi s1, s1,  %lo(XT_WARM)

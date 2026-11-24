@@ -148,7 +148,10 @@ COLON "systick.isr", SYSTICKDOTISR /* ( -- ) timer interrupt (slot 7): re-arm, t
 	.word XT_SYSTICKDOTARM
 	.word XT_SYSTICKHASH
 	.word XT_TRAP_FETCH
+	.word XT_QDUP
+	.word XT_DOCONDBRANCH,SYSTICKDOTISR_0001 /* if */
 	.word XT_EXECUTE
+SYSTICKDOTISR_0001: /* then */
 	.word XT_EXITI
 END SYSTICKDOTISR
 # ----------------------------------------------------------------------

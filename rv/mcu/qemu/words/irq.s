@@ -20,8 +20,15 @@ CONSTANT "msip", MSIP, CLINT_MSIP /* ( -- addr ) CLINT: hart 0 software interrup
 END MSIP
 
 
-CODEWORD "irq.on", IRQ_ON /* ( n -- ) enable interrupt slot n, see trap! */
+CODEWORD "irq.on", IRQ_ON /* ( n -- ) enable interrupt slot n, see trap!, throws if slot n has no handler */
     mv      t0, s3
+    li      t1, 64               /* slots past 63 have no source */
+    bgeu    t0, t1, 9f
+    slli    t1, t0, 2            /* refuse a slot with no handler: */
+    la      t2, RAM_lower_ram_vector
+    add     t1, t1, t2           /* the source would trap forever */
+    lw      t1, 0(t1)
+    beqz    t1, 8f
     loadtos
     li      t1, 16
     bgeu    t0, t1, 1f
@@ -57,6 +64,7 @@ CODEWORD "irq.on", IRQ_ON /* ( n -- ) enable interrupt slot n, see trap! */
     csrs    mie, t1
     NEXT
 
+8:  throw   ENOISR               /* no handler in the slot */
 9:  throw   -24                  /* invalid numeric argument */
 END IRQ_ON
 

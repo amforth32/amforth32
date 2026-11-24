@@ -46,7 +46,7 @@ variable systick.rvr              \# ( -- a ) reload value, period is rvr+1 tick
 : systick.isr \# ( -- ) timer interrupt (slot 7): re-arm, then run the systick# handler
     systick.arm
     systick# trap@
-    execute
+    ?dup if execute then                      \ slot 15 empty: just return
 ;i
 
 : systick.max \# ( -- ) set reload value to maximum possible $00ffffff

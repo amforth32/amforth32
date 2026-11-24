@@ -438,11 +438,7 @@ _master_int:   # interrupt entry
      # if non-zero trap in RAM then assume colon word and use
      # else look in C _vector_base and use
 
-     la      t0, IN_ISRQ_ram # set in-isr? software flag
-     li      t1, -1          # 0 is NOT in isr and -1 is
-     sw      t1, 0(t0)       # in (any) isr 
-
-     csrr t0, mcause         # what caused the trap 
+     csrr t0, mcause         # what caused the trap
      li t1, 0x7FFFFFFF       # %0111111.....1111
      and t0,t0,t1            # t0 has interrupt number [0..255]
      sll t0,t0,2             # t0 has byte offset (num*cellsize)
@@ -453,7 +449,16 @@ _master_int:   # interrupt entry
 
      beq t2,zero,2f          # 0= then fall back on any C isr
 
-     /* push Forth VM registers to special stack */ 
+     /* in-isr? counts the Forth handlers that are running:
+        +1 here, -1 in (exiti). C/asm handlers (path 2:) end in
+        their own mret, so they are not counted */
+
+     la      t0, IN_ISRQ_ram
+     lw      t1, 0(t0)
+     addi    t1, t1, 1
+     sw      t1, 0(t0)
+
+     /* push Forth VM registers to special stack */
 
      sw s1,   0(s11)         # this where Forth context save   
      sw s2,   4(s11)

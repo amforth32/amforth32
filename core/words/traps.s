@@ -5,7 +5,11 @@
 CONSTANT "trap.base" , TRAP_BASE , ram_vector_base /* beginning of Forth interrupt table */
 END TRAP_BASE
 
-COLON "trap!" , TRAP_STORE /* ( xt n -- ) TRAP: store xt at trap number n in RAM vector */
+COLON "trap!" , TRAP_STORE /* ( xt n -- ) TRAP: store xt at trap number n in RAM vector, xt 0 throws */
+      .word XT_OVER, XT_ZEROEQUAL
+      .word XT_DOCONDBRANCH, TRAP_STORE_0001 /* if */
+      .word XT_DOLITERAL, ENOISR, XT_THROW
+TRAP_STORE_0001: /* then */
       .word XT_CELLS
       .word XT_TRAP_BASE
       .word XT_PLUS
@@ -20,6 +24,16 @@ COLON "trap@" , TRAP_FETCH /* ( n -- xt ) TRAP: fetch the xt at trap number n in
       .word XT_FETCH
       .word XT_EXIT
 END TRAP_FETCH
+
+COLON "trap-" , TRAP_MINUS /* ( n -- ) TRAP: empty trap slot n (no handler), disable its source first */
+      .word XT_CELLS
+      .word XT_TRAP_BASE
+      .word XT_PLUS
+      .word XT_ZERO
+      .word XT_SWAP
+      .word XT_STORE
+      .word XT_EXIT
+END TRAP_MINUS
 
 COLON "trap.init", TRAP_INIT /* ( -- ) TRAP: fill every RAM vector slot with XT of isrnop */
       .word XT_DOLITERAL, ram_vector_size / cellsize   /* 256 slots */

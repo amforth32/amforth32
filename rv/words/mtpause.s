@@ -1,13 +1,13 @@
 HEADLESS "mtpause", MTPAUSE
 
-    /* Skip if in interrupt (using software flag) */
-    /*
-    la      t0, in_isr_flag
+    /* No task switch inside an interrupt handler: in-isr? counts the
+       Forth handlers that are running (+1 in isrstub, -1 in (exiti)) */
+
+    la      t0, IN_ISRQ_ram
     lw      t1, 0(t0)
     bnez    t1, MTPAUSE_done
-    */
-    
-    csrci   mstatus, 0x8        
+
+    csrrci  t1, mstatus, 0x8    /* t1 = old mstatus, then clear MIE (atomic) */
 
     sw      s4, USER_SP(s6)
     sw      s5, USER_RP(s6)
@@ -26,7 +26,8 @@ MTPAUSE_loop:
     lw      s2, USER_IP(s6)
     lw      s3, USER_TOS(s6)
 
-    csrsi   mstatus, 0x8       
+    andi    t1, t1, 0x8         /* keep only the old MIE bit */
+    csrs    mstatus, t1         /* set MIE again only if it was set before */
 
 MTPAUSE_done:
     NEXT
