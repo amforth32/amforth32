@@ -1499,6 +1499,8 @@ additional definitions (e.g. register names)
         source_path = os.path.relpath(filename, self._amforth_root)
         print(f"# transpiling {source_path} on {datetime.now():%Y/%m/%d %H:%M:%S}\n")
         xt_dosliteral = self._xt_addresses[self._xt_symbols.index("XT_DOSLITERAL")]
+        xt_doliteral = self._xt_addresses[self._xt_symbols.index("XT_DOLITERAL")]
+        xt_execute = self._xt_addresses[self._xt_symbols.index("XT_EXECUTE")]
         labels = {}
         output_line_open = False
         output_line_prefix_len = 0
@@ -1598,12 +1600,31 @@ additional definitions (e.g. register names)
                 output_line_prefix_len = 0
                 last_output_was_label = False
             separator = " " * offset + ".word "
+            skip_next = False
             for i, token in enumerate(tokens):
+                if skip_next:
+                    skip_next = False
+                    continue
                 is_string_literal = (
                     token[0] == 'X'
                     and int(token[1:], 16) == xt_dosliteral
                     and i + 1 < len(tokens)
                     and tokens[i+1][0] == 'S'
+                )
+                is_symbol_execute = (
+                    # when processing the DOLITERAL before the symbol token
+                    token[0] == 'X'
+                    and int(token[1:], 16) == xt_doliteral
+                    and i + 2 < len(tokens)
+                    and tokens[i+1][0] == '^'
+                    and tokens[i+2][0] == 'X'
+                    and int(tokens[i+2][1:], 16) == xt_execute
+                ) or (
+                    # when processing the symbol token
+                    token[0] == '^'
+                    and i + 1 < len(tokens)
+                    and tokens[i+1][0] == 'X'
+                    and int(tokens[i+1][1:], 16) == xt_execute
                 )
                 if token[0] not in ('L', 'E', 'S') and not is_string_literal:
                     print(separator, end="")
@@ -1612,8 +1633,9 @@ additional definitions (e.g. register names)
                 match token[0]:
                     case 'X':
                         # >mark compiles XT 0 to create space for >resolve to write the address to, skip it
-                        # also skip DOSLITERAL if it's followed by string token, the STRING macro includes it.
-                        if token == "X00000000" or is_string_literal:
+                        # also skip DOSLITERAL if it's followed by string token (the STRING macro includes it)
+                        # or DOLITERAL if followed by symbol token and XT_EXECUTE
+                        if token == "X00000000" or is_string_literal or is_symbol_execute:
                             separator = ""
                         else:
                             xt = self._translate_address(token[1:])
@@ -1628,6 +1650,8 @@ additional definitions (e.g. register names)
                         last_output_was_label = False
                     case '^':
                         print(f"{token[1:]}", end="")
+                        if is_symbol_execute:
+                            skip_next = True
                         output_line_open = True
                         separator = ", "
                         last_output_was_label = False
