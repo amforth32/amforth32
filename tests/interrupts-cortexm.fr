@@ -57,7 +57,7 @@ variable irq_loop_count
 \ run a slow loop on the main task ~25ms
 : sum 0 5 0 do 5 ms i + loop ;
 \ check that the loop worked on the main task while being interrupted
-T { sum -> 10 }
+T{ sum -> 10 }T
 
 \ check that ISR was invoked
 T{ irq_loop_count @ 0 > -> true }T
@@ -97,5 +97,7 @@ T{ irq_result @ -> 55 }T
 \ Leave the system timer and vector table in their normal state.
 -systick
 systick.max
-irq_old_handler @ systick# trap!
+: irq-restore  irq_old_handler @ ?dup
+   if systick# trap! else systick# trap- then ;
+irq-restore
 +systick

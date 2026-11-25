@@ -1,15 +1,62 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
-.option norvc               # no opportunistic use of compressed ... 
-.option norelax             # instructions or other such optimisations 
+.option norvc               # no opportunistic use of compressed ...
+.option norelax             # instructions or other such optimisations
 
-.global PFA_COLD
-.global _start
+.globl PFA_COLD
+.globl _start , isrstub , DO_EXECUTE , reg_shadow
+
+.equ reg_shadow , RAM_upper_reg_shadow   # s11 stack grows down from the top
+
+.equ PLIC_BASE      , 0x0C000000
+.equ PLIC_THRESHOLD , PLIC_BASE + 0x200000 # hart 0 M-mode context
+.equ PLIC_CLAIM     , PLIC_BASE + 0x200004 # read to claim, write to complete
+
+.equ MCAUSE_MEI     , 11                   # machine external interrupt
+.equ PLIC_SLOT_BASE , 16                   # slot = 16 + PLIC source id
+.equ TRAP_SLOTS     , 64                   # size of the trap tables
+
+# trap frame on the s11 shadow stack, in bytes
+#    0 .. 60  ra t0-t6 a0-a7
+#   64 .. 100 s1-s10
+#  104        PLIC claim id, 0 if none
+
+.equ TF_CLAIM , 104
+.equ TF_SIZE  , 108
 
 .section .init
 _start:
 	la gp, __global_pointer$
-	la sp, _eusrstack 
+	la sp, _eusrstack
 
-    j PFA_COLD
+	la s11, reg_shadow
+
+	la t0, RAM_lower_ram_vector    # clear the trap! table
+	la t1, RAM_upper_ram_vector
+1:	sw zero, 0(t0)
+	addi t0, t0, cellsize
+	bltu t0, t1, 1b
+
+	la t0, IN_ISRQ_ram             # not in any isr
+	sw zero, 0(t0)
+
+	li t0, PLIC_THRESHOLD          # let any enabled PLIC source through
+	sw zero, 0(t0)
+
+	csrw mie, zero                 # sources stay off until enabled
+
+.ifnb 
+	la t0, isrstub                 # direct mode, all traps enter here
+	csrw mtvec, t0
+.else
+	la t0, _vector_base            # vector mode
+    ori t0, t0, 1                  # MODE =1 (vectored)
+	csrw mtvec, t0
+.endif
+
+	csrsi mstatus, 0x8             # global enable, as on the 307
+
+	j PFA_COLD
+
+#----------------------------------------------------------------------
 

@@ -6,19 +6,10 @@ ticks at 10 MHz (1 tick = 100 ns, 10000 ticks = 1 ms). It is a 64 bit
 counter but only the low word is used. No init is required. 
 */
 
-.equ MTIME_LO, 0x0200BFF8
-
-CODEWORD "mtime@", MTIMEFETCH /* ( -- n ) read RV mtime low 32 bits */
-    savetos
-    li t0, MTIME_LO
-    lw s3 , 0(t0)
-    NEXT
-END MTIMEFETCH
-
 CODEWORD "1ms", N1MS  /* ( -- ) busy-wait 1 millisecond */
     li      t0, MTIME_LO
     lw      t1, 0(t0)              /* t1 = start */
-    li      t2, 100000             /* ticks per ms */
+    li      t2, 10000              /* ticks per ms */
 1:
     lw      t3, 0(t0)              /* t3 = now */
     sub     t3, t3, t1             /* t3 = elapsed (wrap-safe) */

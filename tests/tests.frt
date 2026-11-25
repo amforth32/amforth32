@@ -18,7 +18,7 @@ s" TESTS STARTING" type cr
 #include "tests/pvalue.fr"
 #include "tests/mtask.fr"
 
-#if defined(TARGET_MPS2) && !defined(IRQ_HAMMER)
+#if ( defined(TARGET_MPS2) || defined(TARGET_RVQEMU) ) && !defined(IRQ_HAMMER)
 #include "tests/interrupts-cortexm.fr"
 #endif
 
