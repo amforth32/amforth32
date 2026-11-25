@@ -92,6 +92,36 @@ T{ 20 ms irq_count @ 0 > -> true }T
 \ check ISR computation result
 T{ irq_result @ -> 55 }T
 
+
+TESTING ISR with CATCH/THROW
+
+-int 
+0 irq_count !
+
+variable catcher
+0 catcher !
+: thrower 42 throw ;
+
+:noname
+   irq_count @ 1+ irq_count !
+   ['] thrower catch catcher !   
+;i systick# trap!
+
++int
+
+\ run a slow catch/throw
+: curler 5 ms 24 throw ;
+\ check that the throw on the main task worked while being interrupted
+T { ' curler catch -> 24 }
+
+-int
+
+\ check that ISR was invoked
+T{ irq_loop_count @ 0 > -> true }T
+\ check that the throw in ISR worked
+T{ catcher @ -> 42 }T
+
+
 \ CLEANUP
 
 \ Leave the system timer and vector table in their normal state.
