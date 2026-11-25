@@ -8,9 +8,12 @@ COLON "compile", COMPILE /* ( -- ) append the XT that follows in the calling wor
     .word XT_TO_R
     .word XT_FETCH
 .if WANT_TRANSPILER == YES
-    .word XT_TPILE_XT
-.endif
+    .word XT_DUP
     .word XT_COMMA
+    .word XT_TPILE_XT
+.else
+    .word XT_COMMA
+.endif
     .word XT_EXIT
 END COMPILE
 

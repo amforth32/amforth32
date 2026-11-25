@@ -4,8 +4,11 @@ IMMED "recurse", RECURSE /* (C: -- ) compile the XT of the word currently being 
     .word XT_LATEST
     .word XT_FETCH
 .if WANT_TRANSPILER == YES
-    .word XT_TPILE_XT
-.endif
+    .word XT_DUP
     .word XT_COMMA
+    .word XT_TPILE_XT
+.else
+    .word XT_COMMA
+.endif
     .word XT_EXIT
 END RECURSE

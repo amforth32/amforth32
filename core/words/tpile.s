@@ -2,7 +2,7 @@
     Emits a stream of tokens when words are compiled. Tokens can be easily converted to ITC given a list of XT addresses (from a symbol table). See (#transpile directive in amforth-shell)
 
     Doesn't handle (see XT_COMMA references):
-    * :noname (no word token or word XT emitted)
+    * :noname (no word token or word XT emitted), use :~ instead
     * does> parent/child word
     * postpone
     * to : current definition compiles oddly, e.g.
@@ -13,7 +13,11 @@
 VARIABLE "tpile", TPILE /* ( -- f ) transpiling status */
 END TPILE
 
+VARIABLE "tpile.data?", TPILE_DATAQ /* ( -- f ) currently compiling DATA */
+END TPILE_DATAQ
+
 COLON "tpile+", TPILEPLUS /* ( -- ) enable transpiling during compilation */
+    .word XT_FALSE, XT_TPILE_DATAQ, XT_STORE
     .word XT_TRUE, XT_TPILE, XT_STORE, XT_EXIT
 END TPILEPLUS
 
@@ -48,6 +52,7 @@ END SYMBOL
 
 NONAME "tpile.word", TPILE_WORD /* ( -- ) emits word token prefix indicating the word type */
     .word XT_TPILE, XT_FETCH, XT_DOCONDBRANCH, 1f
+        .word XT_FALSE, XT_TPILE_DATAQ, XT_STORE
         .word XT_FLAGDOTHEADER, XT_FLAGDOTCOLON, XT_EQUAL, XT_DOCONDBRANCH, 2f
             STRING "WW"
             .word XT_TYPE, XT_DOBRANCH, 1f
@@ -64,9 +69,12 @@ NONAME "tpile.word", TPILE_WORD /* ( -- ) emits word token prefix indicating the
             STRING "WU"
             .word XT_TYPE, XT_DOBRANCH, 1f
 6:      .word XT_FLAGDOTHEADER, XT_FLAGDOTDEFER, XT_EQUAL, XT_DOCONDBRANCH, 7f
+            STRING "WF"
+            .word XT_TYPE, XT_DOBRANCH, 1f
+7:      .word XT_FLAGDOTHEADER, XT_FLAGDOTCODE, XT_EQUAL, XT_DOCONDBRANCH, 8f
             STRING "WD"
             .word XT_TYPE, XT_DOBRANCH, 1f
-7:      /* otherwise */
+8:      /* otherwise */
             STRING "W?"
             .word XT_TYPE
 1:   .word XT_EXIT
@@ -104,11 +112,14 @@ NONAME "tpile.end", TPILE_END /* ( -- ) called by semicolon to emit end of word 
 1:  .word XT_EXIT
 END TPILE_END
 
-NONAME "tpile.xt", TPILE_XT /* ( xt -- xt ) called when XT is compiled, emits XT token */
+NONAME "tpile.xt", TPILE_XT /* ( xt -- ) called when XT is compiled, emits XT token */
     .word XT_TPILE, XT_FETCH, XT_DOCONDBRANCH, 1f
-        .word XT_DOLITERAL, 88, XT_EMIT /* X */
-        .word XT_DUP, XT_8XDOT, XT_SPACE
-1:   .word XT_EXIT
+        .word XT_DUP, XT_DOLITERAL, PFA_DODATA, XT_EQUAL, XT_DOCONDBRANCH, 2f
+            .word XT_TRUE, XT_TPILE_DATAQ, XT_STORE
+2:      .word XT_DOLITERAL, 88, XT_EMIT /* X */
+        .word XT_8XDOT, XT_SPACE
+        .word XT_EXIT
+1:  .word XT_DROP, XT_EXIT
 END TPILE_XT
 
 NONAME "tpile.lit", TPILE_LIT /* ( x -- x ) called when literal value is compiled, emits literal token */

@@ -28,9 +28,12 @@ NONAME "rword.compile", R_WORD_COMPILE
     .word XT_ZEROLESS
     .word XT_DOCONDBRANCH,1f
 .if WANT_TRANSPILER == YES
+        .word XT_DUP
+        .word XT_COMMA
         .word XT_TPILE_XT
+.else
+       .word XT_COMMA
 .endif
-	    .word XT_COMMA
         .word XT_EXIT
 1:
     .word XT_EXECUTE
