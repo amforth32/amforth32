@@ -39,7 +39,7 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
   display: block;
   visibility: hidden;
   width: max-content;
-  max-width: min(45em, calc(100vw - 16px));
+  max-width: min(80em, calc(100vw - 16px));
   max-height: 90vh;
   overflow: auto;
   box-sizing: border-box;
@@ -49,7 +49,8 @@ h2 { border-bottom: 2px solid #333; padding-bottom: 5px; }
   background: var(--page-background);
   color: var(--page-foreground);
   box-shadow: 0 2px 8px #0003;
-  white-space: pre-line;
+  font-family: monospace;
+  white-space: pre-wrap;
   cursor: auto;
 }
 .long-description:hover .long-description-tooltip,
@@ -156,7 +157,7 @@ document.addEventListener('keydown', event => {
 </head>
 <body>
 <h1>AmForth32 Reference Card</h1>
-<h2>CORTEX-M4 / UNO R4 WIFI main@6ac8440 2026-11-25T23:04:34+00:00</h2>
+<h2>CORTEX-M4 / UNO R4 WIFI main@3a638c9 2026-11-25T23:06:28+00:00</h2>
 <p><a href="#STACK">STACK</a> - <a href="#COMPARE">COMPARE</a> - <a href="#MATH">MATH</a> - <a href="#MIXED">MIXED</a> - <a href="#DOUBLE">DOUBLE</a> - <a href="#MEMORY">MEMORY</a> - <a href="#STRING">STRING</a> - <a href="#DICTIONARY">DICTIONARY</a> - <a href="#WORDLIST">WORDLIST</a> - <a href="#COMPILER">COMPILER</a> - <a href="#FLOW">FLOW</a> - <a href="#IO">IO</a> - <a href="#OUTPUT">OUTPUT</a> - <a href="#TASKS">TASKS</a> - <a href="#INTERRUPTS">INTERRUPTS</a> - <a href="#SYSTEM">SYSTEM</a> - <a href="#TOOLS">TOOLS</a> - <a href="#FLASH">FLASH</a> - <a href="#OTHER">OTHER</a> - <a href="#SYSTICK">SYSTICK</a> - <a href="#MCU">MCU</a> - <a href="#UNCATEGORIZED">UNCATEGORIZED</a> - <a href="#LEGEND">LEGEND</a></p>
 <h2 id="STACK">STACK</h2>
 <table>
@@ -580,8 +581,34 @@ because the words following DOES&gt; follow the synthetic jump.</span></span></t
 <tr><td title="ABORT">abort</td><td>COLON</td><td>( i*x -- )(R: j*x -- )</td><td>throw EABRT exception (-1)</td><td class="location" data-copy-path="core/words/abort.s:3" tabindex="0" role="button" aria-label="Copy location core/words/abort.s:3" title="Click to copy">core/words/abort.s:3</td></tr>
 <tr><td title="TRAP_BASE">trap.base</td><td>CONSTANT</td><td>ram_vector_base</td><td>beginning of Forth interrupt table</td><td class="location" data-copy-path="core/words/traps.s:5" tabindex="0" role="button" aria-label="Copy location core/words/traps.s:5" title="Click to copy">core/words/traps.s:5</td></tr>
 <tr><td title="TRAP_STORE">trap!</td><td>COLON</td><td>( xt n -- )</td><td>TRAP: store xt at trap number n in RAM vector, xt 0 throws</td><td class="location" data-copy-path="core/words/traps.s:8" tabindex="0" role="button" aria-label="Copy location core/words/traps.s:8" title="Click to copy">core/words/traps.s:8</td></tr>
-<tr><td title="THROW">throw</td><td>COLON</td><td>( n -- )</td><td>throw exception n if n != 0</td><td class="location" data-copy-path="core/words/throw.s:2" tabindex="0" role="button" aria-label="Copy location core/words/throw.s:2" title="Click to copy">core/words/throw.s:2</td></tr>
-<tr><td title="CATCH">catch</td><td>COLON</td><td>( i*x xt -- j*x 0 | i*x n )</td><td>execute XT and check for exceptions</td><td class="location" data-copy-path="core/words/catch.s:6" tabindex="0" role="button" aria-label="Copy location core/words/catch.s:6" title="Click to copy">core/words/catch.s:6</td></tr>
+<tr><td title="THROW">throw</td><td>COLON</td><td>( k * x n -- k * x | i * x n )</td><td>if n !=0 jump to just after corresponding CATCH <span class="long-description"><button type="button" class="long-description-toggle" aria-expanded="false" aria-label="Show long description">…</button><span class="long-description-tooltip" role="tooltip">THROW restores the stack state to what it was when catch started executing.
+The DS will have the same depth but the contents will have been modified
+by the XT executed by CATCH. THROW pushes n on top of the restored DS.
+
+: could-fail ( -- char )
+KEY DUP [CHAR] Q = IF 1 THROW THEN ;
+: do-it ( a b -- c) 2DROP could-fail ;
+
+: try-it ( --)
+1 2 [&#x27;] do-it CATCH IF
+( x1 x2 ) 2DROP .&quot; There was an exception&quot; CR
+ELSE .&quot; The character was &quot; EMIT CR
+THEN
+;
+
+; retry-it ( -- )
+BEGIN 1 2 [&#x27;] do-it CATCH WHILE
+( x1 x2) 2DROP .&quot; Exception, keep trying&quot; CR
+REPEAT ( char )
+.&quot; The character was &quot; EMIT CR
+;</span></span></td><td class="location" data-copy-path="core/words/throw.s:2" tabindex="0" role="button" aria-label="Copy location core/words/throw.s:2" title="Click to copy">core/words/throw.s:2</td></tr>
+<tr><td title="CATCH">catch</td><td>COLON</td><td>( i * x xt -- j * x 0 | i * x n )</td><td>execute xt; jump to just after CATCH if xt THROWs n <span class="long-description"><button type="button" class="long-description-toggle" aria-expanded="false" aria-label="Show long description">…</button><span class="long-description-tooltip" role="tooltip">Push an exception frame on the return stack and then execute xt in such a way that control
+can be transferred to a point just after CATCH if THROW is executed during the execution of xt.
+
+If the execution of xt completes normally (i.e., the exception frame pushed by this CATCH
+is not popped by an execution of THROW) pop the exception frame and return zero on top of the data stack,
+above whatever stack items would have been returned by xt EXECUTE.
+Otherwise, the remainder of the execution semantics are given by THROW.</span></span></td><td class="location" data-copy-path="core/words/catch.s:6" tabindex="0" role="button" aria-label="Copy location core/words/catch.s:6" title="Click to copy">core/words/catch.s:6</td></tr>
 <tr><td title="HANDLER">handler</td><td>USER</td><td>USER_HANDLER</td><td>used by catch/throw</td><td class="location" data-copy-path="core/words/catch.s:3" tabindex="0" role="button" aria-label="Copy location core/words/catch.s:3" title="Click to copy">core/words/catch.s:3</td></tr>
 <tr><td title="FINISH">exit</td><td>CODEWORD</td><td>(R: addr -- )</td><td>loads addr into IP; compiled by exit</td><td class="location" data-copy-path="arm/words/exit.s:6" tabindex="0" role="button" aria-label="Copy location arm/words/exit.s:6" title="Click to copy">arm/words/exit.s:6</td></tr>
 <tr><td title="ERRQ">err?</td><td>COLON</td><td>( n -- c-addr u )</td><td>search err-wordlist for err num = n and return error string</td><td class="location" data-copy-path="core/words/throwerr.s:115" tabindex="0" role="button" aria-label="Copy location core/words/throwerr.s:115" title="Click to copy">core/words/throwerr.s:115</td></tr>
