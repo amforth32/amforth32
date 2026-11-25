@@ -259,14 +259,13 @@ SECTIONS
     amramlo (NOLOAD) :
     {
         . = ALIGN(256) ;
-
-        PROVIDE(RAM_lower_exceptionstack = . ) ;
-        . = . + 256 ;
-        PROVIDE(RAM_upper_exceptionstack = . ) ;
+		PROVIDE(RAM_lower_ramlo = .);
+		*(amramlo);
+		PROVIDE(RAM_upper_ramlo = .);
 
     } >RAM :forth_ram
 
-	ASSERT(RAM_upper_res <= ADDR(amramlo) ,"*ERROR* amramres and amramlo overlap")
+	ASSERT(RAM_upper_res <= RAM_lower_ramlo ,"*ERROR* amramres and amramlo overlap")
 
 	/* 
 		amramhi contains:
@@ -299,11 +298,11 @@ SECTIONS
 			the kernel won't actually map it into the process' memory space
 			and amforth will segfault if that memory is accessed.
 		*/
-		. = ABSOLUTE(stack_start) - . ;
+		. = ABSOLUTE(stack_start) ;
 
     } >RAM :forth_ram
 
-	ASSERT(ADDR(amramlo) + SIZEOF(amramlo) <= vp0 ,"*ERROR* amramlo and amramhi overlap")
+	ASSERT(RAM_upper_ramlo <= vp0 ,"*ERROR* amramlo and amramhi overlap") 
 
 	/* Sections at the high end of RAM */
 
