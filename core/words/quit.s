@@ -18,6 +18,11 @@ PFA_QUIT4:
     .word XT_CATCH
     .word XT_QDUP
     .word XT_DOCONDBRANCH,PFA_QUIT3
+.if WANT_THROWTXT == YES
+    # Save the return stack to trace_stack.
+    # It is important that no colon words run between CATCH and TASK_SAVE_TRACE.
+    .word XT_TASK_SAVE_TRACE
+.endif
 	.word XT_DUP
 	.word XT_DOLITERAL, -2, XT_LESS
 	.word XT_DOCONDBRANCH, PFA_QUIT5

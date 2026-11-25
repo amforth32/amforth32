@@ -65,7 +65,7 @@ OUTPUT:
     base binary hex decimal 
     <# sign #s # hold #> hld pad
 TASKS:
-    single multi +task -task task! task@ taskn task-block task.warm task.warm-all release reserve vacant
+    single multi +task -task task! task@ taskn task-block operator? task.warm task.warm-all release reserve vacant
     task.ds task.rs task.bt task.ua show.tasks
 INTERRUPTS:
     +int -int trap@ trap- ;i in-isr? isrnop trap.init

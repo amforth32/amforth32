@@ -47,6 +47,11 @@ RAMALLOT ISR_stack, isr_stack_size, pad
 .equ USER_DEBUG_TIB, USER_LP0 + pad
 .endif
 
+.if WANT_THROWTXT == YES
+# task0/operator exception stacks
+RAMALLOT trace_stack, returnstack_size
+.endif
+
 # UP block of ISR task (TASKN)
 .equ RAM_ISR_UP, RAM_TASK0 + TASK_BLOCK_SIZE * (TASKN-1)
 

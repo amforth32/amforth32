@@ -48,9 +48,8 @@ Also look for TODO: in source files
 # TOOLS
 
 * amshell: make sure the `words` change didn't break autocomplete
-* amshell: translate exception number to mnemonic
 * amshell: reconsider the greedy echo loop in send_line()
-
+* amshell: response timeout on abort or positive exception number (missing amforth_error_cre match)
 
 # DOCS
 

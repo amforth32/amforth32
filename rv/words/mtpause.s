@@ -1,3 +1,29 @@
+HEADLESS "task.save", TASK_SAVE /* ( -- ) save current task state into UA */
+    sw s4, USER_SP(s6)
+    sw s5, USER_RP(s6)
+    sw s2, USER_IP(s6)
+    sw s3, USER_TOS(s6)
+    NEXT
+END TASK_SAVE
+
+HEADLESS "task.save.trace", TASK_SAVE_TRACE /* ( -- ) save current task return stack */
+/*
+    The stack is copied into shared trace_stack, so backtrace should be generated promptly
+*/
+    lw      t0, USER_RP(s6)             # t0 = current RP (top of return stack)
+    addi    t1, s6, USER_RP0            # t1 = base of return stack
+    la      t2, RAM_upper_trace_stack   # t2 = destination trace stack
+
+1:  lw      t4, 0(t1)   # [t2] = [t1]
+    sw      t4, 0(t2)
+    addi    t1, t1, -4
+    addi    t2, t2, -4
+    bleu    t0, t1, 1b  # loop while t0 <= t1
+
+    NEXT
+END TASK_SAVE_TRACE
+    
+
 HEADLESS "mtpause", MTPAUSE
 
     /* No task switch inside an interrupt handler: in-isr? counts the
@@ -18,7 +44,7 @@ HEADLESS "mtpause", MTPAUSE
 MTPAUSE_loop:
     lw      s6, USER_LINK(s6)   
     lw      t0, USER_STATUS(s6)
-    beqz    t0, MTPAUSE_loop
+    bnez    t0, MTPAUSE_loop
 
     /* Load incoming state */
     lw      s4, USER_SP(s6)

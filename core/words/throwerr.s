@@ -9,12 +9,14 @@
 .if \ERRNUM == -1
     .word 0
 .else
-    .word 90b
+    .word 9990b
 .endif    
-90: .word \ERRNUM
-    .byte 8f - 7f
-7:  .ascii "\ERRSTRING"
-8:  .p2align 2,0xaa
+9990: .word \ERRNUM
+    .byte .Lname_end\@ - .Lname_start\@
+.Lname_start\@:
+	.ascii "\ERRSTRING"
+.Lname_end\@:
+	.p2align 2,0xaa
 .endif
 .endm
 
@@ -73,6 +75,8 @@ THROWERR ENFANN,   -260 , "NFA is from NONAME or HEADLESS"
 THROWERR EALIALI,  -261 , "attempt to alias an alias"
 THROWERR ENTASK,   -262 , "invalid task number"
 THROWERR ENOISR,   -263 , "no isr handler"
+THROWERR ETFAIL,   -264 , "failed task"
+THROWERR ETACTV,   -265 , "active task"
 
 .if WANT_TRANSPILER == YES
 THROWERR ETPSYM,   -1000 , "tpile: raw symbol"
@@ -80,7 +84,7 @@ THROWERR ETPSYM,   -1000 , "tpile: raw symbol"
 
 .if WANT_THROWTXT == YES    
 
-CONSTANT "err-wordlist" , ERR_WORDLIST , 90b
+CONSTANT "err-wordlist" , ERR_WORDLIST , 9990b
 
 # ----------------------------------------------------------------------
 NONAME "(err?)", LPARENERRQRPAREN 
