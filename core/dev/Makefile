@@ -210,7 +210,7 @@ config:
 
 SPEED ?= 115200
 AMSHELL=$(AMFORTH)/tools/amforth-shell.py --port $(MODEM) --speed $(SPEED) $1
-export AMFORTH_LIB=.:$(AMFORTH)/tests:$(AMFORTH)/lib:$(AMFORTH)/examples
+# export AMFORTH_LIB=.:$(AMFORTH)/tests:$(AMFORTH)/lib:$(AMFORTH)/examples
 
 ## Connect via AmShell (needs MODEM)
 shell:
