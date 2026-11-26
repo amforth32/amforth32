@@ -1,0 +1,75 @@
+\ Nested interrupt tests, RV QEMU only.
+\ Outer: faux SysTick (slot 7 -> systick# 15). Inner: msip (slot 3).
+
+TESTING nested interrupts (RV): msip inside the SysTick handler
+
+-int
+-systick
+0 msip !
+
+variable old.tick  systick# trap@ old.tick !
+variable outer  variable inner  variable inside  variable seen
+variable odepth  variable idepth  variable orp  variable irp
+variable rp0
+
+: rv.clear  0 outer ! 0 inner ! 0 inside ! 0 seen !
+   0 odepth ! 0 idepth ! 0 orp ! 0 irp ! ;
+rv.clear
+
+\ inner: clear the source, record depth, RS and whether outer is active
+:noname  0 msip !  1 inner +!  in-isr? @ idepth !
+   rp@ irp !  inside @ seen ! ;i  3 trap!
+3 irq.on
+
+\ outer: allow nesting, raise msip, then leave (no -int: (exiti) masks)
+:noname  1 outer +!  in-isr? @ odepth !  rp@ orp !
+   1 inside !  +int  1 msip !  0 inside ! ;i  systick# trap!
+
+rp@ rp0 !
+systick.ms 1- systick!
++systick
++int
+T{ 20 ms  inner @ 0>  ->  true }T
+-int
+
+\ inner ran while outer was inside
+T{ seen @  ->  1 }T
+\ in-isr? counts the nesting
+T{ odepth @ idepth @  ->  1 2 }T
+\ inner RS below outer RS
+T{ irp @ orp @ u<  ->  true }T
+\ outer RS below the task RS
+T{ orp @ rp0 @ u<  ->  true }T
+\ task RS balanced
+T{ rp@ rp0 @ =  ->  true }T
+\ all handlers gone
+T{ in-isr? @  ->  0 }T
+\ one inner per outer
+T{ inner @ outer @ - abs 2 <  ->  true }T
+
+TESTING no nesting without +int in the handler
+
+-systick
+0 msip !
+rv.clear
+
+:noname  1 outer +!  1 inside !  1 msip !
+   0 inside ! ;i  systick# trap!
+
++systick
++int
+T{ 20 ms  inner @ 0>  ->  true }T
+-int
+\ inner ran only after outer returned
+T{ seen @ idepth @  ->  0 1 }T
+
+\ CLEANUP
+-systick
+0 msip !
+3 irq.off
+3 trap-
+systick.max
+: rv.restore  old.tick @ ?dup
+   if systick# trap! else systick# trap- then ;
+rv.restore
++systick

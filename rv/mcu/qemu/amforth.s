@@ -42,3 +42,9 @@ ENDDICT
 
 .option pop                 # restore option set
 
+
+# isrstub (rv/isr.s) tells an interrupted task from an interrupted
+# handler by address: every task return stack must lie above ISR_stack
+.if (RAM_lower_TASK0_returnstack - RAM_upper_ISR_stack) < 0
+.error "a task return stack is below ISR_stack (rv/isr.s)"
+.endif

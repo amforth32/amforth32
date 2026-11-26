@@ -11,12 +11,33 @@ _trap_exception:  1:  j 1b
 
 isrstub:
 
-	# QEMU has no HPE so all of the context is saved here. s11 is
-	# reserved for this, so no scratch register is needed yet.
-	# The s11 stack grows down. The frame is claimed by the first
-	# instruction so a nested trap could not overwrite it.
+	# QEMU has no HPE so all of the context is saved here, on
+	# ISR_stack. s11 points at the current frame; it is reserved, so
+	# no scratch register is needed yet. MIE is 0 until the handler
+	# runs +int, so nothing here can be interrupted.
+	#
+	# Like ARM, the handler gets ISR_stack as its return stack:
+	#
+	#   ISR_stack top          <- s11 when no handler is running
+	#     [ frame ]            <- s11 in the handler
+	#     [ handler RS ... ]   <- s5 in the handler
+	#     [ saved s11 ]        nested trap: pushed on the handler RS
+	#     [ nested frame ]     <- s11 in the nested handler
+	#     [ nested RS ... ]
+	#
+	# The old s11 is pushed on the interrupted return stack (the
+	# task's, or the outer handler's when nested) and popped by
+	# (exiti). A nested frame has to go below the outer handler's RS,
+	# not at s11, or it would overwrite that RS.
+	#
+	# Task vs handler is told apart by address: every task return
+	# stack is above ISR_stack (core/amforth32.s allocates ISR_stack
+	# first; the linker script asserts it).
 
-	addi s11, s11, -TF_SIZE
+	push s11                       # old s11 on the interrupted RS
+	bgeu s5, s11, 1f               # a task RS: keep s11 (ISR_stack top)
+	mv   s11, s5                   # a handler RS: frame goes below it
+1:	addi s11, s11, -TF_SIZE
 
 	sw ra,    0(s11)
 	sw t0,    4(s11)
@@ -45,6 +66,11 @@ isrstub:
 	sw s9,   96(s11)
 	sw s10, 100(s11)
 	sw zero, TF_CLAIM(s11)
+
+	csrr t0, mepc                  # a nested trap overwrites these,
+	sw t0, TF_MEPC(s11)            # so they go in the frame too
+	csrr t0, mstatus
+	sw t0, TF_MSTATUS(s11)
 
 	# in-isr? counts the Forth handlers that are running (CH32 does
 	# the same in _master_int). It is incremented on the Forth path below and decremented
@@ -83,6 +109,7 @@ isrstub:
 
 	mv s1, t2                      # XT of the Forth handler
 	mv s7, zero                    # keep the debugger out of the handler
+	mv s5, s11                     # handler RS starts below its frame
 	j DO_EXECUTE                   # ;i compiles the return (exiti)
 
 _trap_return:                      # the context restore is in exiti;

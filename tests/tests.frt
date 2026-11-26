@@ -22,5 +22,9 @@ s" TESTS STARTING" type cr
 #include "tests/interrupts-cortexm.fr"
 #endif
 
+#if defined(TARGET_RVQEMU) && !defined(IRQ_HAMMER)
+#include "tests/interrupts-rv-nested.fr"
+#endif
+
 \ Do not remove as required by awk processing script
 s" TESTS FINISHED" type cr
