@@ -59,6 +59,24 @@
 # protocol and local directives.
 #
 #
+# Host Search Paths
+# -----------------
+# The shell searches directories from AMFORTH_LIB (a colon-separated list)
+# and directories added with -I. If AMFORTH_LIB is unset, the default list is
+# ., examples, lib, src, ~/core/src, and tests. Each selected directory is
+# searched for files, skipping ignored directories like .git, .github, build,
+# dist, tools, and toolchain.
+
+# A path beginning with ~/ is relative to the AmForth source root. Absolute
+# paths are used as given. The path . (and paths beginning with ./) is relative
+# to the current working directory only. Other relative paths are tried from
+# the current directory upward through each parent to the AmForth root, with
+# nearer directories taking precedence. A * component matches any directory
+# and ** component matches recursively within each of those base directories.
+# For example, src can match arm/src when the current directory is below arm/,
+# and **/examples can find nested examples directories from each base.
+#
+#
 # Interaction Protocol
 # --------------------
 # The amforth interaction protocol used by this module is to send a
@@ -546,7 +564,7 @@ class AMForth(object):
         if "AMFORTH_LIB" in os.environ:
             self._search_list = os.environ["AMFORTH_LIB"].split(":")
         else:
-            self._search_list=["."]
+            self._search_list=[".", "examples", "lib", "src", "~/core/src", "tests"]
 
         self._transpiling = False # set to True when excuting transpile_file()
         self._in_debugger = False # indicates whether the debugger is active (based on the response)
@@ -1896,9 +1914,54 @@ additional definitions (e.g. register names)
       self.progress_callback("Information", None, "getting filenames on the host")
       self._filedirs = {}
       self._word_files = {}
-      for p in self._search_list:
+      search_paths = []
+      ignored_dirs = {".git", ".github", "build", "dist", "tools", "toolchain"}
+
+      def allowed_search_path(path):
+        return (os.path.isdir(path)
+                and not ignored_dirs.intersection(os.path.normpath(path).split(os.sep)))
+
+      for entry in self._search_list:
+        if entry == "." or entry.startswith("./"):
+          bases = [os.path.realpath(os.curdir)]
+          pattern = "" if entry == "." else entry[2:]
+        elif entry.startswith("~/"):
+          bases = [self._amforth_root]
+          pattern = entry[2:]
+        elif os.path.isabs(entry):
+          bases = [""]
+          pattern = entry
+        else:
+          # Resolve relative entries from the working directory and its
+          # ancestors through the AmForth root.
+          base = os.path.realpath(os.curdir)
+          amforth_root = os.path.realpath(self._amforth_root)
+          bases = [base]
+          while base != amforth_root and os.path.commonpath((base, amforth_root)) == amforth_root:
+            parent = os.path.dirname(base)
+            if parent == base:
+              break
+            base = parent
+            if base not in bases:
+              bases.append(base)
+          if amforth_root not in bases:
+            bases.append(amforth_root)
+          pattern = entry
+
+        seen_paths = set(search_paths)
+        for base in bases:
+          candidate = os.path.join(base, pattern) if base else pattern
+          paths = (glob.glob(candidate, recursive="**" in candidate)
+                   if glob.has_magic(candidate) else [candidate])
+          for path in sorted(paths):
+            if path not in seen_paths and allowed_search_path(path):
+              search_paths.append(path)
+              seen_paths.add(path)
+
+      for p in search_paths:
         self.progress_callback("Information", None, "  Reading "+p)
         for root, dirs, files in os.walk(p):
+          dirs[:] = [d for d in dirs if d not in ignored_dirs]
           for f in files:
 #            print f
             fpath=os.path.realpath(os.path.join(root, f))
@@ -1913,7 +1976,7 @@ additional definitions (e.g. register names)
               self._filedirs[f]=[fpathdir]
 
       for root, dirs, files in os.walk(self._amforth_root):
-        dirs[:] = [d for d in dirs if d not in (".git", "build")]
+        dirs[:] = [d for d in dirs if d not in ignored_dirs]
         if os.path.basename(root) != "words":
           continue
         self.progress_callback("Information", None, "  Reading "+root)
