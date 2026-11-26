@@ -66,9 +66,9 @@ OUTPUT:
     <# sign #s # hold #> hld pad
 TASKS:
     single multi +task -task task! task@ taskn task-block task.warm task.warm-all release reserve vacant
-    task.ds task.rs task.bt task.ua
+    task.ds task.rs task.bt task.ua show.tasks
 INTERRUPTS:
-    +int -int trap@ ;i in-isr?
+    +int -int trap@ trap- ;i in-isr? isrnop trap.init
 SYSTEM:
     cold warm turnkey appl-turnkey quit pause interpret
     ms .ver .build build.rev build.time build.config arch cpu board version name /user
@@ -76,7 +76,8 @@ SYSTEM:
     first-boot.done ?first-boot first-boot.marker first-boot.start
 TOOLS:
     .s .k .rs .bt .itc .ip dump ?ascii vdump break debug+ debug- || see 
-    show show.flash show.page show.ram show.tasks show.ua
+    show show.flash show.page show.ram show.tasks
+    tpile+ tpile- tpile tpile.data? symbol :~
 FLASH:
     flash.cell flash.page flash.erased flash.start flash.low flash.max flash.erase flush naligned !i
     pv.do pv.init vaddr pv.store pvp pv.reset-hard 2!pvf
