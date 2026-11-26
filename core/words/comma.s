@@ -2,7 +2,12 @@
 
 DEFER ",", COMMA , XT_CARETCOMMA /* ( x -- ) append x to the dictionary */
 
-COLON "^,", CARETCOMMA /* ( x -- ) append x to RAM dictionary */ 
+COLON "^,", CARETCOMMA /* ( x -- ) append x to RAM dictionary */
+.if WANT_TRANSPILER == YES
+    .word XT_TPILE_DATAQ, XT_FETCH, XT_DOCONDBRANCH, 1f
+		.word XT_TPILE_LIT
+1:
+.endif
 	.word XT_DP
 	.word XT_STORE
 	.word XT_CELL

@@ -862,7 +862,7 @@ additional definitions (e.g. register names)
             raise AMForthException("Unable to read target file " + target_path + ": " + str(e))
         raise AMForthException("No valid transpiling provenance header in " + target_path)
 
-    def transpile_file(self, filename, install=False):
+    def transpile_file(self, filename):
         ext = os.path.splitext(filename)[1]
         source_extensions = (".f", ".frt", ".fr", ".fs", ".fth")
         target_path = None
@@ -900,7 +900,7 @@ additional definitions (e.g. register names)
         self._transpiling = True
         self._transpiled_lines = []
         try:
-            self.upload_file(filename, install or target_path is not None, source_path)
+            self.upload_file(filename, True, source_path)
         finally:
             self._transpiling = False
             self.send_line("tpile-\n")
@@ -1551,8 +1551,10 @@ additional definitions (e.g. register names)
                         print(f'CONSTANT "{name}"', end="")
                     case 'U':
                         print(f'VALUE "{name}"', end="")
-                    case 'D':
+                    case 'F':
                         print(f'DEFER "{name}"', end="")
+                    case 'D':
+                        print(f'DATA "{name}"', end="")
                     case 'N':
                         print(f'NONAME "{name}"', end="")                    
                     case _:
@@ -1569,8 +1571,8 @@ additional definitions (e.g. register names)
                 addr = int(tokens[1][1:], 16)
                 self._xt_addresses.append(addr)
                 self._xt_symbols.append(f"XT_{symbol}")
-                if type == 'W' or type == 'I':
-                    # drop the docolon XT emitted by :noname
+                if type == 'W' or type == 'I' or type == 'D':
+                    # drop the word XT
                     tokens = tokens[3:]
                 elif type == 'C' or type == 'U':
                     # add the value to the definition

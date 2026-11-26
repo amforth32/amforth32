@@ -9,6 +9,12 @@ COLON "create", CREATE /* (C: "name" -- )( -- a-addr ) create dictionary header 
  name execution: ( -- a-addr )
  a-addr is the address of name's data field. The execution semantics of name may be extended by using DOES>.
 */
+    .word XT_FLAGDOTCODE
+    .word XT_DOTO
+    .word XT_FLAGDOTHEADER
+.if WANT_TRANSPILER == YES
+    .word XT_TPILE_WORD
+.endif
     .word XT_DOCREATE
     .word XT_REVEAL
     .word XT_COMPILE
