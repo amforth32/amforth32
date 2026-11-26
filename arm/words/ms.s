@@ -12,7 +12,7 @@ Found 3 name(s) that resolve to multiple XT symbols:
 */
 #======================================================================
 #======================================================================
-# transpiling lib/transpiled/ms-arm.f on 2026/11/10 21:38:50
+# transpiling arm/src/ms.f on 2026/11/10 21:38:50
 # \
 # \ Using Systick for the default ARM implementation of ms as that is available
 # \ on any Cortex-M target. May be overridden in specific targets.
