@@ -27,16 +27,25 @@ isrstub:
 	#
 	# The old s11 is pushed on the interrupted return stack (the
 	# task's, or the outer handler's when nested) and popped by
-	# (exiti). A nested frame has to go below the outer handler's RS,
-	# not at s11, or it would overwrite that RS.
+	# (exiti).
 	#
-	# Task vs handler is told apart by address: every task return
-	# stack is above ISR_stack (core/amforth32.s allocates ISR_stack
-	# first; the linker script asserts it).
+	# Each new frame goes into free space, just below whatever stack
+	# is in use:
+	#   - a task was interrupted: its RS lies above ISR_stack, so all
+	#     of ISR_stack is free and the frame goes at s11 (its top).
+	#   - a handler was interrupted: its RS is inside ISR_stack. From
+	#     s11 down to s5 is in use (its RS entries and the s11 just
+	#     pushed); below s5 is free. s5 is the first free address, so
+	#     the frame goes there.
+	# bgeu s5, s11 tells the two apart (s5 at or above s11: a task;
+	# below: a handler) without needing a scratch register. It relies
+	# on every task RS lying above ISR_stack: core/amforth32.s
+	# allocates ISR_stack first, and the .if at the end of
+	# rv/mcu/qemu/amforth.s checks it.
 
 	push s11                       # old s11 on the interrupted RS
-	bgeu s5, s11, 1f               # a task RS: keep s11 (ISR_stack top)
-	mv   s11, s5                   # a handler RS: frame goes below it
+	bgeu s5, s11, 1f               # task: all of ISR_stack is free
+	mv   s11, s5                   # handler: s5 is the first free address
 1:	addi s11, s11, -TF_SIZE
 
 	sw ra,    0(s11)

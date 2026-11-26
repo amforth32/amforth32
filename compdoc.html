@@ -1,0 +1,736 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MPS2 vs RV QEMU</title>
+<style>
+/* Layout: three-lane schematic (ARM | shared core | RV), like a pin-out diagram; lanes stack on phones.
+   Standalone: no external fonts or scripts. */
+:root {
+  --bg: #f6f7f9;
+  --panel: #ffffff;
+  --ink: #1b2129;
+  --muted: #5c6673;
+  --rule: #d9dee5;
+  --arm: #1f5fae;
+  --arm-soft: #e4eefa;
+  --rv: #a2491b;
+  --rv-soft: #f9ebe2;
+  --core: #3d4a58;
+  --core-soft: #e9edf1;
+  --hw: #6b5ca5;
+  --hw-soft: #eeebf8;
+  --warn: #9a6a00;
+  --warn-soft: #fbf1d6;
+  --bad: #b3261e;
+  --bad-soft: #fbe5e3;
+  --on-fill: #ffffff;
+  --font-display: "Avenir Next Condensed", "Roboto Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12161b; --panel: #1a2027; --ink: #e3e8ee; --muted: #9aa5b2; --rule: #2d3640;
+    --arm: #79aef0; --arm-soft: #1a2a3e; --rv: #f0a072; --rv-soft: #3a2519;
+    --core: #b3bfcc; --core-soft: #232b34; --hw: #b7a9f0; --hw-soft: #2a2540;
+    --warn: #e7bd57; --warn-soft: #362c12; --bad: #f28b82; --bad-soft: #3c1f1d; --on-fill: #12161b;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12161b; --panel: #1a2027; --ink: #e3e8ee; --muted: #9aa5b2; --rule: #2d3640;
+  --arm: #79aef0; --arm-soft: #1a2a3e; --rv: #f0a072; --rv-soft: #3a2519;
+  --core: #b3bfcc; --core-soft: #232b34; --hw: #b7a9f0; --hw-soft: #2a2540;
+  --warn: #e7bd57; --warn-soft: #362c12; --bad: #f28b82; --bad-soft: #3c1f1d; --on-fill: #12161b;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 40px 64px; display: grid; gap: 48px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(28px, 5vw, 42px); font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: 25px; font-weight: 650; }
+h3 { font-size: 18px; font-weight: 650; }
+p { margin: 0; max-width: 70ch; }
+code { font-family: var(--font-mono); font-size: 0.86em; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+section { display: grid; gap: 18px; min-width: 0; }
+.lede { color: var(--muted); font-size: 16px; }
+nav { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13.5px; }
+nav a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--rule); }
+nav a:hover, nav a:focus-visible { border-bottom-color: var(--ink); outline: none; }
+
+header { display: grid; gap: 14px; }
+.legend { display: flex; flex-wrap: wrap; gap: 10px 18px; font-size: 13px; color: var(--muted); }
+.key { display: inline-flex; align-items: center; gap: 8px; }
+.sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; flex: none; }
+.sw.arm { background: var(--arm); } .sw.rv { background: var(--rv); } .sw.core { background: var(--core); }
+
+.counts { display: grid; gap: 12px; background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 18px; }
+.bar { display: flex; height: 34px; border-radius: 6px; overflow: hidden; font-family: var(--font-mono); font-size: 13px; font-variant-numeric: tabular-nums; }
+.bar span { display: flex; align-items: center; justify-content: center; color: var(--on-fill); white-space: nowrap; overflow: hidden; }
+.bar .a { background: var(--arm); } .bar .c { background: var(--core); } .bar .r { background: var(--rv); }
+.counts-notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px 24px; font-size: 13.5px; color: var(--muted); }
+.counts-notes b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.lanes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; background: var(--panel); }
+.lane-h { padding: 10px 14px; font-family: var(--font-display); font-weight: 650; font-size: 15px; border-bottom: 1px solid var(--rule); border-left: 1px solid var(--rule); }
+.lane-h:first-child { border-left: 0; }
+.lane-h.arm { color: var(--arm); background: var(--arm-soft); }
+.lane-h.core { color: var(--core); background: var(--core-soft); }
+.lane-h.rv { color: var(--rv); background: var(--rv-soft); }
+.row-label { grid-column: 1 / -1; padding: 8px 14px 4px; font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); border-top: 1px solid var(--rule); background: var(--bg); }
+.cell { padding: 10px 14px 12px; min-width: 0; border-left: 1px solid var(--rule); display: grid; gap: 4px; align-content: start; }
+.cell.c-arm { border-left: 0; }
+.cell.empty { color: var(--muted); font-size: 13px; font-style: italic; }
+.f { font-family: var(--font-mono); font-size: 12.5px; overflow-wrap: anywhere; }
+.f.arm { color: var(--arm); } .f.rv { color: var(--rv); } .f.core { color: var(--core); }
+.note { font-size: 12.5px; color: var(--muted); }
+
+.tbl-wrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: 10px; background: var(--panel); }
+table { border-collapse: collapse; width: 100%; min-width: 720px; font-size: 13.5px; }
+th, td { text-align: left; vertical-align: top; padding: 10px 14px; border-top: 1px solid var(--rule); }
+thead th { border-top: 0; font-family: var(--font-display); font-weight: 650; font-size: 14px; background: var(--bg); }
+thead th.arm { color: var(--arm); } thead th.rv { color: var(--rv); }
+tbody th { font-weight: 500; width: 20%; font-size: 13.5px; }
+.tag { display: inline-block; font-family: var(--font-mono); font-size: 11px; padding: 1px 6px; border-radius: 4px; margin-left: 4px; vertical-align: 1px; white-space: nowrap; }
+.tag.same { background: var(--core-soft); color: var(--core); }
+.tag.diff { background: var(--warn-soft); color: var(--warn); }
+.who { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+.seq-key { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 12.5px; color: var(--muted); }
+.seq-key > span { display: inline-flex; align-items: center; gap: 8px; }
+.seq { display: grid; grid-template-columns: 170px minmax(0, 1fr) minmax(0, 1fr); border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; background: var(--panel); }
+.seq-h { padding: 10px 14px; font-family: var(--font-display); font-weight: 650; font-size: 15px; background: var(--bg); border-left: 1px solid var(--rule); }
+.seq-h:first-child { border-left: 0; color: var(--muted); }
+.seq-h.arm { color: var(--arm); } .seq-h.rv { color: var(--rv); }
+.ph { padding: 12px 14px; border-top: 1px solid var(--rule); font-weight: 600; font-size: 13.5px; display: flex; gap: 10px; align-items: flex-start; }
+.ph .n { flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-family: var(--font-mono); font-size: 11px; font-weight: 500; background: var(--core-soft); color: var(--core); }
+.c { padding: 12px 14px; border-top: 1px solid var(--rule); border-left: 1px solid var(--rule); display: grid; gap: 10px; align-content: start; min-width: 0; }
+.act { display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 10px; align-items: start; min-width: 0; }
+.act > div { display: grid; gap: 3px; min-width: 0; }
+.act b { font-weight: 600; font-size: 13.5px; }
+.act p { font-size: 12.5px; color: var(--muted); }
+.act .f { color: var(--muted); font-size: 12px; }
+.by { display: inline-grid; place-items: center; height: 20px; padding: 0 6px; border-radius: 4px; font-family: var(--font-mono); font-size: 10.5px; font-weight: 600; letter-spacing: .04em; }
+.by.cpu { background: var(--hw-soft); color: var(--hw); border: 1.5px dashed var(--hw); }
+.by.sw-arm { background: var(--arm-soft); color: var(--arm); border: 1.5px solid var(--arm); }
+.by.sw-rv { background: var(--rv-soft); color: var(--rv); border: 1.5px solid var(--rv); }
+.state { justify-self: start; display: inline-block; font-family: var(--font-mono); font-size: 11px; padding: 1px 7px; border-radius: 10px; background: var(--warn-soft); color: var(--warn); margin-top: 2px; }
+
+.findings { display: grid; gap: 10px; }
+.finding { display: grid; grid-template-columns: 104px 1fr; gap: 14px; background: var(--panel); border: 1px solid var(--rule); border-left: 4px solid var(--rule); border-radius: 8px; padding: 14px 16px; min-width: 0; }
+.finding.bad { border-left-color: var(--bad); }
+.finding.warn { border-left-color: var(--warn); }
+.finding.info { border-left-color: var(--core); }
+.sev { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.06em; text-transform: uppercase; padding-top: 2px; }
+.bad .sev { color: var(--bad); } .warn .sev { color: var(--warn); } .info .sev { color: var(--muted); }
+.finding-body { display: grid; gap: 6px; min-width: 0; }
+.finding-body b { font-weight: 600; }
+.finding-body p, .finding-body ul { font-size: 13.5px; color: var(--muted); }
+.finding-body ul { margin: 0; padding-left: 20px; }
+.walk { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; counter-reset: walk; }
+.walk > li { counter-increment: walk; display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 12px; background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 12px 14px; }
+.walk > li::before { content: counter(walk); font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: var(--rv); border: 1px solid var(--rv); border-radius: 50%; width: 24px; height: 24px; display: grid; place-items: center; }
+.walk > li.nest { margin-left: 28px; }
+.walk > li.nest2 { margin-left: 56px; }
+.walk b { font-weight: 600; }
+.walk p { font-size: 13.5px; color: var(--muted); margin-top: 4px; }
+.walk ul { font-size: 13.5px; color: var(--muted); margin: 4px 0 0; padding-left: 20px; }
+.walk .f { display: block; font-family: var(--font-mono); font-size: 12px; margin-top: 4px; overflow-wrap: anywhere; }
+.walk-h { font-family: var(--font-display); font-weight: 650; font-size: 16px; margin: 22px 0 8px; }
+@media (max-width: 640px) { .walk > li.nest { margin-left: 12px; } .walk > li.nest2 { margin-left: 24px; } }
+.dg-fig { margin: 0 0 14px; background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 14px; }
+.dg-fig figcaption { font-size: 13px; color: var(--muted); margin-top: 8px; max-width: 760px; }
+.dg { width: 100%; height: auto; display: block; }
+.dg text { fill: var(--ink); font-family: var(--font-body); font-size: 13px; }
+.dg .dg-small { font-size: 11.5px; }
+.dg .dg-mono { font-family: var(--font-mono); }
+.dg .dg-muted { fill: var(--muted); }
+.dg .dg-head { font-family: var(--font-display); font-weight: 650; font-size: 14px; }
+.dg .dg-ink { fill: var(--ink); }
+.dg .dg-guide { stroke: var(--rule); stroke-dasharray: 3 4; }
+.dg .dg-arrow { stroke: var(--ink); stroke-width: 1.4; fill: none; }
+.dg .dg-link { stroke: var(--warn); stroke-width: 1.4; fill: none; }
+.dg .dg-tick { stroke: var(--rv); stroke-width: 1.5; }
+.dg .dg-task, .dg .dg-taskrs { fill: var(--core-soft); stroke: var(--core); }
+.dg .dg-outer { fill: var(--rv-soft); stroke: var(--rv); }
+.dg .dg-inner { fill: var(--arm-soft); stroke: var(--arm); }
+.dg .dg-rs { fill: var(--bg); stroke: var(--muted); }
+.dg .dg-saved { fill: var(--warn-soft); stroke: var(--warn); }
+.dg .dg-free { fill: none; stroke: var(--rule); stroke-dasharray: 4 4; }
+.dg .dg-on { fill: var(--core-soft); stroke: var(--panel); }
+.dg .dg-off { fill: var(--bad-soft); stroke: var(--panel); }
+.dg .dg-d0 { fill: var(--bg); stroke: var(--panel); }
+.dg .dg-d1 { fill: var(--rv-soft); stroke: var(--panel); }
+.dg .dg-d2 { fill: var(--arm-soft); stroke: var(--panel); }
+.frag { font-family: var(--font-mono); font-size: 12px; line-height: 1.5; background: var(--bg); border: 1px solid var(--rule); border-radius: 6px; padding: 10px 12px; margin: 2px 0; overflow-x: auto; tab-size: 8; white-space: pre; color: var(--ink); max-width: 100%; }
+
+footer { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 16px; display: grid; gap: 6px; }
+
+@media (max-width: 760px) {
+  .lanes { grid-template-columns: minmax(0, 1fr); }
+  .lane-h { display: none; }
+  .cell { border-left: 0; border-top: 1px dashed var(--rule); }
+  .cell::before { font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+  .cell.c-arm::before { content: "ARM MPS2"; color: var(--arm); }
+  .cell.c-core::before { content: "Shared core"; color: var(--core); }
+  .cell.c-rv::before { content: "RV QEMU"; color: var(--rv); }
+  .seq { grid-template-columns: minmax(0, 1fr); }
+  .seq-h { display: none; }
+  .ph { background: var(--bg); }
+  .c { border-left: 0; border-top: 1px dashed var(--rule); }
+  .c::before { font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+  .c.c-arm::before { content: "ARM MPS2"; color: var(--arm); }
+  .c.c-rv::before { content: "RV QEMU"; color: var(--rv); }
+  .finding { grid-template-columns: 1fr; gap: 6px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <span class="eyebrow">AmForth32 · branch mtime · 24 Nov 2026</span>
+  <h1>ARM MPS2 vs RV QEMU: multitasking and interrupts</h1>
+  <p class="lede">How the two QEMU targets share the core Forth system, and where the architecture and board layers take over. File lists come from each target's <code>build/amforth.dep</code> after a default <code>make all</code>.</p>
+  <div class="legend">
+    <span class="key"><span class="sw arm"></span>ARM MPS2: <code>arm/mcu/qemu</code>, TARGET=MPS2, mps2-an386 (Cortex-M4)</span>
+    <span class="key"><span class="sw core"></span>Shared: <code>core/</code></span>
+    <span class="key"><span class="sw rv"></span>RV QEMU: <code>rv/mcu/qemu</code>, virt (RV32IMAC)</span>
+  </div>
+  <nav aria-label="Sections">
+    <a href="#files">Files</a><a href="#map">File map</a><a href="#tasks">Multitasking</a><a href="#irq">Interrupts</a><a href="#stacks">Stacks</a><a href="#nested">Nested test</a><a href="#findings">Open findings</a><a href="#gotchas">Gotchas</a>
+  </nav>
+</header>
+
+<section id="files">
+  <span class="eyebrow">Source files assembled</span>
+  <h2>Where the code comes from</h2>
+  <div class="counts">
+    <div class="bar" role="img" aria-label="106 ARM-only files, 213 shared core files, 109 RV-only files">
+      <span class="a" style="flex: 106">106 ARM</span>
+      <span class="c" style="flex: 213">213 shared core</span>
+      <span class="r" style="flex: 109">109 RV</span>
+    </div>
+    <div class="counts-notes">
+      <div><b>213 shared</b> files, all under <code>core/</code>: colon words, the task system, trap table words, <code>;i</code>, <code>in-isr?</code>, <code>isrnop</code>, the user area layout, the RAM layout and the linker script.</div>
+      <div><b>90 word files are paired</b>: the same filename in <code>arm/words/</code> and <code>rv/words/</code> (dup, do-loop, mtpause, interrupts, exiti, cold, warm, ms, systick …). Same Forth name, different native code.</div>
+      <div><b>The rest</b> is entry, vectors, trap entry and board I/O. That's where the two targets really differ.</div>
+    </div>
+  </div>
+</section>
+
+<section id="map">
+  <span class="eyebrow">Build layering</span>
+  <h2>File map for tasking and interrupts</h2>
+  <p>Each row is one job. A file in the middle lane is the same source on both targets. The assembler searches the MCU directory first, so a board can replace any <code>words/</code> file. CH32V307 does this for <code>mtpause.s</code>, <code>exiti.s</code> and <code>systick.s</code>.</p>
+  <div class="lanes">
+    <div class="lane-h arm">ARM MPS2</div>
+    <div class="lane-h core">Shared core</div>
+    <div class="lane-h rv">RV QEMU</div>
+
+    <div class="row-label">Entry and boot</div>
+    <div class="cell c-arm"><span class="f arm">arm/mcu/qemu/amforth.s</span><span class="f arm">arm/vectors.s</span><span class="note">Reset vector → <code>PFA_COLD</code>. Vector 0 sets MSP to <code>ISR_stack</code>.</span></div>
+    <div class="cell c-core"><span class="f core">core/amforth32.s</span><span class="f core">core/amforth32.ld</span><span class="note">Allocates <code>ram_vector</code>, <code>ISR_stack</code> and the 4 task blocks. Pulled in by <code>core/dict_prims.inc</code> as <code>"core/amforth32.s"</code>; the <code>core/</code> prefix means an MCU directory can't replace it by name.</span></div>
+    <div class="cell c-rv"><span class="f rv">rv/mcu/qemu/amforth.s</span><span class="f rv">rv/mcu/qemu/qemu.startup</span><span class="note"><code>_start</code>: s11 = top of <code>ISR_stack</code>, clear <code>ram_vector</code>, PLIC threshold, <code>mie = 0</code>, vectored mtvec, MIE on, then <code>PFA_COLD</code>.</span></div>
+
+    <div class="row-label">cold / warm</div>
+    <div class="cell c-arm"><span class="f arm">arm/words/cold.s</span><span class="f arm">arm/words/warm.s</span><span class="note">cold: thread mode onto PSP, zero <code>ram_vector</code>. warm: <code>-int</code>, <code>init-ram</code>, <code>systick.init</code>.</span></div>
+    <div class="cell c-core empty">Same names, separate files per architecture</div>
+    <div class="cell c-rv"><span class="f rv">rv/words/cold.s</span><span class="f rv">rv/words/warm.s</span><span class="note">cold: set s5/s4, enter WARM. warm: <code>-int</code>, <code>init-ram</code>. Trap slots stay 0 from <code>_start</code>.</span></div>
+
+    <div class="row-label">Task system</div>
+    <div class="cell c-arm"><span class="f arm">arm/words/mtpause.s</span><span class="note">Native task switch.</span></div>
+    <div class="cell c-core"><span class="f core">core/words/mtask-common.s</span><span class="f core">core/words/pause.s</span><span class="f core">core/user.inc</span><span class="note"><code>multi</code>/<code>single</code>, <code>task!</code>, <code>+task</code>, <code>task.warm</code>, the task ring. <code>pause</code> is a DEFER: NOP under <code>single</code>, mtpause under <code>multi</code>. TASKN = 4.</span></div>
+    <div class="cell c-rv"><span class="f rv">rv/words/mtpause.s</span><span class="note">Native task switch.</span></div>
+
+    <div class="row-label">Global interrupt enable</div>
+    <div class="cell c-arm"><span class="f arm">arm/words/interrupts.s</span><span class="note"><code>+int</code>/<code>-int</code> = <code>cpsie i</code>/<code>cpsid i</code> (PRIMASK).</span></div>
+    <div class="cell c-core empty">Same names</div>
+    <div class="cell c-rv"><span class="f rv">rv/words/interrupts.s</span><span class="note"><code>+int</code>/<code>-int</code> = set/clear <code>mstatus.MIE</code>.</span></div>
+
+    <div class="row-label">Vectors and trap entry</div>
+    <div class="cell c-arm"><span class="f arm">arm/vectors.s</span><span class="f arm">arm/isr.s</span><span class="note">16 entries. Only 15 (SysTick) goes to <code>isrstub</code>; the rest go to null/fault handlers.</span></div>
+    <div class="cell c-core empty">None shared</div>
+    <div class="cell c-rv"><span class="f rv">rv/mcu/qemu/vectors.s</span><span class="f rv">rv/isr.s</span><span class="note">Codes 1, 3, 5, 7, 9, 11, 13 → <code>isrstub</code>. Exceptions → entry 0 → spin.</span></div>
+
+    <div class="row-label">Handler table</div>
+    <div class="cell c-arm empty">Indexed by IPSR exception number</div>
+    <div class="cell c-core"><span class="f core">core/words/traps.s</span><span class="f core">core/words/isrnop.s</span><span class="note"><code>trap.base</code>, <code>trap!</code> (throws on xt 0), <code>trap@</code>, <code>trap-</code> (empties a slot) over <code>ram_vector</code> (256 cells). <code>isrnop</code> and <code>trap.init</code> remain, but nothing calls them.</span></div>
+    <div class="cell c-rv empty">Indexed by slot: mcause code, or 16 + PLIC id</div>
+
+    <div class="row-label">Handler end</div>
+    <div class="cell c-arm"><span class="f arm">arm/words/exiti.s</span><span class="note">sp ← saved MSP, pop r4–r11 and lr, <code>bx lr</code> (EXC_RETURN).</span></div>
+    <div class="cell c-core"><span class="f core">core/words/semicoloni.s</span><span class="f core">core/words/isr-common.s</span><span class="note"><code>;i</code> compiles <code>(exiti)</code>. Defines the <code>in-isr?</code> variable.</span></div>
+    <div class="cell c-rv"><span class="f rv">rv/words/exiti.s</span><span class="note"><code>in-isr?</code> −1, complete PLIC claim, restore frame, <code>mret</code>.</span></div>
+
+    <div class="row-label">Timer</div>
+    <div class="cell c-arm"><span class="f arm">arm/words/systick.s</span><span class="f arm">arm/words/ms.s</span><span class="note">Real SysTick registers. <code>ms</code> counts SysTick and calls <code>pause</code>.</span></div>
+    <div class="cell c-core empty">Same SysTick word names</div>
+    <div class="cell c-rv"><span class="f rv">rv/words/systick.s</span><span class="f rv">rv/words/mtime.s</span><span class="f rv">rv/words/ms.s</span><span class="note">Faux SysTick in Forth on CLINT mtime/mtimecmp (source: <code>lib/transpiled/rv-systick.f</code>). <code>ms</code> reads mtime and calls <code>pause</code>.</span></div>
+
+    <div class="row-label">Per-source enable</div>
+    <div class="cell c-arm empty">None: TICKINT via systick words; NVIC addresses only in system-m.s</div>
+    <div class="cell c-core empty">None</div>
+    <div class="cell c-rv"><span class="f rv">rv/mcu/qemu/words/irq.s</span><span class="note"><code>irq.on</code>/<code>irq.off</code>: <code>mie</code> bits 0–15, PLIC sources in slots 17–63. <code>msip</code>.</span></div>
+  </div>
+</section>
+
+<section id="tasks">
+  <span class="eyebrow">Multitasking</span>
+  <h2>One task system, two task switches</h2>
+  <p>The task model is entirely shared: the same user area offsets, task blocks, task ring and words. Only the native <code>mtpause</code> is per architecture. Both behave the same way; they differ in how they know they are inside an interrupt and how they mask interrupts.</p>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th scope="col">Aspect</th><th scope="col" class="arm">ARM <code>arm/words/mtpause.s</code></th><th scope="col" class="rv">RV <code>rv/words/mtpause.s</code></th></tr></thead>
+      <tbody>
+        <tr><th scope="row">Saved per task <span class="tag same">same</span></th><td>DSP, sp, FIP, TOS → <code>USER_SP/RP/IP/TOS</code></td><td>s4, s5, s2, s3 → the same offsets</td></tr>
+        <tr><th scope="row">Next task <span class="tag same">same</span></th><td>Follow <code>USER_LINK</code>, skip tasks with <code>USER_STATUS = 0</code></td><td>Same loop</td></tr>
+        <tr><th scope="row">Inside an interrupt <span class="tag same">same result</span></th><td>Returns at once if IPSR ≠ 0 (hardware state)</td><td>Returns at once if <code>in-isr?</code> ≠ 0 (software counter)</td></tr>
+        <tr><th scope="row">Interrupts during the switch <span class="tag same">same result</span></th><td>Save PRIMASK, <code>cpsid i</code>, switch, restore the saved PRIMASK</td><td><code>csrrci</code> saves MIE and clears it, switch, set MIE again only if it was set</td></tr>
+        <tr><th scope="row"><code>-int</code> across <code>pause</code> under <code>multi</code></th><td>Holds (measured: 0 handler calls in 20 ms)</td><td>Holds (measured: 0 handler calls in 20 ms)</td></tr>
+        <tr><th scope="row">Stack pointer used</th><td><code>sp</code> = PSP in thread mode (set in cold)</td><td><code>s5</code>; <code>sp</code> is not used by Forth</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="irq">
+  <span class="eyebrow">Interrupts</span>
+  <h2>From trap to handler and back</h2>
+  <p>Both targets end up running a Forth <code>;i</code> word from <code>ram_vector</code>. The work done in hardware is very different, so the software around it is too. Read across a row to compare the same phase. The badges show whether the processor or software does each action.</p>
+  <div class="seq-key">
+    <span><span class="by cpu">CPU</span>done by the processor</span>
+    <span><span class="by sw-arm">SW</span>ARM software</span>
+    <span><span class="by sw-rv">SW</span>RV software</span>
+    <span><span class="state">in interrupt</span>where the "inside an interrupt" state changes</span>
+  </div>
+  <div class="seq" role="table" aria-label="Interrupt sequence, ARM SysTick against RV machine timer">
+    <div class="seq-h" role="columnheader">Phase</div>
+    <div class="seq-h arm" role="columnheader">ARM MPS2, SysTick (exception 15)</div>
+    <div class="seq-h rv" role="columnheader">RV QEMU, machine timer (code 7)</div>
+
+    <div class="ph" role="rowheader"><span class="n">1</span>Take the interrupt</div>
+    <div class="c c-arm" role="cell"><div class="act"><span class="by cpu">CPU</span><div><b>Stacks 8 registers and switches mode</b><span class="f">r0–r3, r12, lr, pc, xPSR → PSP (task return stack); handler mode on MSP; lr = EXC_RETURN</span></div></div><div class="act"><span class="by cpu">CPU</span><div><b>Records the exception</b><span class="f">IPSR = 15</span><span class="state">in interrupt: IPSR ≠ 0</span></div></div></div>
+    <div class="c c-rv" role="cell"><div class="act"><span class="by cpu">CPU</span><div><b>Saves pc and cause only</b><span class="f">mepc ← pc; mcause = 0x80000007</span><p>No general registers are saved.</p></div></div></div>
+
+    <div class="ph" role="rowheader"><span class="n">2</span>Mask other interrupts</div>
+    <div class="c c-arm" role="cell"><div class="act"><span class="by cpu">CPU</span><div><b>Priority masking</b><p>The active exception's priority blocks SysTick and anything lower. PRIMASK is not touched.</p></div></div></div>
+    <div class="c c-rv" role="cell"><div class="act"><span class="by cpu">CPU</span><div><b>Global masking</b><span class="f">MPIE ← MIE; MIE = 0</span><p>All interrupts are masked.</p></div></div></div>
+
+    <div class="ph" role="rowheader"><span class="n">3</span>Get to isrstub</div>
+    <div class="c c-arm" role="cell"><div class="act"><span class="by cpu">CPU</span><div><b>Loads the handler address</b><span class="f">arm/vectors.s entry 15: .word isrstub → pc</span><p>The table holds addresses.</p></div></div></div>
+    <div class="c c-rv" role="cell"><div class="act"><span class="by cpu">CPU</span><div><b>Jumps into the table</b><span class="f">pc ← mtvec base + 4 × 7</span></div></div><div class="act"><span class="by sw-rv">SW</span><div><b>Table entry jumps on</b><span class="f">rv/mcu/qemu/vectors.s entry 7: j isrstub</span><p>The table holds instructions. This is vectored mode, which is fixed in the source (CH32 uses a single entry instead; see Open findings).</p></div></div></div>
+
+    <div class="ph" role="rowheader"><span class="n">4</span>Save the rest</div>
+    <div class="c c-arm" role="cell"><div class="act"><span class="by sw-arm">SW</span><div><b>isrstub</b><span class="f">push r4–r11, lr → MSP (ISR_stack); store MSP and DEBUG_BREAK on PSP; clear DEBUG_BREAK</span></div></div></div>
+    <div class="c c-rv" role="cell"><div class="act"><span class="by sw-rv">SW</span><div><b>isrstub</b><span class="f">push s11 on the interrupted return stack (s5 −= 4); bgeu s5, s11: task → frame at s11 / handler → s11 ← s5; s11 −= 116 (the frame); store ra, t0–t6, a0–a7, s1–s10 (26 words), mepc, mstatus; claim = 0</span><p><b>Interrupted task.</b> s5 is on the task's return stack, above <code>ISR_stack</code>, so s5 ≥ s11 and <code>bgeu</code> branches. s11 is still the top of <code>ISR_stack</code> (0x80040904): all of it is free, so the frame goes at s11. The saved s11 sits on the task's return stack.</p><p><b>Interrupted handler.</b> s5 is on that handler's return stack, inside <code>ISR_stack</code> just below its frame, so s5 &lt; s11 and <code>bgeu</code> falls through. From s11 down to s5 is in use (the handler's return-stack entries and the s11 just pushed). s5 is the first free address, so <code>mv s11, s5</code> and the frame goes there. The saved s11 sits on the outer handler's return stack and points at the outer frame.</p><p>Either way <code>(exiti)</code> pops s11 from where it was pushed, handing the stack back one level. That is the part ARM does by storing MSP on PSP. <a href="#frame-place">Full explanation</a>.</p></div></div></div>
+
+    <div class="ph" role="rowheader"><span class="n">5</span>Find the Forth handler</div>
+    <div class="c c-arm" role="cell"><div class="act"><span class="by sw-arm">SW</span><div><b>Index by IPSR</b><span class="f">FW = ram_vector[IPSR]</span><p>0 → <code>stub_exit</code>, which pops r4–r11 but leaves step 4's PSP changes in place.</p></div></div></div>
+    <div class="c c-rv" role="cell"><div class="act"><span class="by sw-rv">SW</span><div><b>Index by slot</b><span class="f">slot = mcause code (external: 16 + PLIC claim id); XT = ram_vector[slot]</span><p>0 → <code>_trap_return</code>, which restores the frame; a source that is still pending traps again at once. <code>irq.on</code> refuses an empty slot, so this only happens if a source is enabled some other way.</p></div></div></div>
+
+    <div class="ph" role="rowheader"><span class="n">6</span>Enter Forth</div>
+    <div class="c c-arm" role="cell"><div class="act"><span class="by sw-arm">SW</span><div><b>Execute the XT</b><span class="f">DO_EXECUTE → DOCOLON</span><p><code>in-isr?</code> is not touched.</p></div></div></div>
+    <div class="c c-rv" role="cell"><div class="act"><span class="by sw-rv">SW</span><div><b>Count, then execute the XT</b><span class="f">in-isr? +1; s7 = 0; s5 ← s11 (handler return stack on ISR_stack); DO_EXECUTE → DOCOLON</span><span class="state">in interrupt: in-isr? +1</span></div></div></div>
+
+    <div class="ph" role="rowheader"><span class="n">7</span>Handler runs</div>
+    <div class="c c-arm" role="cell"><div class="act"><span class="by sw-arm">SW</span><div><b>The <code>;i</code> word</b><p>Return stack: MSP (<code>ISR_stack</code>). Data stack: the interrupted task's. <code>pause</code> does nothing (IPSR ≠ 0).</p></div></div></div>
+    <div class="c c-rv" role="cell"><div class="act"><span class="by sw-rv">SW</span><div><b><code>systick.isr</code> in slot 7, then the <code>;i</code> word in slot 15</b><p>Return stack: <code>ISR_stack</code>, below its frame. Data stack: the interrupted task's. <code>pause</code> does nothing (<code>in-isr?</code> ≠ 0).</p></div></div></div>
+
+    <div class="ph" role="rowheader"><span class="n">8</span>Clear the source</div>
+    <div class="c c-arm" role="cell"><div class="act"><span class="by cpu">CPU</span><div><b>Already done</b><p>SysTick's pending bit was cleared when the exception was taken (step 1).</p></div></div></div>
+    <div class="c c-rv" role="cell"><div class="act"><span class="by sw-rv">SW</span><div><b>Software must do it</b><span class="f">systick.isr: mtimecmp ← next tick (MTIP drops); PLIC sources: claim completed in (exiti)</span><p>Without this the interrupt fires again straight after <code>mret</code>.</p></div></div></div>
+
+    <div class="ph" role="rowheader"><span class="n">9</span>Restore</div>
+    <div class="c c-arm" role="cell"><div class="act"><span class="by sw-arm">SW</span><div><b>(exiti), arm/words/exiti.s</b><span class="f">sp ← saved MSP; restore DEBUG_BREAK; pop r4–r11, lr; bx lr</span></div></div></div>
+    <div class="c c-rv" role="cell"><div class="act"><span class="by sw-rv">SW</span><div><b>(exiti), rv/words/exiti.s</b><span class="f">MIE = 0; in-isr? −1; complete PLIC claim; reload mepc, mstatus and 26 registers (s5 = interrupted return stack); pop s11; mret</span><span class="state">out of interrupt: in-isr? −1</span></div></div></div>
+
+    <div class="ph" role="rowheader"><span class="n">10</span>Return</div>
+    <div class="c c-arm" role="cell"><div class="act"><span class="by cpu">CPU</span><div><b>Exception return (triggered by EXC_RETURN in lr)</b><span class="f">unstack the 8 registers from PSP; thread mode; priority mask drops</span><span class="state">out of interrupt: IPSR = 0</span></div></div></div>
+    <div class="c c-rv" role="cell"><div class="act"><span class="by cpu">CPU</span><div><b>mret</b><span class="f">pc ← mepc; MIE ← MPIE</span></div></div></div>
+  </div>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th scope="col">Aspect</th><th scope="col" class="arm">ARM MPS2</th><th scope="col" class="rv">RV QEMU</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">Handler table <span class="tag same">same</span></th><td colspan="2"><code>ram_vector</code>, 256 cells, from <code>core/amforth32.s</code>. Written with <code>trap!</code>, read with <code>trap@</code>, emptied with <code>trap-</code>, base address <code>trap.base</code>. 0 means no handler, and <code>trap!</code> throws −263 "no isr handler" if given 0.</td></tr>
+        <tr><th scope="row">Trap entry mode <span class="tag diff">differs</span></th><td>Always vectored: NVIC loads the handler address from the vector table</td><td>Vectored, fixed in <code>qemu.startup</code> (<code>mtvec | 1</code>). CH32V307 uses the opposite: one <code>_master_int</code> entry for every trap (<code>mtvec | 2</code>). No build option picks the mode; see <a href="#findings">Open findings</a></td></tr>
+        <tr><th scope="row">Table index <span class="tag diff">differs</span></th><td>IPSR exception number (SysTick = 15)</td><td>Slot: 0–15 = mcause code, 16–63 = 16 + PLIC id. <code>systick#</code> = 15 is a virtual slot reached through slot 7</td></tr>
+        <tr><th scope="row">"Inside an interrupt" <span class="tag diff">differs</span></th><td>IPSR, set and cleared by the CPU. The Forth variable <code>in-isr?</code> is never updated and always reads 0</td><td><code>in-isr?</code> counter, +1 in <code>isrstub</code>, −1 in <code>(exiti)</code></td></tr>
+        <tr><th scope="row">Boot fill <span class="tag same">same</span></th><td>Zeros (<code>RAMAFILL</code> in cold)</td><td>Zeros in <code>_start</code>. <code>irq.on</code> throws −263 for a slot that is still 0</td></tr>
+        <tr><th scope="row">Timer after boot <span class="tag diff">differs</span></th><td>Counting: warm runs <code>systick.init</code> (TICKINT on, max reload, about 0.67 s). Its interrupt is masked until <code>+int</code>, because warm runs <code>-int</code></td><td>Stopped until <code>+systick</code>. warm also runs <code>-int</code></td></tr>
+        <tr><th scope="row">Timer behaviour</th><td>Hardware auto-reload; one pending bit, so late ticks are lost</td><td>One-shot <code>mtimecmp</code>; <code>systick.arm</code> adds the period to the last target and skips ticks that are already late</td></tr>
+        <tr><th scope="row">Per-source enable</th><td>SysTick TICKINT only</td><td><code>irq.on</code>/<code>irq.off</code> for mie bits and PLIC sources</td></tr>
+        <tr><th scope="row">Exceptions</th><td>Fault vectors spin in <code>nullhandler</code>/<code>faulthandler</code></td><td>All go to vector entry 0 → <code>nullhandler</code> spin</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="stacks">
+  <span class="eyebrow">Memory</span>
+  <h2>Which stack an interrupt uses</h2>
+  <p>Read across a row to compare like with like. Both targets now give the handler <code>ISR_stack</code> as its return stack and share the interrupted task's data stack. What differs is how much the hardware saves and where.</p>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th scope="col">Role</th><th scope="col" class="arm">ARM MPS2</th><th scope="col" class="rv">RV QEMU</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">Registers saved by hardware</th><td>r0–r3, r12, lr, pc, xPSR (8 words)<span class="who">on the task return stack (PSP)</span></td><td>None (QEMU has no hardware save)<span class="who">only mepc/mcause/MPIE in CSRs</span></td></tr>
+        <tr><th scope="row">Registers saved by software</th><td>r4–r11, lr (9 words)<span class="who">on <code>ISR_stack</code> (MSP)</span></td><td>ra, t0–t6, a0–a7, s1–s10 (26 words)<span class="who">in the trap frame on <code>ISR_stack</code> (s11)</span></td></tr>
+        <tr><th scope="row">Other state saved</th><td>MSP value, DEBUG_BREAK<span class="who">on the task return stack (PSP)</span></td><td>Old s11 on the interrupted return stack; mepc, mstatus, PLIC claim id in the trap frame<span class="who">DEBUG is s7, saved with the s registers</span></td></tr>
+        <tr><th scope="row">Handler's return stack <span class="tag same">same</span></th><td><code>ISR_stack</code> (MSP)<span class="who">dedicated</span></td><td><code>ISR_stack</code>, just below the handler's frame (s5 = s11). A nested frame goes at the outer handler's s5: see <a href="#frame-place">where isrstub puts a frame</a><span class="who">dedicated</span></td></tr>
+        <tr><th scope="row">Handler's data stack <span class="tag same">same</span></th><td>The interrupted task's data stack</td><td>The interrupted task's data stack (s4)</td></tr>
+        <tr><th scope="row">Interrupt-only RAM</th><td><code>ISR_stack</code>, 1 KB, used</td><td><code>ISR_stack</code>, 1 KB, used<span class="who"><code>reg_shadow</code> (256 B) is still allocated in <code>rv/mcu/qemu/amforth.s</code> but no longer used</span></td></tr>
+        <tr><th scope="row">Room for nesting</th><td>Whatever fits in 1 KB of <code>ISR_stack</code><span class="who">nesting not used</span></td><td>Each level: 116-byte frame, 4 bytes for the saved s11, plus the handler's return stack. About 3–4 levels of light handlers in 1 KB<span class="who">MIE = 0 in handlers unless one runs <code>+int</code>. Tested in the suite by <code>tests/interrupts-rv-nested.fr</code>; see <a href="#nested">the walkthrough</a></span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="findings" style="margin-top:18px">
+    <div class="finding info" id="frame-place">
+      <span class="sev">How it works · RV</span>
+      <div class="finding-body">
+        <b>Where <code>isrstub</code> puts a new frame</b>
+        <p>Every trap on RV QEMU starts with these four instructions (<code>rv/isr.s:46–49</code>):</p>
+<pre class="frag">	push s11                       # old s11 on the interrupted RS
+	bgeu s5, s11, 1f               # task: all of ISR_stack is free
+	mv   s11, s5                   # handler: s5 is the first free address
+1:	addi s11, s11, -TF_SIZE</pre>
+        <p><b>The rule.</b> Each new frame goes into free space, just below whatever stack is in use. On entry s11 points at the current handler's frame, or at the top of <code>ISR_stack</code> when no handler is running. s5 is the return stack pointer of the code that was interrupted. Which of the two marks the free space depends on what was interrupted:</p>
+        <ul>
+          <li><b>A task.</b> Its return stack lies above <code>ISR_stack</code>, so all of <code>ISR_stack</code> is free and the frame goes at s11, its top.</li>
+          <li><b>A handler.</b> Its return stack is inside <code>ISR_stack</code>, just below its own frame. From s11 down to s5 is in use: the handler's return-stack entries and the s11 just pushed. Below s5 is free. s5 is the first free address, so the frame goes there.</li>
+        </ul>
+        <p><b>Why the push comes first.</b> <code>push s11</code> moves s5 down 4 bytes and stores the old s11 there. In the handler case the saved s11 is then part of the in-use range, and s5 already marks where the free space starts, so <code>mv s11, s5</code> needs no adjustment. In the task case the saved s11 goes on the task's own return stack. Either way <code>(exiti)</code> pops it from the same place, with s5 back at its value after the push.</p>
+        <p><b>Why <code>bgeu s5, s11</code>.</b> At this point no register is free: apart from s11, every register still holds the interrupted code's value, and none can be saved until the frame exists. Reading <code>in-isr?</code> would need a register to load it into. Comparing s5 with s11 needs none: s5 at or above s11 means a task was interrupted, s5 below s11 means a handler. MIE is 0 from the trap until the handler runs <code>+int</code>, so nothing can interrupt these four instructions.</p>
+        <p><b>What it relies on.</b> The comparison is only right if every task return stack lies above <code>ISR_stack</code>. <code>core/amforth32.s</code> allocates <code>ram_vector</code>, then <code>ISR_stack</code>, then the task blocks (lines 10–21), so today it holds: <code>ISR_stack</code> ends at 0x80040904, and TASK0's return stack starts at 0x800409f0. The <code>.if</code> at the end of <code>rv/mcu/qemu/amforth.s</code> stops the build if a change ever breaks it. If it were broken, an interrupted task would look like a handler: its frame and the handler's return stack would go on the task's own return stack (only 160 bytes for TASK0), and would overflow into whatever lies below it.</p>
+        <p><b>ARM has no such step.</b> In handler mode the CPU always uses MSP, which already points into <code>ISR_stack</code>, so a nested exception should land below the outer handler's stack without any test. ARM nesting is untested (see <code>swi.plan</code>). The second diagram in <a href="#nested">the walkthrough</a> shows the RV result at the deepest point.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="nested">
+  <span class="eyebrow">Test walkthrough · RV QEMU</span>
+  <h2>The nested-interrupt test, step by step</h2>
+  <p><code>tests/interrupts-rv-nested.fr</code> runs on RV QEMU only (<code>tests/tests.frt</code>: <code>#if defined(TARGET_RVQEMU) &amp;&amp; !defined(IRQ_HAMMER)</code>). The outer interrupt is the faux SysTick: slot 7 runs <code>systick.isr</code>, which runs the handler in slot 15. The inner interrupt is msip, the CLINT software interrupt, in slot 3. Indented steps happen inside the outer handler, and the more indented ones inside the inner handler. The addresses are worked out from the frame layout and match a manual run (<code>ISR_stack</code> is <code>0x80040504</code>–<code>0x80040904</code>; the task's return stack is above it, at about <code>0x80040A74</code>).</p>
+
+  <div class="walk-h">What a nested interrupt should do</div>
+  <figure class="dg-fig">
+    <svg class="dg" viewBox="0 36 760 262" role="img" aria-labelledby="dg1t dg1d">
+      <title id="dg1t">Timeline of one nested interrupt</title>
+      <desc id="dg1d">The task is interrupted by SysTick. The outer handler runs, enables interrupts, raises msip, and is interrupted by the inner handler. The inner handler returns to the outer handler, which returns to the task. MIE and in-isr? are shown for each stretch.</desc>
+      <defs>
+        <marker id="dgarr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="dg-ink"/></marker>
+      </defs>
+      <!-- lane labels -->
+      <text x="10" y="64">Task</text>
+      <text x="10" y="134">Outer handler</text>
+      <text x="10" y="148" class="dg-small dg-muted">SysTick, slot 15</text>
+      <text x="10" y="204">Inner handler</text>
+      <text x="10" y="218" class="dg-small dg-muted">msip, slot 3</text>
+      <!-- lane guides -->
+      <line x1="120" y1="60" x2="750" y2="60" class="dg-guide"/>
+      <line x1="120" y1="130" x2="750" y2="130" class="dg-guide"/>
+      <line x1="120" y1="200" x2="750" y2="200" class="dg-guide"/>
+      <!-- bars -->
+      <rect x="120" y="47" width="88" height="26" rx="4" class="dg-task"/>
+      <text x="164" y="64" text-anchor="middle" class="dg-small">running</text>
+      <rect x="208" y="117" width="148" height="26" rx="4" class="dg-outer"/>
+      <text x="264" y="134" text-anchor="middle" class="dg-small">isrstub · body</text>
+      <rect x="356" y="187" width="156" height="26" rx="4" class="dg-inner"/>
+      <text x="434" y="204" text-anchor="middle" class="dg-small">isrstub · body · (exiti)</text>
+      <rect x="512" y="117" width="98" height="26" rx="4" class="dg-outer"/>
+      <text x="561" y="134" text-anchor="middle" class="dg-small">rest · (exiti)</text>
+      <rect x="610" y="47" width="140" height="26" rx="4" class="dg-task"/>
+      <text x="680" y="64" text-anchor="middle" class="dg-small">running</text>
+      <!-- transitions -->
+      <line x1="208" y1="74" x2="208" y2="115" class="dg-arrow" marker-end="url(#dgarr)"/>
+      <text x="214" y="98" class="dg-small">SysTick trap</text>
+      <line x1="356" y1="144" x2="356" y2="185" class="dg-arrow" marker-end="url(#dgarr)"/>
+      <text x="362" y="168" class="dg-small">msip trap</text>
+      <line x1="512" y1="186" x2="512" y2="145" class="dg-arrow" marker-end="url(#dgarr)"/>
+      <text x="518" y="168" class="dg-small">mret</text>
+      <line x1="610" y1="116" x2="610" y2="75" class="dg-arrow" marker-end="url(#dgarr)"/>
+      <text x="616" y="98" class="dg-small">mret</text>
+      <!-- events on the outer lane -->
+      <line x1="320" y1="110" x2="320" y2="150" class="dg-tick"/>
+      <text x="318" y="106" text-anchor="end" class="dg-small dg-mono">+int</text>
+      <text x="358" y="106" class="dg-small dg-mono">1 msip !</text>
+      <text x="603" y="110" text-anchor="end" class="dg-small dg-mono">0 inside !  ;i</text>
+      <!-- MIE strip -->
+      <text x="10" y="254">MIE</text>
+      <rect x="120" y="240" width="88" height="20" class="dg-on"/><text x="164" y="254" text-anchor="middle" class="dg-small">1</text>
+      <rect x="208" y="240" width="112" height="20" class="dg-off"/><text x="264" y="254" text-anchor="middle" class="dg-small">0 (CPU on trap)</text>
+      <rect x="320" y="240" width="36" height="20" class="dg-on"/><text x="338" y="254" text-anchor="middle" class="dg-small">1</text>
+      <rect x="356" y="240" width="156" height="20" class="dg-off"/><text x="434" y="254" text-anchor="middle" class="dg-small">0 (CPU on trap)</text>
+      <rect x="512" y="240" width="44" height="20" class="dg-on"/><text x="534" y="254" text-anchor="middle" class="dg-small">1</text>
+      <rect x="556" y="240" width="54" height="20" class="dg-off"/><text x="583" y="254" text-anchor="middle" class="dg-small">0</text>
+      <rect x="610" y="240" width="140" height="20" class="dg-on"/><text x="680" y="254" text-anchor="middle" class="dg-small">1 (from MPIE)</text>
+      <!-- in-isr? strip -->
+      <text x="10" y="284">in-isr?</text>
+      <rect x="120" y="270" width="88" height="20" class="dg-d0"/><text x="164" y="284" text-anchor="middle" class="dg-small">0</text>
+      <rect x="208" y="270" width="148" height="20" class="dg-d1"/><text x="282" y="284" text-anchor="middle" class="dg-small">1</text>
+      <rect x="356" y="270" width="156" height="20" class="dg-d2"/><text x="434" y="284" text-anchor="middle" class="dg-small">2</text>
+      <rect x="512" y="270" width="44" height="20" class="dg-d1"/><text x="534" y="284" text-anchor="middle" class="dg-small">1</text>
+      <rect x="556" y="270" width="194" height="20" class="dg-d0"/><text x="653" y="284" text-anchor="middle" class="dg-small">0</text>
+    </svg>
+    <figcaption>Each trap switches MIE off; only the outer handler's own <code>+int</code> lets the inner interrupt in. Each <code>(exiti)</code> switches MIE off before it restores, and each <code>mret</code> puts back the MIE of the code it returns to.</figcaption>
+  </figure>
+
+  <figure class="dg-fig">
+    <svg class="dg" viewBox="0 0 760 380" role="img" aria-labelledby="dg2t dg2d">
+      <title id="dg2t">ISR_stack at the deepest point</title>
+      <desc id="dg2d">ISR_stack from its top at 0x80040904 downwards: the outer frame, the outer handler's return stack, the saved outer s11, the inner frame and the inner handler's return stack. The task's return stack holds the s11 saved by the first trap.</desc>
+      <defs>
+        <marker id="dgarr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="dg-ink"/></marker>
+      </defs>
+      <text x="300" y="20" text-anchor="middle" class="dg-head">ISR_stack, while the inner handler runs</text>
+      <!-- addresses -->
+      <text x="190" y="38" text-anchor="end" class="dg-mono dg-small">0x80040904</text>
+      <text x="190" y="122" text-anchor="end" class="dg-mono dg-small">0x80040890</text>
+      <text x="190" y="162" text-anchor="end" class="dg-mono dg-small">0x80040888</text>
+      <text x="190" y="182" text-anchor="end" class="dg-mono dg-small">0x80040884</text>
+      <text x="190" y="266" text-anchor="end" class="dg-mono dg-small">0x80040810</text>
+      <text x="190" y="290" text-anchor="end" class="dg-mono dg-small">0x8004080C</text>
+      <text x="190" y="366" text-anchor="end" class="dg-mono dg-small">0x80040504</text>
+      <!-- column -->
+      <rect x="200" y="34" width="200" height="84" class="dg-outer"/>
+      <text x="300" y="70" text-anchor="middle">outer frame, 116 B</text>
+      <text x="300" y="86" text-anchor="middle" class="dg-small dg-muted">26 registers, mepc, mstatus</text>
+      <text x="300" y="100" text-anchor="middle" class="dg-small dg-muted">(s5 here = the task's RS)</text>
+      <rect x="200" y="118" width="200" height="40" class="dg-rs"/>
+      <text x="300" y="142" text-anchor="middle" class="dg-small">outer handler's return stack</text>
+      <rect x="200" y="158" width="200" height="20" class="dg-saved"/>
+      <text x="300" y="172" text-anchor="middle" class="dg-small dg-mono">saved s11 = 0x80040890</text>
+      <rect x="200" y="178" width="200" height="84" class="dg-inner"/>
+      <text x="300" y="214" text-anchor="middle">inner frame, 116 B</text>
+      <text x="300" y="230" text-anchor="middle" class="dg-small dg-muted">26 registers, mepc, mstatus</text>
+      <text x="300" y="244" text-anchor="middle" class="dg-small dg-muted">(s5 here = 0x80040884)</text>
+      <rect x="200" y="262" width="200" height="24" class="dg-rs"/>
+      <text x="300" y="278" text-anchor="middle" class="dg-small">inner handler's return stack</text>
+      <rect x="200" y="286" width="200" height="76" class="dg-free"/>
+      <text x="300" y="322" text-anchor="middle" class="dg-small dg-muted">free</text>
+      <text x="300" y="338" text-anchor="middle" class="dg-small dg-muted">below 0x80040504: ram_vector</text>
+      <!-- pointers on the right -->
+      <line x1="470" y1="262" x2="404" y2="262" class="dg-arrow" marker-end="url(#dgarr2)"/>
+      <text x="476" y="266" class="dg-mono dg-small">s11 (inner frame)</text>
+      <line x1="470" y1="290" x2="404" y2="290" class="dg-arrow" marker-end="url(#dgarr2)"/>
+      <text x="476" y="294" class="dg-mono dg-small">s5 (inner handler)</text>
+      <!-- saved s11 points at the outer frame -->
+      <path d="M404,168 C440,168 440,118 406,118" class="dg-link" marker-end="url(#dgarr2)"/>
+      <text x="446" y="146" class="dg-small">popped by the inner (exiti):</text>
+      <text x="446" y="160" class="dg-small">s11 back to the outer frame</text>
+      <!-- task return stack -->
+      <text x="640" y="20" text-anchor="middle" class="dg-head">Task return stack</text>
+      <rect x="560" y="34" width="160" height="28" class="dg-taskrs"/>
+      <text x="640" y="52" text-anchor="middle" class="dg-small">task's own entries</text>
+      <rect x="560" y="62" width="160" height="20" class="dg-saved"/>
+      <text x="640" y="76" text-anchor="middle" class="dg-small dg-mono">saved s11 = 0x80040904</text>
+      <text x="640" y="100" text-anchor="middle" class="dg-small dg-muted">pushed by the first trap,</text>
+      <text x="640" y="114" text-anchor="middle" class="dg-small dg-muted">popped by the outer (exiti)</text>
+      <text x="640" y="134" text-anchor="middle" class="dg-small dg-muted">above ISR_stack (asserted)</text>
+    </svg>
+    <figcaption>Every trap pushes the old s11 onto the return stack it interrupted, then builds its frame below that. A nested frame therefore lands below the outer handler's return stack, never on top of it. Each <code>(exiti)</code> reloads s5 from its frame and pops s11, which hands the stack back one level.</figcaption>
+  </figure>
+
+  <div class="walk-h">Part 1: nesting allowed</div>
+  <ol class="walk">
+    <li><div><b>Set up</b><span class="f">-int  -systick  0 msip !   save the old slot 15 handler; zero the counters</span><p>Interrupts off, timer stopped, no software interrupt pending.</p></div></li>
+    <li><div><b>Install the inner handler in slot 3</b><span class="f">:noname 0 msip ! 1 inner +! in-isr? @ idepth ! rp@ irp ! inside @ seen ! ;i  3 trap!   3 irq.on</span><p>It clears msip first (the source stays pending until software clears it), then records its depth, its return stack pointer, and whether the outer handler was active.</p></div></li>
+    <li><div><b>Install the outer handler in slot 15</b><span class="f">:noname 1 outer +! in-isr? @ odepth ! rp@ orp ! 1 inside ! +int 1 msip ! 0 inside ! ;i  systick# trap!</span><p>It records its depth and return stack pointer, marks itself active, allows nesting with <code>+int</code>, raises msip, then marks itself inactive.</p>
+      <p><b>Why it ends without <code>-int</code>.</b> From <code>+int</code> to <code>;i</code> the handler runs with MIE = 1, and that is the window in which the inner interrupt may arrive. It doesn't have to close that window itself, for two reasons. First, <code>(exiti)</code> starts with <code>csrci mstatus, 8</code>, so MIE is 0 before mepc, mstatus and the registers are reloaded, and no interrupt can land half-way through the restore. Second, the interrupt state the task gets back doesn't depend on what the handler left in MIE: <code>mret</code> sets MIE from the MPIE saved in this handler's frame, which is the task's own MIE at the moment it was interrupted. A <code>-int</code> before <code>;i</code> would be harmless, just pointless.</p></div></li>
+    <li><div><b>Start</b><span class="f">rp@ rp0 !   systick.ms 1- systick!   +systick   +int   20 ms</span><p>The task's return stack pointer is saved for the balance check. A 1 ms tick starts, and the task waits 20 ms.</p></div></li>
+    <li><div><b>SysTick trap: isrstub, from the task</b><span class="f">push s11 (0x80040904, the top of ISR_stack) onto the task's return stack; s5 ≥ s11, so a task was interrupted: frame at 0x80040904 − 116 = 0x80040890; save registers, mepc, mstatus; in-isr? = 1; s5 = s11</span><p>The CPU has already set MIE = 0 and MPIE = 1.</p></div></li>
+    <li class="nest"><div><b>Outer handler runs on ISR_stack</b><span class="f">systick.isr re-arms mtimecmp, then runs slot 15; the two colon calls push down to 0x80040888</span><p>It stores <code>odepth</code> = 1 and <code>orp</code> = 0x80040888, sets <code>inside</code> = 1, runs <code>+int</code> (MIE = 1), then <code>1 msip !</code>.</p></div></li>
+    <li class="nest"><div><b>msip trap at once: isrstub, from a handler</b><span class="f">push s11 (0x80040890, the outer frame) onto the outer handler's return stack, at 0x80040884; s5 &lt; s11, so a handler was interrupted: s11 = 0x80040884; frame at 0x80040884 − 116 = 0x80040810; save registers, mepc (a point inside the outer handler), mstatus; in-isr? = 2; s5 = s11</span><p><b>Why at s5.</b> This is the handler case of <a href="#frame-place">where isrstub puts a frame</a>. From s11 (0x80040890) down to s5 (0x80040884) is in use: the outer handler's return-stack entries and the s11 just pushed. Below s5 is free, so s5 is the first free address, and the frame goes there. In step 5, the task case put the frame at s11, the top of <code>ISR_stack</code>.</p></div></li>
+    <li class="nest2"><div><b>Inner handler runs</b><span class="f">0 msip !   inner +1   idepth = 2   irp = 0x8004080C   seen = inside = 1</span><p>Its one colon call pushes from 0x80040810 to 0x8004080C.</p></div></li>
+    <li class="nest2"><div><b>Inner <code>;i</code> → (exiti)</b><span class="f">MIE = 0; in-isr? = 1; mepc and mstatus from the inner frame; registers back (s5 = 0x80040884); pop s11 = 0x80040890; mret</span><p><code>mret</code> sets MIE from the saved MPIE (1) and returns into the outer handler just after <code>1 msip !</code>.</p></div></li>
+    <li class="nest"><div><b>Outer handler finishes</b><span class="f">0 inside !   ;i → (exiti): MIE = 0; in-isr? = 0; mepc and mstatus from the outer frame; registers back (s5 = the task's return stack); pop s11 = 0x80040904; mret</span><p>Back in the task, with MIE = 1 from the task's saved MPIE.</p></div></li>
+    <li><div><b>Repeat for 20 ms, then check</b><span class="f">-int</span><p>Each tick repeats steps 5–10. Then the checks:</p>
+      <ul>
+        <li><code>inner @ 0&gt;</code>: the inner handler ran.</li>
+        <li><code>seen @</code> = 1: it ran while the outer handler was active.</li>
+        <li><code>odepth @ idepth @</code> = 1 2: <code>in-isr?</code> counted the nesting.</li>
+        <li><code>irp @ orp @ u&lt;</code>: the inner return stack is below the outer one.</li>
+        <li><code>orp @ rp0 @ u&lt;</code>: the outer handler ran on <code>ISR_stack</code>, not on the task's return stack.</li>
+        <li><code>rp@ rp0 @ =</code>: the task's return stack is balanced.</li>
+        <li><code>in-isr? @</code> = 0: no handler is left running.</li>
+        <li><code>inner @ outer @ - abs 2 &lt;</code>: one inner per outer, with one tick of slack at the <code>-int</code>.</li>
+      </ul></div></li>
+  </ol>
+
+  <div class="walk-h">Part 2: no nesting without +int</div>
+  <ol class="walk">
+    <li><div><b>Replace the outer handler</b><span class="f">:noname 1 outer +! 1 inside ! 1 msip ! 0 inside ! ;i  systick# trap!</span><p>The same, but without <code>+int</code>. The inner handler is unchanged.</p></div></li>
+    <li class="nest"><div><b>msip is raised but has to wait</b><p>MIE is still 0, so the pending msip can't be taken. The outer handler sets <code>inside</code> back to 0 and returns.</p></div></li>
+    <li><div><b>The inner handler runs after mret</b><p><code>mret</code> sets MIE = 1, the pending msip is taken at once, and the inner handler sees <code>inside</code> = 0 and <code>in-isr?</code> = 1.</p></div></li>
+    <li><div><b>Check</b><span class="f">T{ seen @ idepth @ -&gt; 0 1 }T</span></div></li>
+  </ol>
+
+  <div class="walk-h">Cleanup, and what the test catches</div>
+  <ol class="walk">
+    <li><div><b>Put everything back</b><span class="f">-systick  0 msip !  3 irq.off  3 trap-  systick.max  rv.restore  +systick</span><p>Each source is switched off before its slot is emptied (see Gotchas). <code>rv.restore</code> puts the old slot 15 handler back with <code>trap!</code>, or empties the slot with <code>trap-</code> if there was none.</p></div></li>
+    <li><div><b>Against the pre-ISR_stack code, it hangs</b><p>The old <code>isrstub</code> didn't save mepc and mstatus in the frame. The nested msip trap overwrites the outer handler's mepc, and the run locks up at the first <code>+int</code>: <code>FINISHED: N</code>, and <code>make tests</code> exits with an error. So broken nesting shows up as a hang, not a failed check, but CI still sees it.</p></div></li>
+  </ol>
+  <p>Results on 26 Nov 2026: <code>make test TEST=interrupts-rv-nested</code> PASS 10, FAIL 0; the full suite PASS 689, FAIL 0 in both vectored and direct mode.</p>
+</section>
+
+<section id="findings">
+  <span class="eyebrow">Open findings</span>
+  <h2>Differences that still change behaviour</h2>
+  <div class="findings">
+    <div class="finding bad">
+      <span class="sev">Gap · ARM</span>
+      <div class="finding-body">
+        <b>ARM's empty-slot path leaks</b>
+        <p>Slots start at 0 on both targets, but ARM's <code>systick.init</code> leaves SysTick counting with its interrupt enabled, and ARM has no <code>irq.on</code> to refuse it. As soon as anything runs <code>+int</code> without first installing a SysTick handler, each tick takes <code>stub_exit</code>, which leaves PSP 4–8 bytes lower and DEBUG_BREAK cleared. This is from reading the code; it hasn't been traced. <code>interrupts-cortexm.fr</code> now ends this way (its cleanup empties slot 15 with <code>trap-</code>), but with interrupts off. Fixing <code>stub_exit</code> would make an empty SysTick slot harmless.</p>
+      </div>
+    </div>
+    <div class="finding warn">
+      <span class="sev">Gap · ARM</span>
+      <div class="finding-body">
+        <b><code>in-isr?</code> means nothing on ARM</b>
+        <p>The variable is shared, but only RV updates it. On ARM it always reads 0, even inside a handler (measured: a SysTick handler that stored <code>in-isr? @</code> ran 4 times and saw 0 each time). Forth code that tests <code>in-isr?</code> will behave differently on the two targets. ARM could update it in <code>isrstub</code> and <code>(exiti)</code>, or provide a word that reads IPSR.</p>
+      </div>
+    </div>
+    <div class="finding bad">
+      <span class="sev">Wart · RV</span>
+      <div class="finding-body">
+        <b>The trap-entry scheme is fixed in the source, and QEMU and CH32 are set up in very different ways</b>
+        <p>There is no build option that picks the scheme. Each target sets it in its own startup file, and the two files are not variants of each other.</p>
+
+        <p><b>RV QEMU: a <code>.ifnb</code> switch picks one of two standard schemes.</b> <code>rv/mcu/qemu/qemu.startup:47–54</code>:</p>
+<pre class="frag">.ifnb 
+	la t0, isrstub                 # direct mode, all traps enter here
+	csrw mtvec, t0
+.else
+	la t0, _vector_base            # vector mode
+    ori t0, t0, 1                  # MODE =1 (vectored)
+	csrw mtvec, t0
+.endif</pre>
+        <p><code>.ifnb</code> is true only when something follows it on the line. Nothing does, so the <code>.else</code> branch is built: <b>vectored</b> (standard RISC-V MODE = 1). The CPU jumps to <code>_vector_base + 4 × code</code>, and the <code>j isrstub</code> or <code>j nullhandler</code> instruction there runs next (<code>rv/mcu/qemu/vectors.s</code>). Put any token after <code>.ifnb</code> and you get <b>direct</b> mode (MODE = 0): every trap, interrupt or exception, enters <code>isrstub</code>.</p>
+        <p>Both branches use the same <code>isrstub</code>, <code>(exiti)</code> and <code>ram_vector</code>. <code>isrstub</code> reads <code>mcause</code> itself, so it works either way. What changes:</p>
+        <ul>
+          <li>Exceptions: vectored sends them to table entry 0 (<code>nullhandler</code>); direct sends them to <code>isrstub</code>, which branches to <code>_trap_exception</code>.</li>
+          <li>Unwired codes: vectored stops them in the table; direct lets them reach the slot lookup.</li>
+          <li><code>vectors.s</code> is assembled in both cases (<code>amforth.s:28</code>), so direct mode carries an unused table.</li>
+        </ul>
+
+        <p><b>Both branches pass the test suite</b> (<code>WANT_IGNORECASE=1 TIMEOUT=10s make tests</code>). On 24 Nov 2026, before the ISR_stack change: vectored, as checked in, PASS 672, FAIL 0; direct, built with <code>.ifnb DIRECT</code> (the listing confirms <code>la t0, isrstub</code> was assembled), PASS 672, FAIL 0. Re-run on 26 Nov 2026 after the ISR_stack change, with the test files as updated that day plus the new nested test: PASS 689, FAIL 0 in both schemes (679 existing + 10 in <code>interrupts-rv-nested.fr</code>). Run again later on 26 Nov, after only comment and documentation changes: vectored PASS 689, FAIL 0; direct PASS 689, FAIL 0, with <code>.ifnb DIRECT</code> on <code>qemu.startup:52</code> (the listing shows <code>mtvec</code> loaded from <code>isrstub</code> with no <code>ori 1</code>), then put back to vectored and rebuilt. All runs exited with 0 and had no <code>??</code> errors in <code>build/tests.log</code>. One test line is never counted, in either mode: <code>T{ ' curler catch -&gt; 24 }T</code> in <code>interrupts-cortexm.fr</code>. Its <code>T {</code> typo is fixed, but the SysTick handler's <code>42 throw</code> prints <code>err# not known</code> each tick, even though it is caught. That text lands in the middle of the echoed line, so <code>results.awk</code> doesn't recognise it as a test. The interrupt tests run SysTick through slot 7, and the nested test adds msip through slot 3, in both modes. No test raises an exception, so direct mode's <code>_trap_exception</code> path is untested.</p>
+
+        <p><b>CH32V307: one WCH-specific scheme, no switch.</b> <code>rv/mcu/ch32v307/307.startup:376–396</code>:</p>
+<pre class="frag">.if WANT_NESTED_ISR
+	li t0, 0x0b         /* enable nested and hardware stack */
+	csrw 0x804, t0
+.else
+	li t0, 0x01         /* hardware stack only */
+	csrw 0x804, t0
+.endif
+
+    /* WCH-specific: enable GINTENR (master interrupt gate) */
+    li t0, 0x6088
+    csrw 0x800, t0
+
+    /* Enable floating point and interrupt */
+   	li t0, 0x6088           
+   	csrs mstatus, t0
+
+ 	la t0, _vector_base
+    ori t0, t0, 2           
+	csrw mtvec, t0</pre>
+        <p>The only <code>.if</code> here selects nesting (<code>WANT_NESTED_ISR</code>), not the entry scheme. <code>mtvec | 2</code> is a QingKe V4 extension: bit 0 = 0 means one entry for every trap, and bit 1 = 1 means that entry holds an <i>address</i> (standard RISC-V only allows an instruction). So every trap goes to <code>.word _master_int</code>. Around it, the scheme differs from QEMU at every step:</p>
+        <ul>
+          <li><code>intsyscr</code> (0x804) turns on HPE, which saves the caller-saved registers in hardware. <code>_master_int</code> saves only s1–s10 on s11, not QEMU's full 26-register frame.</li>
+          <li><code>_master_int</code>, not <code>isrstub</code>, finds the slot. It uses <code>mcause</code> directly, with no PLIC (the PFIC numbers interrupts itself).</li>
+          <li>Slot 0 → it reads the same <code>_vector_base</code> table <i>as data</i> and jumps to the C/asm handler there. QEMU just returns.</li>
+          <li>Its own <code>(exiti)</code> (<code>rv/mcu/ch32v307/words/exiti.s</code>) restores s1–s10 and leaves the rest to HPE.</li>
+        </ul>
+
+        <p><b>So "single handler" means two different things.</b> QEMU's direct branch is standard RISC-V MODE 0 into the QEMU <code>isrstub</code>. CH32's is a WCH address-table entry into <code>_master_int</code>, with HPE behind it. Neither target can build the other's scheme. A per-target option, for example in <code>config.inc</code>, would replace QEMU's empty <code>.ifnb</code> with a named switch. Giving CH32 a vectored choice would also need a vector table that dispatches without <code>_master_int</code>. That is still to do.</p>
+      </div>
+    </div>
+    <div class="finding warn">
+      <span class="sev">Note · RV</span>
+      <div class="finding-body">
+        <b>Faux SysTick at 1 ms drops ticks under QEMU on macOS</b>
+        <p>Over 1 s: a 1 ms period gave 746 ticks (234 late re-arms), 2 ms gave 499, 5 ms gave 199. Probably late timer delivery by QEMU on the host. The interrupt tests pass either way.</p>
+      </div>
+    </div>
+    <div class="finding info">
+      <span class="sev">Info</span>
+      <div class="finding-body">
+        <b>Smaller asymmetries</b>
+        <p>RV QEMU still allocates <code>reg_shadow</code> but no longer uses it. ARM's vector table stops at 15, so MPS2 peripherals have no interrupt path. On RV, slot 7 belongs to the faux SysTick while it runs, so <code>7 trap!</code> has no visible effect. The RV test suite needs more than CI's 5 s timeout on this Mac (it passes with 10 s).</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="gotchas">
+  <span class="eyebrow">Gotchas</span>
+  <h2>Things that catch you out</h2>
+  <div class="findings">
+    <div class="finding warn">
+      <span class="sev">Gotcha</span>
+      <div class="finding-body">
+        <b><code>trap-</code> empties a slot but leaves its source enabled</b>
+        <p>In Forth this is <code>: trap- ( n -- ) cells trap.base + 0 swap ! ;</code>. It is a shared word in <code>core/</code> and doesn't call <code>irq.off</code>, for three reasons:</p>
+        <ul>
+          <li><code>irq.off</code> exists only on RV QEMU;</li>
+          <li>slot 15 on RV is reached only through <code>systick.isr</code>, so it has no source of its own;</li>
+          <li>ARM has no per-slot disable.</li>
+        </ul>
+        <p>So turn the source off first (<code>-systick</code>, <code>n irq.off</code>), then <code>n trap-</code>. Otherwise a source that is still enabled traps into an empty slot: on RV QEMU a level-triggered source livelocks, and on ARM SysTick takes the leaking <code>stub_exit</code> path.</p>
+      </div>
+    </div>
+    <div class="finding info">
+      <span class="sev">Note · RV</span>
+      <div class="finding-body">
+        <b>What an empty slot (XT = 0) does on RV QEMU: kept as is, on purpose</b>
+        <p><code>isrstub</code> saves the full frame as for any trap, finds 0 in <code>ram_vector[slot]</code>, and branches to <code>_trap_return</code> → <code>_trap_restore</code> in <code>(exiti)</code>. No Forth runs, and <code>in-isr?</code> is neither incremented nor decremented. A PLIC claim, if any, is completed; mepc, mstatus and the registers are reloaded; the saved s11 is popped; then <code>mret</code>. The frame, the return stack and <code>in-isr?</code> come out balanced.</p>
+        <p>Nothing clears the <i>cause</i>, so the outcome depends on the source:</p>
+        <ul>
+          <li><b>Timer (MTIP, slot 7), msip (slot 3), level-triggered PLIC device:</b> still pending after <code>mret</code>, so it traps again at once. That's a livelock: the interrupted code never runs another instruction, nothing is corrupted, and nothing flags it.</li>
+          <li><b>One-off PLIC pulse, spurious claim (id 0), slot ≥ 64:</b> returns normally; the event is lost.</li>
+          <li><b>Slot 15 (virtual SysTick):</b> harmless. <code>systick.isr</code> in slot 7 has already moved <code>mtimecmp</code>, and its <code>?dup if execute then</code> skips the empty slot.</li>
+        </ul>
+        <p><b>Why it stays this way.</b> This matches ARM as closely as the hardware allows. On both targets 0 means "no handler", and the stub returns without running Forth: ARM through <code>stub_exit</code>, RV through <code>_trap_return</code>. ARM's SysTick doesn't livelock only because the CPU clears its pending bit on entry. A level-triggered NVIC interrupt with an empty slot would livelock on ARM too. Rather than give RV a default handler that changes state behind the user's back, the words keep a 0 out of enabled slots:</p>
+        <ul>
+          <li><code>trap!</code> refuses 0 (throws −263 "no isr handler").</li>
+          <li><code>irq.on</code> refuses to enable a slot that holds 0.</li>
+          <li>Slots are 0 at boot (<code>_start</code> clears <code>ram_vector</code>), and every source starts disabled (<code>mie = 0</code>).</li>
+        </ul>
+        <p>A livelock is still possible in two ways: <code>n trap-</code> while source n is enabled (see the gotcha above), or enabling a source without <code>irq.on</code>, by writing <code>mie</code> or the PLIC registers directly. CH32 differs: there, 0 means "use the C/asm handler in the flash <code>_vector_base</code> table".</p>
+      </div>
+    </div>
+    <div class="finding info">
+      <span class="sev">Note · RV</span>
+      <div class="finding-body">
+        <b>s11 grows down on QEMU (on <code>ISR_stack</code>) and up on CH32 (on <code>reg_shadow</code>)</b>
+        <p>The RAM layout is <code>reg_shadow</code> (256 B), then <code>ram_vector</code> (1 KB), then <code>ISR_stack</code> (1 KB), then the task blocks. Each target starts s11 at the end that matches its growth direction, so push, pop and initial value agree on both:</p>
+        <ul>
+          <li><b>QEMU:</b> s11 = <code>RAM_upper_ISR_stack</code>, grows <b>down</b>. Frames (116 B) and handler return stacks share <code>ISR_stack</code>; a nested frame goes below the outer handler's return stack. This relies on every task return stack lying above <code>ISR_stack</code>, which an assembler check at the end of <code>rv/mcu/qemu/amforth.s</code> enforces (see <a href="#frame-place">where isrstub puts a frame</a>). Overflow runs down into <code>ram_vector</code>'s top slots (255, 254, …).</li>
+          <li><b>CH32V307:</b> s11 = <code>RAM_lower_reg_shadow</code>, grows <b>up</b> (<code>_master_int</code> stores, then adds 40). 40-byte frames (s1–s10, HPE saves the rest), room for 6. Overflow runs into <code>ram_vector</code> slot 0, 1, …. That needs 7 nested Forth handlers, and nesting is off (<code>WANT_NESTED_ISR</code>, "HPE only").</li>
+        </ul>
+        <p>Neither target checks for overflow. Each target builds its own <code>(exiti)</code>, so the pops stay matched to the pushes.</p>
+        <p><b>Stale clear loop in the CH32 startup.</b> <code>307.startup:401–406</code> (and <code>203.startup</code>) clear from <code>ram_vector_base</code> up to <code>reg_shadow</code>. The commented-out line above it (<code>reg_shadow - 0x100 * cellsize</code>) shows it was written when <code>ram_vector</code> sat below <code>reg_shadow</code>. With the current layout the start is above the end, so the loop clears slot 0 once and stops. It does no harm, because the bss loop has already zeroed both blocks, but it doesn't do what it says. To fix it, clear <code>RAM_lower_ram_vector</code>..<code>RAM_upper_ram_vector</code> as <code>qemu.startup</code> does, or delete the loop.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <span>Sources: <code>build/amforth.dep</code> from <code>TARGET=MPS2 make all</code> (arm/mcu/qemu) and <code>make all</code> (rv/mcu/qemu); the files named above; QEMU runs on 24 Nov 2026. Test suite on 26 Nov 2026, after the ISR_stack change: ARM MPS2 679 passed, 0 failed; RV QEMU vectored and direct 689 passed, 0 failed each (the extra 10 are the RV-only nested test).</span>
+  <span>Reflects the uncommitted working tree on branch <code>mtime</code>.</span>
+</footer>
+
+</div>
+</body>
+</html>
