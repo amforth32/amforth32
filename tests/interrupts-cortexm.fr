@@ -112,7 +112,7 @@ variable catcher
 \ run a slow catch/throw
 : curler 5 ms 24 throw ;
 \ check that the throw on the main task worked while being interrupted
-T { ' curler catch -> 24 }
+T{ ' curler catch -> 24 }T
 
 -int
 

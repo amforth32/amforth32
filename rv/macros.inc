@@ -49,7 +49,7 @@
 .macro popdouble register1 register2
   lw \register1, 4(s5)
   lw \register2, 0(s5)
-  addi s4, s4, 8
+  addi s5, s5, 8
 .endm
 
 .macro pushda register # Push register on Datastack

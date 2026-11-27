@@ -2,7 +2,12 @@
 
 HEADLESS "(exiti)", EXITI /* return from interrupt handler; compiled by ;i. */
 
-     # QEMU has no HPE: restore the whole frame saved by _master_int
+     # QEMU has no HPE: restore the whole frame saved by isrstub
+
+     /* the handler may have run +int: mask before touching mepc,
+        mret sets MIE again from the saved MPIE */
+
+     csrci   mstatus, 0x8
 
      /* one less Forth handler running (in-isr? is a count) */
 
@@ -13,7 +18,8 @@ HEADLESS "(exiti)", EXITI /* return from interrupt handler; compiled by ;i. */
 
      /*
         the flash handler, spurious and out-of-range paths did not
-        count themselves in in-isr?, so they enter here
+        count themselves in in-isr?, so they enter here (MIE is
+        still 0 on those paths)
      */
 
 _trap_restore:
@@ -25,6 +31,11 @@ _trap_restore:
      li      t1, PLIC_CLAIM
      sw      t0, 0(t1)
 1:
+
+     lw      t0, TF_MEPC(s11)      # return address and MPIE/MPP of
+     csrw    mepc, t0              # this trap, not of a nested one
+     lw      t0, TF_MSTATUS(s11)
+     csrw    mstatus, t0
 
      lw ra,    0(s11)
      lw t0,    4(s11)
@@ -53,9 +64,10 @@ _trap_restore:
      lw s9,   96(s11)
      lw s10, 100(s11)
 
-     /* release the frame last, so a nested trap could not overwrite it */
+     /* s5 is the interrupted RS again, with the old s11 on top
+        (pushed by isrstub): pop it. This releases the frame. */
 
-     addi s11, s11, TF_SIZE
+     pop s11                        # old s11, pushed by isrstub
 
      mret
 END EXITI

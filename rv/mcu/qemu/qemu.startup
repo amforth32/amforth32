@@ -4,9 +4,9 @@
 .option norelax             # instructions or other such optimisations
 
 .globl PFA_COLD
-.globl _start , isrstub , DO_EXECUTE , reg_shadow
+.globl _start , isrstub , DO_EXECUTE
 
-.equ reg_shadow , RAM_upper_reg_shadow   # s11 stack grows down from the top
+.equ isr_stack_top , RAM_upper_ISR_stack  # s11: trap frames grow down from the top
 
 .equ PLIC_BASE      , 0x0C000000
 .equ PLIC_THRESHOLD , PLIC_BASE + 0x200000 # hart 0 M-mode context
@@ -16,20 +16,24 @@
 .equ PLIC_SLOT_BASE , 16                   # slot = 16 + PLIC source id
 .equ TRAP_SLOTS     , 64                   # size of the trap tables
 
-# trap frame on the s11 shadow stack, in bytes
+# trap frame on ISR_stack at s11, in bytes
 #    0 .. 60  ra t0-t6 a0-a7
 #   64 .. 100 s1-s10
 #  104        PLIC claim id, 0 if none
+#  108        mepc
+#  112        mstatus
 
-.equ TF_CLAIM , 104
-.equ TF_SIZE  , 108
+.equ TF_CLAIM   , 104
+.equ TF_MEPC    , 108
+.equ TF_MSTATUS , 112
+.equ TF_SIZE    , 116
 
 .section .init
 _start:
 	la gp, __global_pointer$
 	la sp, _eusrstack
 
-	la s11, reg_shadow
+	la s11, isr_stack_top
 
 	la t0, RAM_lower_ram_vector    # clear the trap! table
 	la t1, RAM_upper_ram_vector

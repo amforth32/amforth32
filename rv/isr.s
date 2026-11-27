@@ -11,12 +11,42 @@ _trap_exception:  1:  j 1b
 
 isrstub:
 
-	# QEMU has no HPE so all of the context is saved here. s11 is
-	# reserved for this, so no scratch register is needed yet.
-	# The s11 stack grows down. The frame is claimed by the first
-	# instruction so a nested trap could not overwrite it.
+	# QEMU has no HPE so all of the context is saved here, on
+	# ISR_stack. s11 points at the current frame; it is reserved, so
+	# no scratch register is needed yet. MIE is 0 until the handler
+	# runs +int, so nothing here can be interrupted.
+	#
+	# Like ARM, the handler gets ISR_stack as its return stack:
+	#
+	#   ISR_stack top          <- s11 when no handler is running
+	#     [ frame ]            <- s11 in the handler
+	#     [ handler RS ... ]   <- s5 in the handler
+	#     [ saved s11 ]        nested trap: pushed on the handler RS
+	#     [ nested frame ]     <- s11 in the nested handler
+	#     [ nested RS ... ]
+	#
+	# The old s11 is pushed on the interrupted return stack (the
+	# task's, or the outer handler's when nested) and popped by
+	# (exiti).
+	#
+	# Each new frame goes into free space, just below whatever stack
+	# is in use:
+	#   - a task was interrupted: its RS lies above ISR_stack, so all
+	#     of ISR_stack is free and the frame goes at s11 (its top).
+	#   - a handler was interrupted: its RS is inside ISR_stack. From
+	#     s11 down to s5 is in use (its RS entries and the s11 just
+	#     pushed); below s5 is free. s5 is the first free address, so
+	#     the frame goes there.
+	# bgeu s5, s11 tells the two apart (s5 at or above s11: a task;
+	# below: a handler) without needing a scratch register. It relies
+	# on every task RS lying above ISR_stack: core/amforth32.s
+	# allocates ISR_stack first, and the .if at the end of
+	# rv/mcu/qemu/amforth.s checks it.
 
-	addi s11, s11, -TF_SIZE
+	push s11                       # old s11 on the interrupted RS
+	bgeu s5, s11, 1f               # task: all of ISR_stack is free
+	mv   s11, s5                   # handler: s5 is the first free address
+1:	addi s11, s11, -TF_SIZE
 
 	sw ra,    0(s11)
 	sw t0,    4(s11)
@@ -45,6 +75,11 @@ isrstub:
 	sw s9,   96(s11)
 	sw s10, 100(s11)
 	sw zero, TF_CLAIM(s11)
+
+	csrr t0, mepc                  # a nested trap overwrites these,
+	sw t0, TF_MEPC(s11)            # so they go in the frame too
+	csrr t0, mstatus
+	sw t0, TF_MSTATUS(s11)
 
 	# in-isr? counts the Forth handlers that are running (CH32 does
 	# the same in _master_int). It is incremented on the Forth path below and decremented
@@ -83,6 +118,7 @@ isrstub:
 
 	mv s1, t2                      # XT of the Forth handler
 	mv s7, zero                    # keep the debugger out of the handler
+	mv s5, s11                     # handler RS starts below its frame
 	j DO_EXECUTE                   # ;i compiles the return (exiti)
 
 _trap_return:                      # the context restore is in exiti;
