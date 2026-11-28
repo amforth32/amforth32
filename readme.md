@@ -20,7 +20,7 @@ Pre-built binaries for various targets are available as Github releases.
 ### RISC-V 32
 
 * [WCH CH32V307 / dev board v307, v305, v203 ](rv/mcu/ch32v307) @[refcard](https://amforth32.github.io/amforth32/refcards/rv/rv-307.html)
-* [Generic RISCV-32 / QEMU -M virt](rv/mcu/qemu) @[refcard](https://amforth32.github.io/amforth32/refcards/rv/rv-QEM.html)
+* [Generic RISCV-32 / QEMU -M virt](rv/mcu/qemu) @[refcard](https://amforth32.github.io/amforth32/refcards/rv/rv-RVQEMU.html)
 
 
 ### ARM 32
@@ -28,7 +28,8 @@ Pre-built binaries for various targets are available as Github releases.
 * [Renesas RA4M1 / Arduino UNO R4](arm/mcu/ra4m1) @[refcard](https://amforth32.github.io/amforth32/refcards/arm/arm-UNOR4.html)
 * [TI LM4F120 / Stellaris Launchpad (+QEMU emulation)](arm/mcu/lm4f120) @[refcard](https://amforth32.github.io/amforth32/refcards/arm/arm-LM4.html)
 * [Generic ARM-32 / Linux, Raspberry PI (+Docker emulation)](arm/mcu/linux) @[refcard](https://amforth32.github.io/amforth32/refcards/arm-linux/arm-LINUX.html)
-* [Generic ARM-32 / QEMU -M virt](arm/mcu/qemu) @[refcard](https://amforth32.github.io/amforth32/refcards/arm/arm-QEM.html)
+* [Generic ARM-32 / QEMU -M virt | -M mps2](arm/mcu/qemu) @[refcard](https://amforth32.github.io/amforth32/refcards/arm/arm-VIRT.html)|[refcard](https://amforth32.github.io/amforth32/refcards/arm/arm-MPS2.html)
+
 
 From the original AmForth README:
 
